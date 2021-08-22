@@ -6,7 +6,9 @@ using System.Threading.Tasks;
 
 namespace CrunchEconomy
 {
-    public class Class1
+    public class Config
     {
+        public string StoragePath = "default";
+
     }
 }
