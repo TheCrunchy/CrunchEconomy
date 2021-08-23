@@ -13,5 +13,6 @@ namespace CrunchEconomy
         public string subtypeId = "Iron";
         public long minPrice = 1;
         public long maxPrice = 3;
+        public double chance = 1;
     }
 }

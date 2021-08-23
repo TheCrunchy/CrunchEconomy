@@ -74,15 +74,22 @@ namespace CrunchEconomy
             }
             return targetAmount;
         }
-        public static List<VRage.Game.ModAPI.IMyInventory> GetInventories(MyCubeGrid grid)
+        public static List<VRage.Game.ModAPI.IMyInventory> GetInventories(MyCubeGrid grid, Stations station)
         {
             List<VRage.Game.ModAPI.IMyInventory> inventories = new List<VRage.Game.ModAPI.IMyInventory>();
 
             foreach (var block in grid.GetFatBlocks())
             {
-
+                if (station.ViewOnlyNamedCargo)
+                {
+                    if (!block.DisplayNameText.Equals(station.CargoName))
+                    {
+                        continue;
+                    }
+                }
                 for (int i = 0; i < block.InventoryCount; i++)
                 {
+
                     VRage.Game.ModAPI.IMyInventory inv = ((VRage.Game.ModAPI.IMyCubeBlock)block).GetInventory(i);
                     inventories.Add(inv);
                 }
@@ -99,6 +106,16 @@ namespace CrunchEconomy
             {
                 NextFileRefresh = DateTime.Now.AddMinutes(2);
                 Log.Info("Loading stuff for CrunchEcon");
+                try
+                {
+                    LoadAllGridSales();
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("Error loading grid sales " + ex.ToString());
+
+
+                }
                 try
                 {
                     LoadAllSellOffers();
@@ -158,23 +175,27 @@ namespace CrunchEconomy
                                             station.nextSellRefresh = now.AddSeconds(station.SecondsBetweenRefreshForSellOffers);
                                             if (sellOffers.TryGetValue(store.DisplayNameText, out List<SellOffer> offers))
                                             {
-                                               
+
 
                                                 ClearStoreOfPlayersBuyingOffers(store);
                                                 List<VRage.Game.ModAPI.IMyInventory> inventories = new List<VRage.Game.ModAPI.IMyInventory>();
-                                                inventories.AddRange(GetInventories(grid));
+                                                inventories.AddRange(GetInventories(grid, station));
                                                 Random rnd = new Random();
                                                 foreach (SellOffer offer in offers)
                                                 {
-                                                 
+
                                                     if (MyDefinitionId.TryParse("MyObjectBuilder_" + offer.typeId, offer.subtypeId, out MyDefinitionId id))
                                                     {
-                                                     
+
                                                         int hasAmount = CountComponents(inventories, id).ToIntSafe();
                                                         if (hasAmount > 0)
                                                         {
-                                                       
-                                                            SerializableDefinitionId itemId = new SerializableDefinitionId(id.TypeId, offer.subtypeId);
+                                                            double chance = rnd.NextDouble();
+                                                            if (chance > offer.chance)
+                                                            {
+                                                                continue;
+                                                            }
+                                                                SerializableDefinitionId itemId = new SerializableDefinitionId(id.TypeId, offer.subtypeId);
 
 
                                                             rnd = new Random();
@@ -185,32 +206,32 @@ namespace CrunchEconomy
                                                             MyStoreInsertResults result = store.InsertOffer(item, out long notUsingThis);
                                                             if (result == MyStoreInsertResults.Fail_PricePerUnitIsLessThanMinimum || result == MyStoreInsertResults.Fail_StoreLimitReached || result == MyStoreInsertResults.Error)
                                                             {
-                                                                Log.Error("Unable to insert this offer into store " + offer.typeId + " " + offer.subtypeId + " at station " + station.Name  + " " + result.ToString());
+                                                                Log.Error("Unable to insert this offer into store " + offer.typeId + " " + offer.subtypeId + " at station " + station.Name + " " + result.ToString());
                                                             }
                                                         }
                                                     }
                                                 }
 
                                             }
-                                         
+
 
 
                                         }
                                         if (now >= station.nextBuyRefresh && station.DoBuyOrders)
                                         {
                                             station.nextBuyRefresh = now.AddSeconds(station.SecondsBetweenRefreshForBuyOrders);
-                             
+
                                             if (buyOrders.TryGetValue(store.DisplayNameText, out List<BuyOrder> orders))
                                             {
-                                                
+
                                                 station.nextSellRefresh = now.AddSeconds(station.SecondsBetweenRefreshForSellOffers);
                                                 ClearStoreOfPlayersSellingOrders(store);
                                                 List<VRage.Game.ModAPI.IMyInventory> inventories = new List<VRage.Game.ModAPI.IMyInventory>();
-                                                inventories.AddRange(GetInventories(grid));
+                                                inventories.AddRange(GetInventories(grid, station));
                                                 Random rnd = new Random();
                                                 foreach (BuyOrder order in orders)
                                                 {
-                                                
+
                                                     if (MyDefinitionId.TryParse("MyObjectBuilder_" + order.typeId, order.subtypeId, out MyDefinitionId id))
                                                     {
 
@@ -220,9 +241,9 @@ namespace CrunchEconomy
                                                         double chance = rnd.NextDouble();
                                                         if (chance <= order.chance)
                                                         {
-                                                        int price = rnd.Next((int)order.minPrice, (int)order.maxPrice);
-                                                        int amount = rnd.Next((int)order.minAmount, (int)order.maxAmount);
-                                                        MyStoreItemData item = new MyStoreItemData(itemId, amount, price, null, null);
+                                                            int price = rnd.Next((int)order.minPrice, (int)order.maxPrice);
+                                                            int amount = rnd.Next((int)order.minAmount, (int)order.maxAmount);
+                                                            MyStoreItemData item = new MyStoreItemData(itemId, amount, price, null, null);
                                                             MyStoreInsertResults result = store.InsertOrder(item, out long notUsingThis);
                                                             if (result == MyStoreInsertResults.Fail_PricePerUnitIsLessThanMinimum || result == MyStoreInsertResults.Fail_StoreLimitReached || result == MyStoreInsertResults.Error)
                                                             {
@@ -346,6 +367,29 @@ namespace CrunchEconomy
             }
 
         }
+
+        public void LoadAllGridSales()
+        {
+            gridsForSale.Clear();
+
+            foreach (String s2 in Directory.GetFiles(path + "//GridSelling//"))
+            {
+                try
+                {
+                    GridSale sale = utils.ReadFromXmlFile<GridSale>(s2);
+                    if (sale.Enabled && !gridsForSale.ContainsKey(sale.ItemSubTypeId))
+                    {
+                        gridsForSale.Add(sale.ItemSubTypeId, sale);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("Error loading sell offers " + s2 + " " + ex.ToString());
+
+                }
+            }
+        }
+
         public void LoadAllSellOffers()
         {
             sellOffers.Clear();
@@ -414,12 +458,23 @@ namespace CrunchEconomy
             }
             return null;
         }
+       public static Dictionary<String, GridSale> gridsForSale = new Dictionary<string, GridSale>();
 
         private void SessionChanged(ITorchSession session, TorchSessionState state)
         {
             TorchState = state;
             if (state == TorchSessionState.Loaded)
             {
+                try
+                {
+                    LoadAllGridSales();
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("Error loading grid sales " + ex.ToString());
+
+
+                }
                 try
                 {
                     LoadAllSellOffers();
@@ -495,7 +550,14 @@ namespace CrunchEconomy
             }
             if (!Directory.Exists(path + "//GridSelling//"))
             {
+                GridSale gridSale = new GridSale();
+         
                 Directory.CreateDirectory(path + "//GridSelling//");
+                utils.WriteToXmlFile<GridSale>(path + "//GridSelling//ExampleSale.xml", gridSale);
+            }
+            if (!Directory.Exists(path + "//GridSelling//Grids//"))
+            {
+                Directory.CreateDirectory(path + "//GridSelling//Grids//");
             }
             TorchBase = Torch;
         }

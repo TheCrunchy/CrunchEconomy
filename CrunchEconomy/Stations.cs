@@ -13,6 +13,8 @@ namespace CrunchEconomy
         public Boolean Enabled = false;
         public Boolean DoBuyOrders = true;
         public Boolean DoSellOffers = true;
+        public Boolean ViewOnlyNamedCargo = false;
+        public string CargoName = "bob";
         public string stationGPS = "Put a GPS here";
         public int SecondsBetweenRefreshForBuyOrders = 1800;
         public int SecondsBetweenRefreshForSellOffers = 60;
