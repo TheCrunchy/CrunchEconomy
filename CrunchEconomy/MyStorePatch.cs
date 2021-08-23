@@ -123,11 +123,21 @@ namespace CrunchEconomy
                                     {
                                         if (File.Exists(CrunchEconCore.path + "//GridSelling//Grids//" + sale.ExportedGridName + ".sbc"))
                                         {
-                                            if (!GridManager.LoadGrid(CrunchEconCore.path + "//GridSelling//Grids//" + sale.ExportedGridName + ".sbc", player.Character.PositionComp.GetPosition(), false, player.Id.SteamId, storeItem.Item.Value.SubtypeName, false))
+                                            ulong idd = player.Id.SteamId;
+                                            if (sale.GiveOwnerShipToNPC)
                                             {
+                                                idd = (ulong)store.OwnerId;
+                                            }
+                                            if (!GridManager.LoadGrid(CrunchEconCore.path + "//GridSelling//Grids//" + sale.ExportedGridName + ".sbc", player.Character.PositionComp.GetPosition(), false, idd, storeItem.Item.Value.SubtypeName, false))
+                                            {
+                                                CrunchEconCore.Log.Info(player.Id.SteamId + " failure when purchasing grid");
                                                 DialogMessage m = new DialogMessage("Shop Error", "Unable to paste the grid, is it obstructed?");
                                                 ModCommunication.SendMessageTo(m, player.Id.SteamId);
                                                 return false;
+                                            }
+                                             else
+                                            {
+                                                CrunchEconCore.Log.Info(player.Id.SteamId + " purchased grid " + sale.ExportedGridName);
                                             }
                                         }
                                     }

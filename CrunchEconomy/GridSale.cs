@@ -15,5 +15,7 @@ namespace CrunchEconomy
         public string StoreBlockName = "EXAMPLESGRIDSTORE";
         public string OwnerFactionTag = "GAIA";
         public string ExportedGridName = "BOB";
+        public Boolean GiveOwnerShipToNPC = false;
+       
     }
 }
