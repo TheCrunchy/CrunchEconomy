@@ -18,10 +18,12 @@ namespace CrunchEconomy
         public string stationGPS = "Put a GPS here";
         public int SecondsBetweenRefreshForBuyOrders = 1800;
         public int SecondsBetweenRefreshForSellOffers = 60;
+        public int SecondsBetweenClearEntireInventory = 432000;
         public string OwnerFactionTag = "GAIA";
         public DateTime nextBuyRefresh = DateTime.Now;
         public DateTime nextSellRefresh = DateTime.Now;
-
+        public Boolean DoPeriodGridClearing = false;
+        public DateTime nextGridInventoryClear = DateTime.Now;
         public MyGps getGPS()
         {
             return CrunchEconCore.ScanChat(stationGPS);

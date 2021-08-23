@@ -17,5 +17,7 @@ namespace CrunchEconomy
         public long maxPrice = 3;
 
         public double chance = 0.5;
+
+        public Boolean DeleteTheseItemsInCargOnRefresh = false;
     }
 }

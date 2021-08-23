@@ -9,6 +9,6 @@ namespace CrunchEconomy
     public class Config
     {
         public string StoragePath = "default";
-
+        public Boolean MiningContractsEnabled = false;
     }
 }

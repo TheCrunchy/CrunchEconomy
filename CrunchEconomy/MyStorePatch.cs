@@ -1,8 +1,10 @@
-﻿using Sandbox.Game;
+﻿using CrunchEconomy.Contracts;
+using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.Game.Entities.Blocks;
 using Sandbox.Game.Entities.Character;
 using Sandbox.Game.GameSystems.BankingAndCurrency;
+using Sandbox.Game.Screens.Helpers;
 using Sandbox.Game.SessionComponents;
 using Sandbox.Game.World;
 using System;
@@ -91,7 +93,7 @@ namespace CrunchEconomy
                             return true;
                         }
 
-                        if (!CrunchEconCore.gridsForSale.ContainsKey(storeItem.Item.Value.SubtypeName))
+                        if (!CrunchEconCore.gridsForSale.ContainsKey(storeItem.Item.Value.SubtypeName) && !CrunchEconCore.sellOffers.ContainsKey(store.DisplayNameText))
                         {
                             return true;
                         }
@@ -110,7 +112,7 @@ namespace CrunchEconomy
                             }
                             else
                             {
-                            
+
                                 if (CrunchEconCore.gridsForSale.TryGetValue(storeItem.Item.Value.SubtypeName, out GridSale sale))
                                 {
                                     if (amount > 1)
@@ -135,22 +137,143 @@ namespace CrunchEconomy
                                                 ModCommunication.SendMessageTo(m, player.Id.SteamId);
                                                 return false;
                                             }
-                                             else
+                                            else
                                             {
                                                 CrunchEconCore.Log.Info(player.Id.SteamId + " purchased grid " + sale.ExportedGridName);
                                             }
                                         }
                                     }
                                 }
+                                else
+                                {
+
+                                    if (CrunchEconCore.sellOffers.TryGetValue(store.DisplayNameText, out List<SellOffer> offers))
+                                    {
+                                        //  CrunchEconCore.Log.Info("1");
+                                        foreach (SellOffer offer in offers)
+                                        {//
+
+                                            if (offer.BuyingGivesHaulingContract || offer.BuyingGivesMiningContract)
+                                            {
+                                                //  CrunchEconCore.Log.Info("has a contract");
+                                                if (!store.GetOwnerFactionTag().Equals(offer.IfGivesContractNPCTag))
+                                                {
+                                                    //     CrunchEconCore.Log.Info("not the faction tag");
+                                                    continue;
+                                                }
+                                                // CrunchEconCore.Log.Info("is the faction tag");
+                                                //  CrunchEconCore.Log.Info(storeItem.Item.Value.TypeIdString + " " + storeItem.Item.Value.SubtypeName) ;
+                                                if (offer.typeId.Equals(storeItem.Item.Value.TypeIdString.Replace("MyObjectBuilder_", "")) && offer.subtypeId.Equals(storeItem.Item.Value.SubtypeName))
+                                                {
+
+                                                    CrunchEconCore.playerData.TryGetValue(player.Id.SteamId, out PlayerData data);
+                                                    if (data == null)
+                                                    {
+                                                        //   CrunchEconCore.Log.Info("Data was null");
+                                                        data = new PlayerData();
+                                                        data.steamId = player.Id.SteamId;
+                                                    }
+                                                    if (offer.BuyingGivesMiningContract)
+                                                    {
+                                                        //  CrunchEconCore.Log.Info(data.getMiningContracts().Count);
+                                                        if (data.getMiningContracts().Count < 5)
+                                                        {
+                                                            if (amount > 5 || data.getMiningContracts().Count + amount > 5)
+                                                            {
+
+                                                                StringBuilder sb = new StringBuilder();
+                                                                sb.AppendLine("Cannot purchase more than 5 contracts!");
+                                                                sb.AppendLine("Maximum you can purchase is " + (5 - data.getMiningContracts().Count).ToString());
+                                                                DialogMessage m = new DialogMessage("Shop Error", "", sb.ToString());
+                                                                ModCommunication.SendMessageTo(m, player.Id.SteamId);
+                                                                return false;
+                                                            }
+                                                            for (int i = 0; i <= amount; i++)
+                                                            {
+                                                                if (ContractUtils.newContracts.TryGetValue(offer.MiningContractName, out GeneratedContract contract))
+                                                                {
+
+                                                                    MiningContract temp = ContractUtils.GeneratedToPlayer(contract);
+                                                                    data.MiningContracts.Add(temp.ContractId);
+                                                                    MyGps gps = new MyGps();
+                                                                    gps.Coords = player.GetPosition();
+                                                                    temp.DeliveryLocation = gps.ToString();
+                                                                    data.addMining(temp);
+                                                                    temp.PlayerSteamId = player.Id.SteamId;
+                                                                    //do this the lazy way instead of checking then setting by the key
+                                                                    CrunchEconCore.playerData.Remove(player.Id.SteamId);
+                                                                    CrunchEconCore.playerData.Add(player.Id.SteamId, data);
+
+
+                                                                    CrunchEconCore.miningSave.Remove(player.Id.SteamId);
+                                                                    CrunchEconCore.miningSave.Add(player.Id.SteamId, temp);
+
+
+                                                                    CrunchEconCore.utils.WriteToJsonFile<PlayerData>(CrunchEconCore.path + "//PlayerData//Data//" + data.steamId + ".json", data);
+
+                                                            
+                                                               
+                                                                }
+                                                                else
+                                                                {
+                                                                    DialogMessage m = new DialogMessage("Shop Error", "Failed to find contract.");
+                                                                    ModCommunication.SendMessageTo(m, player.Id.SteamId);
+                                                                    return false;
+                                                                }
+                                                            }
+                                                            StringBuilder contractDetails = new StringBuilder();
+                                                            foreach (MiningContract c in data.getMiningContracts().Values)
+                                                            {
+                                                                if (c.minedAmount >= c.amountToMine)
+                                                                {
+                                                                    c.DoPlayerGps(player.Identity.IdentityId);
+                                                                    contractDetails.AppendLine("Deliver " + c.OreSubType + " Ore " + String.Format("{0:n0}", c.amountToMine));
+                                                                    contractDetails.AppendLine("Reward : " + String.Format("{0:n0}", c.contractPrice) + " SC.");
+                                                                }
+                                                                else
+                                                                {
+                                                                    contractDetails.AppendLine("Mine " + c.OreSubType + " Ore " + String.Format("{0:n0}", c.minedAmount) + " / " + String.Format("{0:n0}", c.amountToMine));
+                                                                    contractDetails.AppendLine("Reward : " + String.Format("{0:n0}", c.contractPrice) + " SC.");
+                                                                }
+                                                                contractDetails.AppendLine("");
+                                                            }
+
+                                                            DialogMessage m2 = new DialogMessage("Contract Details", "Instructions", contractDetails.ToString());
+                                                            ModCommunication.SendMessageTo(m2, player.Id.SteamId);
+                                                            return true;
+
+                                                        }
+                                                        else
+                                                        {
+                                                            DialogMessage m = new DialogMessage("Shop Error", "", "You already have the maximum amount of mining contracts. View them with !contract info");
+                                                            ModCommunication.SendMessageTo(m, player.Id.SteamId);
+                                                            return false;
+                                                        }
+
+                                                    }
+                                                    if (offer.BuyingGivesHaulingContract)
+                                                    {
+
+                                                    }
+                                                }
+                                            }
+
+                                        }
+                                    }
+
+
+                                }
                                 return true;
                             }
                         }
                     }
                 }
+
+                return true;
             }
             return false;
-        }
 
+        }
     }
 }
 
