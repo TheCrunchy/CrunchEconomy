@@ -113,6 +113,7 @@ namespace CrunchEconomy.Contracts
                                 MyCharacter pilot = cockpit.Pilot as MyCharacter;
                                 if (CrunchEconCore.playerData.TryGetValue(MySession.Static.Players.TryGetSteamId(pilot.GetPlayerIdentityId()), out PlayerData data))
                                 {
+                                    
 
                                     playerId = pilot.GetPlayerIdentityId();
                                     MyObjectBuilder_Ore newObject = MyObjectBuilderSerializer.CreateNewObject<MyObjectBuilder_Ore>(material.MinedOre);
@@ -154,20 +155,21 @@ namespace CrunchEconomy.Contracts
                                                     {
                                                         contract.DeliveryLocation = (location.ToString());
                                                         contract.DoPlayerGps(playerId);
-                                                        if (messageCooldown.TryGetValue(MySession.Static.Players.TryGetSteamId(playerId), out DateTime time))
-                                                        {
-                                                            if (DateTime.Now >= time)
-                                                            {
-                                                                CrunchEconCore.SendMessage("Big Boss Dave", "Contract Ready to be completed, Deliver " + String.Format("{0:n0}", contract.amountToMine) + " " + contract.OreSubType + " to the delivery GPS.", Color.Gold, (long)MySession.Static.Players.TryGetSteamId(playerId));
-                                                                messageCooldown[MySession.Static.Players.TryGetSteamId(playerId)] = DateTime.Now.AddSeconds(3);
-                                                            }
-                                                        }
-                                                        else
-                                                        {
-                                                            CrunchEconCore.SendMessage("Big Boss Dave", "Contract Ready to be completed, Deliver " + String.Format("{0:n0}", contract.amountToMine) + " " + contract.OreSubType + " to the delivery GPS.", Color.Gold, (long)MySession.Static.Players.TryGetSteamId(playerId));
-                                                            messageCooldown.Add(MySession.Static.Players.TryGetSteamId(playerId), DateTime.Now.AddSeconds(3));
-                                                        }
+                                             
                                                     }
+                                                }
+                                                if (messageCooldown.TryGetValue(MySession.Static.Players.TryGetSteamId(playerId), out DateTime time))
+                                                {
+                                                    if (DateTime.Now >= time)
+                                                    {
+                                                        CrunchEconCore.SendMessage("Boss Dave", "Contract Ready to be completed, Deliver " + String.Format("{0:n0}", contract.amountToMine) + " " + contract.OreSubType + " to the delivery GPS.", Color.Gold, (long)MySession.Static.Players.TryGetSteamId(playerId));
+                                                        messageCooldown[MySession.Static.Players.TryGetSteamId(playerId)] = DateTime.Now.AddSeconds(3);
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    CrunchEconCore.SendMessage("Boss Dave", "Contract Ready to be completed, Deliver " + String.Format("{0:n0}", contract.amountToMine) + " " + contract.OreSubType + " to the delivery GPS.", Color.Gold, (long)MySession.Static.Players.TryGetSteamId(playerId));
+                                                    messageCooldown.Add(MySession.Static.Players.TryGetSteamId(playerId), DateTime.Now.AddSeconds(3));
                                                 }
                                                 //im not sure i need this anymore, since the contract data is saved seperately
                                                 data.getMiningContracts()[contract.ContractId] = contract;
@@ -183,13 +185,33 @@ namespace CrunchEconomy.Contracts
                                                 {
                                                     if (DateTime.Now >= time)
                                                     {
-                                                        CrunchEconCore.SendMessage("Big Boss Dave", "Contract progress : " + material.MinedOre + " " + String.Format("{0:n0}", contract.minedAmount) + " / " + String.Format("{0:n0}", contract.amountToMine), Color.Gold, (long)MySession.Static.Players.TryGetSteamId(playerId));
-                                                        messageCooldown[MySession.Static.Players.TryGetSteamId(playerId)] = DateTime.Now.AddSeconds(0.5);
+                                                        if (contract.minedAmount == 0)
+                                                        {
+                                                            CrunchEconCore.SendMessage("Boss Dave", "Progress: " + material.MinedOre + " " + String.Format("{0:n0}", totalAmount.ToIntSafe()) + " / " + String.Format("{0:n0}", contract.amountToMine), Color.Gold, (long)MySession.Static.Players.TryGetSteamId(playerId));
+                                                            messageCooldown[MySession.Static.Players.TryGetSteamId(playerId)] = DateTime.Now.AddSeconds(0.5);
+                                                        }
+                                                        else
+                                                        {
+                                                            CrunchEconCore.SendMessage("Boss Dave", "Progress: " + material.MinedOre + " " + String.Format("{0:n0}", contract.minedAmount) + " / " + String.Format("{0:n0}", contract.amountToMine), Color.Gold, (long)MySession.Static.Players.TryGetSteamId(playerId));
+                                                            messageCooldown[MySession.Static.Players.TryGetSteamId(playerId)] = DateTime.Now.AddSeconds(0.5);
+
+                                                        }
+                                                  
                                                     }
                                                 }
                                                 else
                                                 {
-                                                    CrunchEconCore.SendMessage("Big Boss Dave", "Contract progress : " + material.MinedOre + " " + String.Format("{0:n0}", contract.minedAmount) + " / " + String.Format("{0:n0}", contract.amountToMine), Color.Gold, (long)MySession.Static.Players.TryGetSteamId(playerId));
+                                                    if (contract.minedAmount == 0)
+                                                    {
+                                                        CrunchEconCore.SendMessage("Boss Dave", "Progress: " + material.MinedOre + " " + String.Format("{0:n0}", totalAmount.ToIntSafe()) + " / " + String.Format("{0:n0}", contract.amountToMine), Color.Gold, (long)MySession.Static.Players.TryGetSteamId(playerId));
+                                                       
+                                                    }
+                                                    else
+                                                    {
+                                                        CrunchEconCore.SendMessage("Boss Dave", "Progress: " + material.MinedOre + " " + String.Format("{0:n0}", contract.minedAmount) + " / " + String.Format("{0:n0}", contract.amountToMine), Color.Gold, (long)MySession.Static.Players.TryGetSteamId(playerId));
+                                                  
+
+                                                    }
                                                     messageCooldown.Add(MySession.Static.Players.TryGetSteamId(playerId), DateTime.Now.AddSeconds(0.5));
                                                 }
                                                 //im not sure i need this anymore, since the contract data is saved seperately

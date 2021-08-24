@@ -175,22 +175,40 @@ namespace CrunchEconomy
                                                     }
                                                     if (offer.BuyingGivesMiningContract)
                                                     {
-                                                        //  CrunchEconCore.Log.Info(data.getMiningContracts().Count);
-                                                        if (data.getMiningContracts().Count < 5)
+                                                        int max = 1;
+                                                        if (data.MiningReputation >= 100)
                                                         {
-                                                            if (amount > 5 || data.getMiningContracts().Count + amount > 5)
+                                                            max++;
+                                                        }
+                                                        if (data.MiningReputation >= 200)
+                                                        {
+                                                            max++;
+                                                        }
+                                                        if (data.MiningReputation >= 300)
+                                                        {
+                                                            max++;
+                                                        }
+                                                        if (data.MiningReputation >= 400)
+                                                        {
+                                                            max++;
+                                                        }
+                                                        //  CrunchEconCore.Log.Info(data.getMiningContracts().Count);
+                                                        if (data.getMiningContracts().Count < max)
+                                                        {
+                                                            if (amount > max || data.getMiningContracts().Count + amount > max)
                                                             {
 
                                                                 StringBuilder sb = new StringBuilder();
-                                                                sb.AppendLine("Cannot purchase more than 5 contracts!");
-                                                                sb.AppendLine("Maximum you can purchase is " + (5 - data.getMiningContracts().Count).ToString());
+                                                                sb.AppendLine("Cannot purchase more than " + max + " contracts!");
+                                                                sb.AppendLine("Maximum you can purchase is " + (max - data.getMiningContracts().Count).ToString());
                                                                 DialogMessage m = new DialogMessage("Shop Error", "", sb.ToString());
                                                                 ModCommunication.SendMessageTo(m, player.Id.SteamId);
                                                                 return false;
                                                             }
-                                                            for (int i = 0; i <= amount; i++)
+                                                            if (ContractUtils.newContracts.TryGetValue(offer.MiningContractName, out GeneratedContract contract))
                                                             {
-                                                                if (ContractUtils.newContracts.TryGetValue(offer.MiningContractName, out GeneratedContract contract))
+
+                                                                for (int i = 1; i <= amount; i++)
                                                                 {
 
                                                                     MiningContract temp = ContractUtils.GeneratedToPlayer(contract);
@@ -200,6 +218,8 @@ namespace CrunchEconomy
                                                                     temp.DeliveryLocation = gps.ToString();
                                                                     data.addMining(temp);
                                                                     temp.PlayerSteamId = player.Id.SteamId;
+
+
                                                                     //do this the lazy way instead of checking then setting by the key
                                                                     CrunchEconCore.playerData.Remove(player.Id.SteamId);
                                                                     CrunchEconCore.playerData.Add(player.Id.SteamId, data);
@@ -211,69 +231,76 @@ namespace CrunchEconomy
 
                                                                     CrunchEconCore.utils.WriteToJsonFile<PlayerData>(CrunchEconCore.path + "//PlayerData//Data//" + data.steamId + ".json", data);
 
-                                                            
-                                                               
+
+
                                                                 }
-                                                                else
+                                                                StringBuilder contractDetails = new StringBuilder();
+                                                                foreach (MiningContract c in data.getMiningContracts().Values)
                                                                 {
-                                                                    DialogMessage m = new DialogMessage("Shop Error", "Failed to find contract.");
-                                                                    ModCommunication.SendMessageTo(m, player.Id.SteamId);
-                                                                    return false;
+                                                             
+                                                                    if (c.minedAmount >= c.amountToMine)
+                                                                    {
+                                                                        c.DoPlayerGps(player.Identity.IdentityId);
+                                                                        contractDetails.AppendLine("Deliver " + c.OreSubType + " Ore " + String.Format("{0:n0}", c.amountToMine));
+                                                                        contractDetails.AppendLine("Reward : " + String.Format("{0:n0}", c.contractPrice) + " SC.");
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        contractDetails.AppendLine("Mine " + c.OreSubType + " Ore " + String.Format("{0:n0}", c.minedAmount) + " / " + String.Format("{0:n0}", c.amountToMine));
+                                                                        contractDetails.AppendLine("Reward : " + String.Format("{0:n0}", c.contractPrice) + " SC.");
+                                                                    }
+                                                                    contractDetails.AppendLine("");
                                                                 }
+                                                                contractDetails.AppendLine("View all contract details with !crunchecon contracts");
+                                                                DialogMessage m2 = new DialogMessage("Contract Details", "Instructions", contractDetails.ToString());
+                                                                ModCommunication.SendMessageTo(m2, player.Id.SteamId);
+                                                                return true;
                                                             }
-                                                            StringBuilder contractDetails = new StringBuilder();
-                                                            foreach (MiningContract c in data.getMiningContracts().Values)
+                                                            else
                                                             {
-                                                                if (c.minedAmount >= c.amountToMine)
-                                                                {
-                                                                    c.DoPlayerGps(player.Identity.IdentityId);
-                                                                    contractDetails.AppendLine("Deliver " + c.OreSubType + " Ore " + String.Format("{0:n0}", c.amountToMine));
-                                                                    contractDetails.AppendLine("Reward : " + String.Format("{0:n0}", c.contractPrice) + " SC.");
-                                                                }
-                                                                else
-                                                                {
-                                                                    contractDetails.AppendLine("Mine " + c.OreSubType + " Ore " + String.Format("{0:n0}", c.minedAmount) + " / " + String.Format("{0:n0}", c.amountToMine));
-                                                                    contractDetails.AppendLine("Reward : " + String.Format("{0:n0}", c.contractPrice) + " SC.");
-                                                                }
-                                                                contractDetails.AppendLine("");
+                                                                DialogMessage m = new DialogMessage("Shop Error", "Failed to find contract.");
+                                                                ModCommunication.SendMessageTo(m, player.Id.SteamId);
+                                                                return false;
                                                             }
-
-                                                            DialogMessage m2 = new DialogMessage("Contract Details", "Instructions", contractDetails.ToString());
-                                                            ModCommunication.SendMessageTo(m2, player.Id.SteamId);
-                                                            return true;
-
                                                         }
                                                         else
                                                         {
-                                                            DialogMessage m = new DialogMessage("Shop Error", "", "You already have the maximum amount of mining contracts. View them with !contract info");
+                                                            DialogMessage m = new DialogMessage("Shop Error", "", "You already have the maximum amount of mining contracts. View them with !crunchecon contracts");
                                                             ModCommunication.SendMessageTo(m, player.Id.SteamId);
                                                             return false;
                                                         }
 
-                                                    }
-                                                    if (offer.BuyingGivesHaulingContract)
-                                                    {
 
                                                     }
+                                                    else
+                                                    {
+                                                        DialogMessage m = new DialogMessage("Shop Error", "", "You already have the maximum amount of mining contracts. View them with !crunchecon contracts");
+                                                        ModCommunication.SendMessageTo(m, player.Id.SteamId);
+                                                        return false;
+                                                    }
+
+                                                }
+                                                if (offer.BuyingGivesHaulingContract)
+                                                {
+
                                                 }
                                             }
-
                                         }
+
                                     }
-
-
                                 }
-                                return true;
+
+
                             }
+                            return true;
                         }
                     }
                 }
-
-                return true;
             }
-            return false;
 
+            return true;
         }
     }
 }
+
 

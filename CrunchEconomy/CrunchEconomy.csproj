@@ -31,6 +31,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="0Harmony">
+      <HintPath>..\..\AlliancesPlugin\0Harmony.dll</HintPath>
+    </Reference>
     <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\4 Torch Server\DedicatedServer64\Newtonsoft.Json.dll</HintPath>
@@ -96,6 +99,7 @@
     <Compile Include="Contracts\PlayerData.cs" />
     <Compile Include="CrunchEconCore.cs" />
     <Compile Include="EconCommands.cs" />
+    <Compile Include="EconUtils.cs" />
     <Compile Include="FacUtils.cs" />
     <Compile Include="FileUtils.cs" />
     <Compile Include="GridManager.cs" />
@@ -107,6 +111,8 @@
     <Compile Include="SellOffer.cs" />
     <Compile Include="Stations.cs" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <WCFMetadata Include="Connected Services\" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -44,6 +44,7 @@ using VRage.Game.ObjectBuilders.Definitions;
 using VRageMath;
 using NLog;
 using CrunchEconomy.Contracts;
+using HarmonyLib;
 
 namespace CrunchEconomy
 {
@@ -253,7 +254,23 @@ namespace CrunchEconomy
             return targetAmount;
         }
 
-    
+
+        public static void Login(IPlayer p)
+        {
+            if (p == null)
+            {
+                return;
+            }
+
+            if (File.Exists(path + "//PlayerData//Data//" + p.SteamId.ToString() + ".json"))
+            {
+                PlayerData data = utils.ReadFromJsonFile<PlayerData>(path + "//PlayerData//Data//" + p.SteamId.ToString() + ".json");
+                playerData.Remove(p.SteamId);
+                data.getMiningContracts();
+                data.getHaulingContracts();
+                playerData.Add(p.SteamId, data);
+            }
+        }
 
         public static Dictionary<ulong, PlayerData> playerData = new Dictionary<ulong, PlayerData>();
         public static Boolean AlliancePluginEnabled = false;
@@ -277,9 +294,10 @@ namespace CrunchEconomy
                             if (playerData.TryGetValue(player.Id.SteamId, out PlayerData data))
                             {
 
+                                List<MiningContract> delete = new List<MiningContract>();
                                 foreach (MiningContract contract in data.getMiningContracts().Values)
                                 {
-                                    if (!String.IsNullOrEmpty(contract.OreSubType) && contract.minedAmount >= contract.amountToMine)
+                                    if (contract.minedAmount >= contract.amountToMine)
                                     {
                                         Vector3D coords = contract.getCoords();
                                         float distance = Vector3.Distance(coords, controller.PositionComp.GetPosition());
@@ -299,7 +317,7 @@ namespace CrunchEconomy
                                             {
                                                 if (ConsumeComponents(inventories, itemsToRemove, player.Id.SteamId))
                                                 {
-                                                
+
 
                                                     data.MiningReputation += contract.reputation;
                                                     data.MiningContracts.Remove(contract.ContractId);
@@ -326,13 +344,35 @@ namespace CrunchEconomy
                                                     if (AlliancePluginEnabled)
                                                     {
                                                         //patch into alliances and process the payment there
+                                                        //contract.AmountPaid = contract.contractPrice;
+                                                        try
+                                                        {
+                                                            if (Alliance == null)
+                                                            {
+                                                                Log.Info("Null alliance");
+                                                            }
+                                                            if (AllianceTaxes == null)
+                                                            {
+                                                                Log.Info("Null method");
+                                                            }
+                                                            object[] MethodInput = new object[] { player.Id.SteamId, contract.amountToMine };
+                                                            Log.Info(AllianceTaxes?.Invoke(null, MethodInput));
+                                                            Log.Info("Alliance taxes maybe?");
+                                                        }
+                                                        catch (Exception ex)
+                                                        {
+                                                            Log.Error(ex);
+                                                        }
                                                     }
 
-                                                    //   EconUtils.addMoney(player.Identity.IdentityId, contract.contractPrice);
+                                                    contract.AmountPaid = contract.contractPrice;
+
+                                                    EconUtils.addMoney(player.Identity.IdentityId, contract.contractPrice);
                                                     SendMessage("Big Boss Dave", "Good job, heres the money", Color.Gold, (long)player.Id.SteamId);
 
                                                     contract.PlayerSteamId = player.Id.SteamId;
-                                                    contract.AmountPaid = contract.contractPrice;
+                                                    delete.Add(contract);
+                                                  
 
                                                     FileUtils utils = new FileUtils();
                                                     contract.status = ContractStatus.Completed;
@@ -340,13 +380,18 @@ namespace CrunchEconomy
                                                     CrunchEconCore.miningSave.Remove(player.Id.SteamId);
                                                     CrunchEconCore.miningSave.Add(player.Id.SteamId, contract);
 
-                                                    utils.WriteToJsonFile<PlayerData>(path + "//PlayerData//Data//" + data.steamId + ".json", data);
+                                                   
                                                     //SAVE THE PLAYER DATA WITH INCREASED REPUTATION
 
                                                 }
                                             }
                                         }
                                     }
+                                }
+                                foreach (MiningContract contract in delete)
+                                {
+                                    data.getMiningContracts().Remove(contract.ContractId);
+                                    utils.WriteToJsonFile<PlayerData>(path + "//PlayerData//Data//" + data.steamId + ".json", data);
                                 }
                             }
                         }
@@ -432,9 +477,7 @@ namespace CrunchEconomy
                 return;
             }
 
-            foreach (MyPlayer player in MySession.Static.Players.GetOnlinePlayers())
-            {
-            }
+
             if (DateTime.Now >= NextFileRefresh)
             {
                 NextFileRefresh = DateTime.Now.AddMinutes(1);
@@ -492,10 +535,18 @@ namespace CrunchEconomy
 
             }
 
+            if (ticks % 64 == 0 && TorchState == TorchSessionState.Loaded)
+            {
+                foreach (MyPlayer player in MySession.Static.Players.GetOnlinePlayers())
+                {
+                    DoMiningContractDelivery(player);
+                }
 
+            }
 
             if (ticks % 32 == 0 && TorchState == TorchSessionState.Loaded)
             {
+
                 foreach (KeyValuePair<ulong, MiningContract> keys in miningSave)
                 {
                     //  utils.SaveMiningData(AlliancePlugin.path + "//MiningStuff//PlayerData//" + keys.Key + ".xml", keys.Value);
@@ -866,6 +917,33 @@ namespace CrunchEconomy
             TorchState = state;
             if (state == TorchSessionState.Loaded)
             {
+                session.Managers.GetManager<IMultiplayerManagerBase>().PlayerJoined += Login;
+                if (session.Managers.GetManager<PluginManager>().Plugins.TryGetValue(Guid.Parse("74796707-646f-4ebd-8700-d077a5f47af3"), out ITorchPlugin All))
+                {
+                    Type alli = All.GetType().Assembly.GetType("AlliancesPlugin.AlliancePlugin");
+                    try
+                    {
+                        AllianceTaxes = All.GetType().GetMethod("AddToTaxes", BindingFlags.Public | BindingFlags.Static, null, new Type[2] { typeof(ulong), typeof(long) }, null);
+                    //    BackupGrid = GridBackupPlugin.GetType().GetMethod("BackupGridsManuallyWithBuilders", BindingFlags.Public | BindingFlags.Instance, null, new Type[2] { typeof(List<MyObjectBuilder_CubeGrid>), typeof(long) }, null);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error("Shits fucked");
+
+                    }
+                    Alliance = All;
+                    AlliancePluginEnabled = true;
+                }
+
+                try
+                {
+                    ContractUtils.LoadAllContracts();
+                    ContractUtils.LoadDeliveryLocations();
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex);
+                }
                 try
                 {
                     LoadAllGridSales();
@@ -955,7 +1033,7 @@ namespace CrunchEconomy
             if (!Directory.Exists(path + "//ContractConfigs//Mining//"))
             {
                 GeneratedContract contract = new GeneratedContract();
-         
+
                 Directory.CreateDirectory(path + "//ContractConfigs//Mining//");
                 utils.WriteToXmlFile<GeneratedContract>(path + "//ContractConfigs//Mining//Example.xml", contract);
             }
@@ -994,6 +1072,10 @@ namespace CrunchEconomy
             TorchBase = Torch;
         }
 
+        public static MethodInfo AllianceTaxes;
+
+        public static ITorchPlugin Alliance;
+   
         public void SetupConfig()
         {
 
