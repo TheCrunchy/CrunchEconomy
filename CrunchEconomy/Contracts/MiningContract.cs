@@ -33,28 +33,35 @@ namespace CrunchEconomy.Contracts
         public void DoPlayerGps(long identityId)
         {
             MyGpsCollection gpscol = (MyGpsCollection)MyAPIGateway.Session?.GPS;
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("Deliver " + amountToMine + " " + OreSubType + " Ore. !mc info");
+            sb.AppendLine("Contract Delivery Location.");
             if (ScanChat(DeliveryLocation) != null)
             {
                 MyGps gpsRef = ScanChat(DeliveryLocation);
                 gpsRef.GPSColor = Color.DarkOrange;
                 gpsRef.ShowOnHud = true;
-                gpsRef.Description = "Deliver " + amountToMine + " " + OreSubType + " Ore. !mc info";
-                gpsRef.DisplayName = "Ore Delivery Location.";
-                gpsRef.Name = "Ore Delivery Location.";
+
+                gpsRef.Description = sb.ToString() ;
+                gpsRef.DisplayName = "Ore Delivery Location. " + OreSubType;
+                gpsRef.Name = "Ore Delivery Location. " + OreSubType;
                 gpsRef.DiscardAt = new TimeSpan(600);
                 gpscol.SendAddGps(identityId, ref gpsRef);
             }
         }
         public Vector3 getCoords()
         {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("Deliver " + amountToMine + " " + OreSubType + " Ore. !mc info");
+            sb.AppendLine("Contract Delivery Location.");
             if (ScanChat(DeliveryLocation) != null)
             {
                 MyGps gpsRef = ScanChat(DeliveryLocation);
                 gpsRef.GPSColor = Color.DarkOrange;
                 gpsRef.ShowOnHud = true;
-                gpsRef.Description = "Deliver " + amountToMine + " " + OreSubType + " Ore. !mc info";
-                gpsRef.DisplayName = "Ore Delivery Location.";
-                gpsRef.Name = "Ore Delivery Location.";
+                gpsRef.Description = sb.ToString();
+                gpsRef.DisplayName = "Ore Delivery Location. " + OreSubType;
+                gpsRef.Name = "Ore Delivery Location. " + OreSubType;
                 gpsRef.DiscardAt = new TimeSpan(600);
 
 

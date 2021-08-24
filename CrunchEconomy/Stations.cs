@@ -9,6 +9,7 @@ namespace CrunchEconomy
 {
     public class Stations
     {
+        public Boolean UseAsDeliveryLocationForContracts = true;
         public String Name = "Example";
         public Boolean Enabled = false;
         public Boolean DoBuyOrders = true;

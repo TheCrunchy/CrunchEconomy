@@ -27,13 +27,17 @@ namespace CrunchEconomy
                 MySession.Static.Gpss.GetGpsList(Context.Player.IdentityId, playerList);
                 foreach (IMyGps gps in playerList)
                 {
-                    if (gps.Name.Contains("Ore Delivery Location."))
+                    if (gps.Description.Contains("Contract Delivery Location."))
                     {
                         MyAPIGateway.Session?.GPS.RemoveGps(Context.Player.Identity.IdentityId, gps);
                     }
                 }
 
                 StringBuilder contractDetails = new StringBuilder();
+                contractDetails.AppendLine("Current Mining Reputation " + data.MiningReputation);
+                contractDetails.AppendLine("");
+                contractDetails.AppendLine("Current Hauling Reputation " + data.HaulingReputation);
+                contractDetails.AppendLine("");
                 foreach (MiningContract c in data.getMiningContracts().Values)
                 {
 
@@ -41,12 +45,13 @@ namespace CrunchEconomy
                     {
                         c.DoPlayerGps(Context.Player.Identity.IdentityId);
                         contractDetails.AppendLine("Deliver " + c.OreSubType + " Ore " + String.Format("{0:n0}", c.amountToMine));
-                        contractDetails.AppendLine("Reward : " + String.Format("{0:n0}", c.contractPrice) + " SC.");
+                        contractDetails.AppendLine("Reward : " + String.Format("{0:n0}", c.contractPrice) + " SC. and " + c.reputation + " reputation gain.");
+                        
                     }
                     else
                     {
                         contractDetails.AppendLine("Mine " + c.OreSubType + " Ore " + String.Format("{0:n0}", c.minedAmount) + " / " + String.Format("{0:n0}", c.amountToMine));
-                        contractDetails.AppendLine("Reward : " + String.Format("{0:n0}", c.contractPrice) + " SC.");
+                        contractDetails.AppendLine("Reward : " + String.Format("{0:n0}", c.contractPrice) + " SC. and " + c.reputation + " reputation gain.");
                     }
                     contractDetails.AppendLine("");
                 }

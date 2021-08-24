@@ -124,36 +124,7 @@ namespace CrunchEconomy.Contracts
             return null;
         }
 
-        public static void LoadDeliveryLocations()
-        {
-            DrillPatch.locations.Clear();
-            String[] line;
-            if (System.IO.File.Exists(CrunchEconCore.path + "//ContractConfigs//MiningDeliveryLocations.txt"))
-            {
-                line = File.ReadAllLines(CrunchEconCore.path + "//ContractConfigs//MiningDeliveryLocations.txt");
-                for (int i = 0; i < line.Length; i++)
-                {
-                    if (ScanChat(line[i]) != null)
-                    {
-                        MyGps gpsRef = ScanChat(line[i]);
-                        gpsRef.GPSColor = Color.DarkOrange;
-                        gpsRef.ShowOnHud = true;
-                        DrillPatch.locations.Add(gpsRef);
-                    }
-                }
-            }
-
-            //HaulingCore.DeliveryLocations.Clear();
-            //line = File.ReadAllLines(path + "//HaulingStuff//deliveryLocations.txt");
-            //for (int i = 0; i < line.Length; i++)
-            //{
-            //    if (ScanChat(line[i]) != null)
-            //    {
-            //        MyGps gpsRef = ScanChat(line[i]);
-            //        HaulingCore.DeliveryLocations.Add(gpsRef);
-            //    }
-            //}
-        }
+    
 
         public static DateTime chat = DateTime.Now;
         public void GenerateNewMiningContracts(MyPlayer player)
@@ -187,8 +158,8 @@ namespace CrunchEconomy.Contracts
                 contract.PlayerSteamId = player.Id.SteamId;
 
                 CrunchEconCore.SendMessage("Big Boss Dave", "New job for you, !mc info or !mc quit", Color.Gold, (long)MySession.Static.Players.TryGetSteamId(player.Identity.IdentityId));
-                CrunchEconCore.miningSave.Remove(player.Id.SteamId);
-                CrunchEconCore.miningSave.Add(player.Id.SteamId, contract);
+                CrunchEconCore.miningSave.Remove(contract.ContractId);
+                CrunchEconCore.miningSave.Add(contract.ContractId, contract);
                 CrunchEconCore.utils.WriteToJsonFile<PlayerData>(CrunchEconCore.path + "//PlayerData//Data//" + data.steamId + ".json", data);
             }
             else

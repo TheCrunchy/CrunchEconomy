@@ -10,5 +10,6 @@ namespace CrunchEconomy
     {
         public string StoragePath = "default";
         public Boolean MiningContractsEnabled = false;
+        public int SecondsBetweenMiningContracts = 600;
     }
 }

@@ -225,9 +225,8 @@ namespace CrunchEconomy
                                                                     CrunchEconCore.playerData.Add(player.Id.SteamId, data);
 
 
-                                                                    CrunchEconCore.miningSave.Remove(player.Id.SteamId);
-                                                                    CrunchEconCore.miningSave.Add(player.Id.SteamId, temp);
-
+                                                                    CrunchEconCore.miningSave.Remove(temp.ContractId);
+                                                                    CrunchEconCore.miningSave.Add(temp.ContractId,temp);
 
                                                                     CrunchEconCore.utils.WriteToJsonFile<PlayerData>(CrunchEconCore.path + "//PlayerData//Data//" + data.steamId + ".json", data);
 

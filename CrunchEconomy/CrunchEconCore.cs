@@ -44,7 +44,6 @@ using VRage.Game.ObjectBuilders.Definitions;
 using VRageMath;
 using NLog;
 using CrunchEconomy.Contracts;
-using HarmonyLib;
 
 namespace CrunchEconomy
 {
@@ -271,132 +270,178 @@ namespace CrunchEconomy
                 playerData.Add(p.SteamId, data);
             }
         }
+        public static void Logout(IPlayer p)
+        {
+            if (p == null)
+            {
+                return;
+            }
+
+            if (File.Exists(path + "//PlayerData//Data//" + p.SteamId.ToString() + ".json"))
+            {
+                PlayerData data = utils.ReadFromJsonFile<PlayerData>(path + "//PlayerData//Data//" + p.SteamId.ToString() + ".json");
+                playerData.Remove(p.SteamId);
+                data.getMiningContracts();
+                data.getHaulingContracts();
+                playerData.Add(p.SteamId, data);
+            }
+        }
 
         public static Dictionary<ulong, PlayerData> playerData = new Dictionary<ulong, PlayerData>();
         public static Boolean AlliancePluginEnabled = false;
         //i should really split this into multiple methods so i dont have one huge method for everything
-        public static Dictionary<ulong, MiningContract> miningSave = new Dictionary<ulong, MiningContract>();
-        public void DoMiningContractDelivery(MyPlayer player)
+        public static Dictionary<Guid, MiningContract> miningSave = new Dictionary<Guid, MiningContract>();
+        public void DoMiningContractDelivery(MyPlayer player, bool DoNewContract)
         {
-            if (player.GetPosition() != null)
+            if (DoNewContract)
             {
-
-                // GenerateNewMiningContracts(player);
-
-                try
-                {
-                    if (config.MiningContractsEnabled)
+            
+                if (playerData.TryGetValue(player.Id.SteamId, out PlayerData data))
                     {
-                        MyPlayer playerOnline = player;
-                        if (player.Character != null && player?.Controller.ControlledEntity is MyCockpit controller)
+                        if (data.getMiningContracts().Count == 0)
                         {
-                            MyCubeGrid grid = controller.CubeGrid;
-                            if (playerData.TryGetValue(player.Id.SteamId, out PlayerData data))
+                            data.addMining(ContractUtils.GeneratedToPlayer(ContractUtils.GetRandomPlayerContract()));
+                            utils.WriteToJsonFile<PlayerData>(path + "//PlayerData//Data//" + data.steamId + ".json", data);
+                        }
+                    SendMessage("Boss Dave", "Check contracts with !contract info", Color.Gold, (long)player.Id.SteamId);
+                }
+                    else
+                    {
+                        PlayerData newdata = new PlayerData();
+                        newdata.steamId = player.Id.SteamId;
+                        newdata.addMining(ContractUtils.GeneratedToPlayer(ContractUtils.GetRandomPlayerContract()));
+                        utils.WriteToJsonFile<PlayerData>(path + "//PlayerData//Data//" + newdata.steamId + ".json", newdata);
+                    SendMessage("Boss Dave", "Heres a new job !contract info", Color.Gold, (long)player.Id.SteamId);
+                }
+                
+            }
+                if (player.GetPosition() != null)
+                {
+
+                    // GenerateNewMiningContracts(player);
+
+                    try
+                    {
+                        if (config.MiningContractsEnabled)
+                        {
+                            MyPlayer playerOnline = player;
+                            if (player.Character != null && player?.Controller.ControlledEntity is MyCockpit controller)
                             {
-
-                                List<MiningContract> delete = new List<MiningContract>();
-                                foreach (MiningContract contract in data.getMiningContracts().Values)
+                                MyCubeGrid grid = controller.CubeGrid;
+                                if (playerData.TryGetValue(player.Id.SteamId, out PlayerData data))
                                 {
-                                    if (contract.minedAmount >= contract.amountToMine)
+
+                                    List<MiningContract> delete = new List<MiningContract>();
+                                    foreach (MiningContract contract in data.getMiningContracts().Values)
                                     {
-                                        Vector3D coords = contract.getCoords();
-                                        float distance = Vector3.Distance(coords, controller.PositionComp.GetPosition());
-                                        if (distance <= 500)
+                                    
+                                        if (contract.minedAmount >= contract.amountToMine )
                                         {
-                                            Dictionary<MyDefinitionId, int> itemsToRemove = new Dictionary<MyDefinitionId, int>();
-
-                                            if (MyDefinitionId.TryParse("MyObjectBuilder_Ore/" + contract.OreSubType, out MyDefinitionId id))
+                                        if (contract.DeliveryLocation == null && contract.DeliveryLocation == string.Empty)
+                                        {
+                                           contract.DeliveryLocation = DrillPatch.GenerateDeliveryLocation(player.GetPosition(), contract).ToString();
+                                            CrunchEconCore.miningSave.Remove(contract.ContractId);
+                                            CrunchEconCore.miningSave.Add(contract.ContractId, contract);
+                                        }
+                                            Vector3D coords = contract.getCoords();
+                                            float distance = Vector3.Distance(coords, controller.PositionComp.GetPosition());
+                                            if (distance <= 500)
                                             {
-                                                itemsToRemove.Add(id, contract.amountToMine);
+                                                Dictionary<MyDefinitionId, int> itemsToRemove = new Dictionary<MyDefinitionId, int>();
 
-                                            }
-
-                                            List<VRage.Game.ModAPI.IMyInventory> inventories = GetInventoriesForContract(grid);
-
-                                            if (FacUtils.IsOwnerOrFactionOwned(grid, player.Identity.IdentityId, true))
-                                            {
-                                                if (ConsumeComponents(inventories, itemsToRemove, player.Id.SteamId))
+                                                if (MyDefinitionId.TryParse("MyObjectBuilder_Ore/" + contract.OreSubType, out MyDefinitionId id))
                                                 {
+                                                    itemsToRemove.Add(id, contract.amountToMine);
+
+                                                }
+
+                                                List<VRage.Game.ModAPI.IMyInventory> inventories = GetInventoriesForContract(grid);
+
+                                                if (FacUtils.IsOwnerOrFactionOwned(grid, player.Identity.IdentityId, true))
+                                                {
+                                                    if (ConsumeComponents(inventories, itemsToRemove, player.Id.SteamId))
+                                                    {
 
 
-                                                    data.MiningReputation += contract.reputation;
-                                                    data.MiningContracts.Remove(contract.ContractId);
-                                                    if (data.MiningReputation >= 100)
-                                                    {
-                                                        contract.contractPrice += long.Parse((contract.contractPrice * 0.05f).ToString());
-                                                    }
-                                                    if (data.MiningReputation >= 200)
-                                                    {
-                                                        contract.contractPrice += long.Parse((contract.contractPrice * 0.05f).ToString());
-                                                    }
-                                                    if (data.MiningReputation >= 300)
-                                                    {
-                                                        contract.contractPrice += long.Parse((contract.contractPrice * 0.05f).ToString());
-                                                    }
-                                                    if (data.MiningReputation >= 400)
-                                                    {
-                                                        contract.contractPrice += long.Parse((contract.contractPrice * 0.05f).ToString());
-                                                    }
-                                                    if (data.MiningReputation >= 500)
-                                                    {
-                                                        contract.contractPrice += long.Parse((contract.contractPrice * 0.05f).ToString());
-                                                    }
-                                                    if (AlliancePluginEnabled)
-                                                    {
-                                                        //patch into alliances and process the payment there
-                                                        //contract.AmountPaid = contract.contractPrice;
-                                                        try
+                                                        data.MiningReputation += contract.reputation;
+                                                        data.MiningContracts.Remove(contract.ContractId);
+                                                        if (data.MiningReputation >= 100)
                                                         {
-                                                            object[] MethodInput = new object[] { player.Id.SteamId, contract.contractPrice};
-                                                            contract.contractPrice = (long) AllianceTaxes?.Invoke(null, MethodInput);
-                                                           
+                                                            contract.contractPrice += Convert.ToInt64(contract.contractPrice * 0.05f);
                                                         }
-                                                        catch (Exception ex)
+                                                        if (data.MiningReputation >= 200)
                                                         {
-                                                            Log.Error(ex);
+                                                            contract.contractPrice += Convert.ToInt64(contract.contractPrice * 0.05f);
                                                         }
+                                                        if (data.MiningReputation >= 300)
+                                                        {
+                                                            contract.contractPrice += Convert.ToInt64(contract.contractPrice * 0.05f);
+                                                        }
+                                                        if (data.MiningReputation >= 400)
+                                                        {
+                                                            contract.contractPrice += Convert.ToInt64(contract.contractPrice * 0.05f);
+                                                        }
+                                                        if (data.MiningReputation >= 500)
+                                                        {
+                                                            contract.contractPrice += Convert.ToInt64(contract.contractPrice * 0.05f);
+                                                        }
+                                                        if (AlliancePluginEnabled)
+                                                        {
+                                                            //patch into alliances and process the payment there
+                                                            //contract.AmountPaid = contract.contractPrice;
+                                                            try
+                                                            {
+                                                                object[] MethodInput = new object[] { player.Id.SteamId, contract.contractPrice, "Mining" };
+                                                                contract.contractPrice = (long)AllianceTaxes?.Invoke(null, MethodInput);
+
+                                                            }
+                                                            catch (Exception ex)
+                                                            {
+                                                                Log.Error(ex);
+                                                            }
+                                                        }
+
+                                                        contract.AmountPaid = contract.contractPrice;
+
+                                                        EconUtils.addMoney(player.Identity.IdentityId, contract.contractPrice);
+                                                       
+
+                                                        contract.PlayerSteamId = player.Id.SteamId;
+                                                        delete.Add(contract);
+
+
+                                                        FileUtils utils = new FileUtils();
+                                                        contract.status = ContractStatus.Completed;
+                                                        File.Delete(path + "//PlayerData//Mining//InProgress//" + contract.ContractId + ".xml");
+                                                        CrunchEconCore.miningSave.Remove(contract.ContractId);
+                                                        CrunchEconCore.miningSave.Add(contract.ContractId, contract);
+
+
+                                                        //SAVE THE PLAYER DATA WITH INCREASED REPUTATION
+
                                                     }
-
-                                                    contract.AmountPaid = contract.contractPrice;
-
-                                                    EconUtils.addMoney(player.Identity.IdentityId, contract.contractPrice);
-                                                    SendMessage("Big Boss Dave", "Good job, heres the money", Color.Gold, (long)player.Id.SteamId);
-
-                                                    contract.PlayerSteamId = player.Id.SteamId;
-                                                    delete.Add(contract);
-                                                  
-
-                                                    FileUtils utils = new FileUtils();
-                                                    contract.status = ContractStatus.Completed;
-                                                    File.Delete(path + "//PlayerData//Mining//InProgress//" + contract.ContractId + ".xml");
-                                                    CrunchEconCore.miningSave.Remove(player.Id.SteamId);
-                                                    CrunchEconCore.miningSave.Add(player.Id.SteamId, contract);
-
-                                                   
-                                                    //SAVE THE PLAYER DATA WITH INCREASED REPUTATION
-
                                                 }
                                             }
                                         }
                                     }
-                                }
-                                foreach (MiningContract contract in delete)
-                                {
-                                    data.getMiningContracts().Remove(contract.ContractId);
-                                    utils.WriteToJsonFile<PlayerData>(path + "//PlayerData//Data//" + data.steamId + ".json", data);
-                                }
+                                    foreach (MiningContract contract in delete)
+                                    {
+                                        data.getMiningContracts().Remove(contract.ContractId);
+                                      
+                                    }
+                                utils.WriteToJsonFile<PlayerData>(path + "//PlayerData//Data//" + data.steamId + ".json", data);
+                            }
                             }
                         }
                     }
-                }
 
-                catch (Exception ex)
-                {
+                    catch (Exception ex)
+                    {
 
-                    Log.Error(ex);
+                        Log.Error(ex);
+                    }
                 }
             }
-        }
         //public void DoHaulingContractDelivery(MyPlayer player)
         //{
         //    if (config.HaulingContractsEnabled)
@@ -416,50 +461,50 @@ namespace CrunchEconomy
         //                    {
         //                        Dictionary<MyDefinitionId, int> itemsToRemove = new Dictionary<MyDefinitionId, int>();
 
-        //                        int pay = 0;
-        //                        //calculate the pay since we only show the player the minimum they can get, this could be removed if the pay is made part of the contract
-        //                        //when its generated and stored in the db, reputation when completed could give a bonus percent
-        //                        foreach (ContractItems item in haulContract.getItemsInContract())
-        //                        {
-        //                            if (MyDefinitionId.TryParse("MyObjectBuilder_" + item.ItemType, item.SubType, out MyDefinitionId id))
-        //                            {
-        //                                itemsToRemove.Add(id, item.AmountToDeliver);
-        //                                pay += item.AmountToDeliver * item.GetPrice();
-        //                            }
-        //                        }
+            //                        int pay = 0;
+            //                        //calculate the pay since we only show the player the minimum they can get, this could be removed if the pay is made part of the contract
+            //                        //when its generated and stored in the db, reputation when completed could give a bonus percent
+            //                        foreach (ContractItems item in haulContract.getItemsInContract())
+            //                        {
+            //                            if (MyDefinitionId.TryParse("MyObjectBuilder_" + item.ItemType, item.SubType, out MyDefinitionId id))
+            //                            {
+            //                                itemsToRemove.Add(id, item.AmountToDeliver);
+            //                                pay += item.AmountToDeliver * item.GetPrice();
+            //                            }
+            //                        }
 
-        //                        List<VRage.Game.ModAPI.IMyInventory> inventories = ShipyardCommands.GetInventories(grid);
+            //                        List<VRage.Game.ModAPI.IMyInventory> inventories = ShipyardCommands.GetInventories(grid);
 
-        //                        if (FacUtils.IsOwnerOrFactionOwned(grid, player.Identity.IdentityId, true))
-        //                        {
-        //                            if (ShipyardCommands.ConsumeComponents(inventories, itemsToRemove, player.Id.SteamId))
-        //                            {
-        //                                if (AlliancePlugin.TaxesToBeProcessed.ContainsKey(player.Identity.IdentityId))
-        //                                {
+            //                        if (FacUtils.IsOwnerOrFactionOwned(grid, player.Identity.IdentityId, true))
+            //                        {
+            //                            if (ShipyardCommands.ConsumeComponents(inventories, itemsToRemove, player.Id.SteamId))
+            //                            {
+            //                                if (AlliancePlugin.TaxesToBeProcessed.ContainsKey(player.Identity.IdentityId))
+            //                                {
 
-        //                                    AlliancePlugin.TaxesToBeProcessed[player.Identity.IdentityId] += pay;
-        //                                }
-        //                                else
-        //                                {
-        //                                    AlliancePlugin.TaxesToBeProcessed.Add(player.Identity.IdentityId, pay);
+            //                                    AlliancePlugin.TaxesToBeProcessed[player.Identity.IdentityId] += pay;
+            //                                }
+            //                                else
+            //                                {
+            //                                    AlliancePlugin.TaxesToBeProcessed.Add(player.Identity.IdentityId, pay);
 
-        //                                }
-        //                                EconUtils.addMoney(player.Identity.IdentityId, pay);
-        //                                ShipyardCommands.SendMessage("Big Boss Dave", "Good job, heres the money", Color.Gold, (long)player.Id.SteamId);
-        //                                HaulingCore.RemoveContract(player.Id.SteamId, player.Identity.IdentityId);
-        //                                File.Delete(AlliancePlugin.path + "//HaulingStuff//PlayerData//" + player.Id.SteamId + ".json");
-        //                            }
-        //                        }
-        //                    }
-        //                }
-        //            }
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            Log.Error(ex);
-        //        }
-        //    }
-        //}
+            //                                }
+            //                                EconUtils.addMoney(player.Identity.IdentityId, pay);
+            //                                ShipyardCommands.SendMessage("Big Boss Dave", "Good job, heres the money", Color.Gold, (long)player.Id.SteamId);
+            //                                HaulingCore.RemoveContract(player.Id.SteamId, player.Identity.IdentityId);
+            //                                File.Delete(AlliancePlugin.path + "//HaulingStuff//PlayerData//" + player.Id.SteamId + ".json");
+            //                            }
+            //                        }
+            //                    }
+            //                }
+            //            }
+            //        }
+            //        catch (Exception ex)
+            //        {
+            //            Log.Error(ex);
+            //        }
+            //    }
+            //}
 
         public override void Update()
         {
@@ -477,7 +522,6 @@ namespace CrunchEconomy
                 try
                 {
                     ContractUtils.LoadAllContracts();
-                    ContractUtils.LoadDeliveryLocations();
                 }
                 catch (Exception ex)
                 {
@@ -531,7 +575,16 @@ namespace CrunchEconomy
             {
                 foreach (MyPlayer player in MySession.Static.Players.GetOnlinePlayers())
                 {
-                    DoMiningContractDelivery(player);
+                    if (DateTime.Now >= ContractUtils.chat)
+                    {
+                        ContractUtils.chat = DateTime.Now.AddSeconds(config.SecondsBetweenMiningContracts);
+                        DoMiningContractDelivery(player, true);
+                    }
+                    else
+                    {
+                        DoMiningContractDelivery(player, false);
+                    }
+                    
                 }
 
             }
@@ -539,7 +592,7 @@ namespace CrunchEconomy
             if (ticks % 32 == 0 && TorchState == TorchSessionState.Loaded)
             {
 
-                foreach (KeyValuePair<ulong, MiningContract> keys in miningSave)
+                foreach (KeyValuePair<Guid, MiningContract> keys in miningSave)
                 {
                     //  utils.SaveMiningData(AlliancePlugin.path + "//MiningStuff//PlayerData//" + keys.Key + ".xml", keys.Value);
                     MiningContract contract = keys.Value;
@@ -755,7 +808,7 @@ namespace CrunchEconomy
             }
         }
 
-        public List<Stations> stations = new List<Stations>();
+        public static List<Stations> stations = new List<Stations>();
 
         public static Dictionary<String, List<BuyOrder>> buyOrders = new Dictionary<string, List<BuyOrder>>();
         public static Dictionary<String, List<SellOffer>> sellOffers = new Dictionary<string, List<SellOffer>>();
@@ -907,6 +960,27 @@ namespace CrunchEconomy
         private void SessionChanged(ITorchSession session, TorchSessionState state)
         {
             TorchState = state;
+            if (state == TorchSessionState.Unloading)
+            {
+                foreach (KeyValuePair<Guid, MiningContract> keys in miningSave)
+                {
+                    //  utils.SaveMiningData(AlliancePlugin.path + "//MiningStuff//PlayerData//" + keys.Key + ".xml", keys.Value);
+                    MiningContract contract = keys.Value;
+                    switch (contract.status)
+                    {
+                        case ContractStatus.InProgress:
+                            utils.WriteToXmlFile<MiningContract>(path + "//PlayerData//Mining//InProgress//" + contract.ContractId + ".xml", keys.Value);
+                            break;
+                        case ContractStatus.Completed:
+                            utils.WriteToXmlFile<MiningContract>(path + "//PlayerData//Mining//Completed//" + contract.ContractId + ".xml", keys.Value);
+                            break;
+                        case ContractStatus.Failed:
+                            utils.WriteToXmlFile<MiningContract>(path + "//PlayerData//Mining//Failed//" + contract.ContractId + ".xml", keys.Value);
+                            break;
+                    }
+
+                }
+            }
             if (state == TorchSessionState.Loaded)
             {
                 session.Managers.GetManager<IMultiplayerManagerBase>().PlayerJoined += Login;
@@ -915,8 +989,8 @@ namespace CrunchEconomy
                     Type alli = All.GetType().Assembly.GetType("AlliancesPlugin.AlliancePlugin");
                     try
                     {
-                        AllianceTaxes = All.GetType().GetMethod("AddToTaxes", BindingFlags.Public | BindingFlags.Static, null, new Type[2] { typeof(ulong), typeof(long) }, null);
-                    //    BackupGrid = GridBackupPlugin.GetType().GetMethod("BackupGridsManuallyWithBuilders", BindingFlags.Public | BindingFlags.Instance, null, new Type[2] { typeof(List<MyObjectBuilder_CubeGrid>), typeof(long) }, null);
+                        AllianceTaxes = All.GetType().GetMethod("AddToTaxes", BindingFlags.Public | BindingFlags.Static, null, new Type[3] { typeof(ulong), typeof(long), typeof(string) }, null);
+                        //    BackupGrid = GridBackupPlugin.GetType().GetMethod("BackupGridsManuallyWithBuilders", BindingFlags.Public | BindingFlags.Instance, null, new Type[2] { typeof(List<MyObjectBuilder_CubeGrid>), typeof(long) }, null);
                     }
                     catch (Exception ex)
                     {
@@ -930,7 +1004,6 @@ namespace CrunchEconomy
                 try
                 {
                     ContractUtils.LoadAllContracts();
-                    ContractUtils.LoadDeliveryLocations();
                 }
                 catch (Exception ex)
                 {
@@ -1067,7 +1140,7 @@ namespace CrunchEconomy
         public static MethodInfo AllianceTaxes;
 
         public static ITorchPlugin Alliance;
-   
+
         public void SetupConfig()
         {
 
