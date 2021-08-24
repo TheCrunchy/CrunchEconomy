@@ -347,17 +347,9 @@ namespace CrunchEconomy
                                                         //contract.AmountPaid = contract.contractPrice;
                                                         try
                                                         {
-                                                            if (Alliance == null)
-                                                            {
-                                                                Log.Info("Null alliance");
-                                                            }
-                                                            if (AllianceTaxes == null)
-                                                            {
-                                                                Log.Info("Null method");
-                                                            }
-                                                            object[] MethodInput = new object[] { player.Id.SteamId, contract.amountToMine };
-                                                            Log.Info(AllianceTaxes?.Invoke(null, MethodInput));
-                                                            Log.Info("Alliance taxes maybe?");
+                                                            object[] MethodInput = new object[] { player.Id.SteamId, contract.contractPrice};
+                                                            contract.contractPrice = (long) AllianceTaxes?.Invoke(null, MethodInput);
+                                                           
                                                         }
                                                         catch (Exception ex)
                                                         {
