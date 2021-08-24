@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace CrunchEconomy.Contracts
 {
-    public class HaulingContract
+    public enum ContractType
     {
-        public ContractStatus status = ContractStatus.InProgress;
-        public Guid ContractId = Guid.NewGuid();
+        Mining,
+        Hauling
     }
 }

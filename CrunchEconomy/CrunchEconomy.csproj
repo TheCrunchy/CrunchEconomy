@@ -90,10 +90,10 @@
     <Compile Include="Config.cs" />
     <Compile Include="ContractCommands.cs" />
     <Compile Include="Contracts\ContractStatus.cs" />
+    <Compile Include="Contracts\ContractType.cs" />
     <Compile Include="Contracts\ContractUtils.cs" />
     <Compile Include="Contracts\DrillPatch.cs" />
     <Compile Include="Contracts\GeneratedContract.cs" />
-    <Compile Include="Contracts\HaulingContract.cs" />
     <Compile Include="Contracts\PlayerData.cs" />
     <Compile Include="CrunchEconCore.cs" />
     <Compile Include="EconCommands.cs" />
@@ -102,7 +102,7 @@
     <Compile Include="FileUtils.cs" />
     <Compile Include="GridManager.cs" />
     <Compile Include="GridSale.cs" />
-    <Compile Include="Contracts\MiningContract.cs" />
+    <Compile Include="Contracts\Contract.cs" />
     <Compile Include="MyStorePatch.cs" />
     <Compile Include="PendingSale.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

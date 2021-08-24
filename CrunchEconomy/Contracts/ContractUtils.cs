@@ -13,16 +13,25 @@ using VRageMath;
 
 namespace CrunchEconomy.Contracts
 {
-   public class ContractUtils
+    public class ContractUtils
     {
-        public static MiningContract GeneratedToPlayer(GeneratedContract gen)
+        public static Contract GeneratedToPlayer(GeneratedContract gen)
         {
-            MiningContract contract = new MiningContract();
-            contract.OreSubType = gen.OreSubType;
-            contract.GenerateAmountToMine(gen.minimumToMine, gen.maximumToMine);
-            contract.contractPrice = contract.amountToMine * gen.PricePerOre;
+            Contract contract = new Contract();
+            contract.type = gen.type;
+            contract.TypeIfHauling = gen.TypeIfHauling;
+            contract.SubType = gen.SubType;
+            contract.GenerateAmountToMine(gen.minimum, gen.maximum);
+            contract.contractPrice = contract.amountToMineOrDeliver * gen.PricePerOre;
             contract.minedAmount = 0;
+            contract.ContractName = gen.Name;
 
+            contract.DoRareItemReward = gen.DoRareItemReward;
+            contract.ItemRewardChance = gen.ItemRewardChance;
+            contract.RewardItemType = gen.RewardItemType;
+            contract.RewardItemSubType = gen.RewardItemSubType;
+            contract.ItemRewardAmount = gen.ItemRewardAmount;
+            contract.MinimumRepRequiredForItem = gen.MinimumRepRequiredForItem;
             return contract;
         }
         public static GeneratedContract GetRandomPlayerContract()
@@ -65,7 +74,7 @@ namespace CrunchEconomy.Contracts
             newContracts.Clear();
             foreach (String s in Directory.GetFiles(CrunchEconCore.path + "//ContractConfigs//Mining//"))
             {
-                
+
 
                 GeneratedContract contract = CrunchEconCore.utils.ReadFromXmlFile<GeneratedContract>(s);
                 //  DateTime now = DateTime.Now;
@@ -124,12 +133,12 @@ namespace CrunchEconomy.Contracts
             return null;
         }
 
-    
+
 
         public static DateTime chat = DateTime.Now;
         public void GenerateNewMiningContracts(MyPlayer player)
         {
-            MiningContract contract;
+            Contract contract;
             Boolean generate = false;
             CrunchEconCore.playerData.TryGetValue(player.Id.SteamId, out PlayerData data);
             if (data == null)
@@ -141,7 +150,7 @@ namespace CrunchEconomy.Contracts
             if (data.getMiningContracts().Count == 0)
             {
 
-                contract = new MiningContract();
+                contract = new Contract();
                 generate = true;
 
             }
@@ -158,15 +167,15 @@ namespace CrunchEconomy.Contracts
                 contract.PlayerSteamId = player.Id.SteamId;
 
                 CrunchEconCore.SendMessage("Big Boss Dave", "New job for you, !mc info or !mc quit", Color.Gold, (long)MySession.Static.Players.TryGetSteamId(player.Identity.IdentityId));
-                CrunchEconCore.miningSave.Remove(contract.ContractId);
-                CrunchEconCore.miningSave.Add(contract.ContractId, contract);
+                CrunchEconCore.ContractSave.Remove(contract.ContractId);
+                CrunchEconCore.ContractSave.Add(contract.ContractId, contract);
                 CrunchEconCore.utils.WriteToJsonFile<PlayerData>(CrunchEconCore.path + "//PlayerData//Data//" + data.steamId + ".json", data);
             }
             else
             {
 
-                    CrunchEconCore.SendMessage("Big Boss Dave", "Check contract info with !contract info", Color.Gold, (long)MySession.Static.Players.TryGetSteamId(player.Identity.IdentityId));
-                
+                CrunchEconCore.SendMessage("Big Boss Dave", "Check contract info with !contract info", Color.Gold, (long)MySession.Static.Players.TryGetSteamId(player.Identity.IdentityId));
+
             }
         }
 

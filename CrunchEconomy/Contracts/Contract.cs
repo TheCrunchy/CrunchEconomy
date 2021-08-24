@@ -13,28 +13,36 @@ using VRageMath;
 
 namespace CrunchEconomy.Contracts
 {
-    public class MiningContract
+    public class Contract
     {
         public ContractStatus status = ContractStatus.InProgress;
         public Guid ContractId = Guid.NewGuid();
-
+        public ContractType type;
+        public Boolean DoRareItemReward = false;
+        public double ItemRewardChance = 1;
+        public string TypeIfHauling = "MyObjectBuilder_Ingot";
+        public string RewardItemType = "MyObjectBuilder_Ingot";
+        public string RewardItemSubType = "Uranium";
+        public double ItemRewardAmount = 5;
+        public int MinimumRepRequiredForItem = 50;
+        public string ContractName;
         public ulong PlayerSteamId; 
 
         public long contractPrice = 0;
 
         public int reputation = 1;
 
-        public string OreSubType;
+        public string SubType;
 
         public int minedAmount = 0;
 
-        public int amountToMine = 0;
+        public int amountToMineOrDeliver = 0;
         public long AmountPaid = 0;
         public void DoPlayerGps(long identityId)
         {
             MyGpsCollection gpscol = (MyGpsCollection)MyAPIGateway.Session?.GPS;
             StringBuilder sb = new StringBuilder();
-            sb.AppendLine("Deliver " + amountToMine + " " + OreSubType + " Ore. !mc info");
+            sb.AppendLine("Deliver " + amountToMineOrDeliver + " " + SubType + " Ore. !mc info");
             sb.AppendLine("Contract Delivery Location.");
             if (ScanChat(DeliveryLocation) != null)
             {
@@ -43,8 +51,8 @@ namespace CrunchEconomy.Contracts
                 gpsRef.ShowOnHud = true;
 
                 gpsRef.Description = sb.ToString() ;
-                gpsRef.DisplayName = "Ore Delivery Location. " + OreSubType;
-                gpsRef.Name = "Ore Delivery Location. " + OreSubType;
+                gpsRef.DisplayName = "Ore Delivery Location. " + SubType;
+                gpsRef.Name = "Ore Delivery Location. " + SubType;
                 gpsRef.DiscardAt = new TimeSpan(600);
                 gpscol.SendAddGps(identityId, ref gpsRef);
             }
@@ -52,7 +60,7 @@ namespace CrunchEconomy.Contracts
         public Vector3 getCoords()
         {
             StringBuilder sb = new StringBuilder();
-            sb.AppendLine("Deliver " + amountToMine + " " + OreSubType + " Ore. !mc info");
+            sb.AppendLine("Deliver " + amountToMineOrDeliver + " " + SubType + " Ore. !mc info");
             sb.AppendLine("Contract Delivery Location.");
             if (ScanChat(DeliveryLocation) != null)
             {
@@ -60,8 +68,8 @@ namespace CrunchEconomy.Contracts
                 gpsRef.GPSColor = Color.DarkOrange;
                 gpsRef.ShowOnHud = true;
                 gpsRef.Description = sb.ToString();
-                gpsRef.DisplayName = "Ore Delivery Location. " + OreSubType;
-                gpsRef.Name = "Ore Delivery Location. " + OreSubType;
+                gpsRef.DisplayName = "Ore Delivery Location. " + SubType;
+                gpsRef.Name = "Ore Delivery Location. " + SubType;
                 gpsRef.DiscardAt = new TimeSpan(600);
 
 
@@ -114,14 +122,14 @@ namespace CrunchEconomy.Contracts
         public void GenerateAmountToMine(int min, int max)
         {
             Random rnd = new Random();
-            amountToMine = rnd.Next(min - 1, max + 1);
+            amountToMineOrDeliver = rnd.Next(min - 1, max + 1);
 
         }
 
         public Boolean AddToContractAmount(int amount)
         {
             minedAmount += amount;
-            if (minedAmount >= amountToMine)
+            if (minedAmount >= amountToMineOrDeliver)
             {
                 return true;
             }

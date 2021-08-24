@@ -15,31 +15,32 @@ namespace CrunchEconomy.Contracts
         public int MiningReputation = 0;
         public int HaulingReputation = 0;
 
-        private Dictionary<Guid, MiningContract> loadedMining = new Dictionary<Guid, MiningContract>();
-        private Dictionary<Guid, HaulingContract> loadedHauling = new Dictionary<Guid, HaulingContract>();
+        private Dictionary<Guid, Contract> loadedMining = new Dictionary<Guid, Contract>();
+        private Dictionary<Guid, Contract> loadedHauling = new Dictionary<Guid, Contract>();
 
-        public void addMining(MiningContract contract)
+        public void addMining(Contract contract)
         {
             if (!loadedMining.ContainsKey(contract.ContractId))
             {
                 loadedMining.Add(contract.ContractId, contract);
+                MiningContracts.Add(contract.ContractId);
             }
         }
 
-        public Dictionary<Guid, MiningContract> getMiningContracts()
+        public Dictionary<Guid, Contract> getMiningContracts()
         {
             if (loadedMining.Count > 0)
             {
                 return loadedMining;
             }
-            Dictionary<Guid, MiningContract> temporary = new Dictionary<Guid, MiningContract>();
+            Dictionary<Guid, Contract> temporary = new Dictionary<Guid, Contract>();
             foreach (Guid id in MiningContracts)
             {
                 if (File.Exists(CrunchEconCore.path + "//PlayerData//Mining//InProgress//" + id.ToString() + ".xml"))
                 {
                     if (!temporary.ContainsKey(id))
                     {
-                        MiningContract contract = CrunchEconCore.utils.ReadFromXmlFile<MiningContract>(CrunchEconCore.path + "//PlayerData//Mining//InProgress//" + id.ToString() + ".xml");
+                       Contract contract = CrunchEconCore.utils.ReadFromXmlFile<Contract>(CrunchEconCore.path + "//PlayerData//Mining//InProgress//" + id.ToString() + ".xml");
                         temporary.Add(id, contract);
                     }
                 }
@@ -49,20 +50,20 @@ namespace CrunchEconomy.Contracts
             return temporary;
           
         }
-        public Dictionary<Guid, HaulingContract> getHaulingContracts()
+        public Dictionary<Guid, Contract> getHaulingContracts()
         {
             if (loadedHauling.Count > 0)
             {
                 return loadedHauling;
             }
-            Dictionary<Guid, HaulingContract> temporary = new Dictionary<Guid, HaulingContract>();
+            Dictionary<Guid, Contract> temporary = new Dictionary<Guid, Contract>();
             foreach (Guid id in HaulingContracts)
             {
                 if (File.Exists(CrunchEconCore.path + "//PlayerData//Hauling//InProgress//" + id.ToString() + ".xml"))
                 {
                     if (!temporary.ContainsKey(id))
                     {
-                        HaulingContract contract = CrunchEconCore.utils.ReadFromXmlFile<HaulingContract>(CrunchEconCore.path + "//PlayerData//Hauling//InProgress//" + id.ToString() + ".xml");
+                        Contract contract = CrunchEconCore.utils.ReadFromXmlFile<Contract>(CrunchEconCore.path + "//PlayerData//Hauling//InProgress//" + id.ToString() + ".xml");
                         temporary.Add(id, contract);
                     }
                 }

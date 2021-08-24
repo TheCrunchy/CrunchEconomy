@@ -19,5 +19,9 @@ namespace CrunchEconomy
         public double chance = 0.5;
 
         public Boolean DeleteTheseItemsInCargOnRefresh = false;
+
+        public Boolean SellingThisCancelsContract = false;
+        public string ContractToCancel = "Example";
+        public string FactionTagOwnerForCancelling = "GAIA";
     }
 }
