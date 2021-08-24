@@ -251,7 +251,7 @@ namespace CrunchEconomy
                                                                     }
                                                                     contractDetails.AppendLine("");
                                                                 }
-                                                                contractDetails.AppendLine("View all contract details with !crunchecon contracts");
+                                                                contractDetails.AppendLine("View all contract details with !contract info");
                                                                 DialogMessage m2 = new DialogMessage("Contract Details", "Instructions", contractDetails.ToString());
                                                                 ModCommunication.SendMessageTo(m2, player.Id.SteamId);
                                                                 return true;
@@ -265,7 +265,7 @@ namespace CrunchEconomy
                                                         }
                                                         else
                                                         {
-                                                            DialogMessage m = new DialogMessage("Shop Error", "", "You already have the maximum amount of mining contracts. View them with !crunchecon contracts");
+                                                            DialogMessage m = new DialogMessage("Shop Error", "", "You already have the maximum amount of mining contracts. View them with !contract info");
                                                             ModCommunication.SendMessageTo(m, player.Id.SteamId);
                                                             return false;
                                                         }
@@ -274,7 +274,7 @@ namespace CrunchEconomy
                                                     }
                                                     else
                                                     {
-                                                        DialogMessage m = new DialogMessage("Shop Error", "", "You already have the maximum amount of mining contracts. View them with !crunchecon contracts");
+                                                        DialogMessage m = new DialogMessage("Shop Error", "", "You already have the maximum amount of mining contracts. View them with !contract info");
                                                         ModCommunication.SendMessageTo(m, player.Id.SteamId);
                                                         return false;
                                                     }
