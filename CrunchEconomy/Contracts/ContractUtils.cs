@@ -1,4 +1,5 @@
-﻿using Sandbox.Game.Screens.Helpers;
+﻿using CrunchEconomy.SurveyMissions;
+using Sandbox.Game.Screens.Helpers;
 using Sandbox.Game.World;
 using System;
 using System.Collections.Generic;
@@ -33,6 +34,52 @@ namespace CrunchEconomy.Contracts
             contract.ItemRewardAmount = gen.ItemRewardAmount;
             contract.MinimumRepRequiredForItem = gen.MinimumRepRequiredForItem;
             return contract;
+        }
+        public static List<SurveyMission> SurveyMissions = new List<SurveyMission>();
+
+        public static SurveyMission GetNewMission(PlayerData data)
+        {
+            List<SurveyMission> Possible = new List<SurveyMission>();
+            SurveyMission chosen = null;
+            foreach (SurveyMission mission in SurveyMissions)
+            {
+                if (mission.enabled)
+                {
+                    if (data.SurveyReputation >= mission.ReputationRequired)
+                    {
+                        Random rand = new Random();
+                        double chance = rand.NextDouble();
+                        if (chance <= mission.chance)
+                        {
+                            if (mission.getStage(1) != null && mission.getStage(1).enabled)
+                            {
+                                if (data.SurveyReputation >= mission.getStage(1).MinimumReputation && data.SurveyReputation <= mission.getStage(1).MaximumReputation)
+                                {
+                                    if (ScanChat(mission.getStage(1).LocationGPS) != null)
+                                    {
+                                        Possible.Add(mission);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if (Possible.Count == 1)
+            {
+                chosen = Possible[0];
+            }
+            Random random = new Random();
+            int r = random.Next(Possible.Count);
+            chosen = Possible[r];
+
+            if (chosen != null)
+            {
+                chosen.id = Guid.NewGuid();
+                return chosen;
+            }
+            
+            return null;
         }
 
         public static MyGps GetDeliveryLocation(Contract contract)
@@ -98,6 +145,7 @@ namespace CrunchEconomy.Contracts
         public static void LoadAllContracts()
         {
             newContracts.Clear();
+            SurveyMissions.Clear();
             foreach (String s in Directory.GetFiles(CrunchEconCore.path + "//ContractConfigs//Mining//"))
             {
 
@@ -144,6 +192,27 @@ namespace CrunchEconomy.Contracts
                 if (contract.Enabled)
                 {
                     newContracts.Add(contract.Name, contract);
+                }
+            }
+
+            foreach (String s in Directory.GetFiles(CrunchEconCore.path + "//ContractConfigs//Survey//"))
+            {
+
+
+               SurveyMission mission = CrunchEconCore.utils.ReadFromXmlFile<SurveyMission>(s);
+                //  DateTime now = DateTime.Now;
+                //if (now.Minute == 59 || now.Minute == 60)
+                //{
+                //    koth.nextCaptureInterval = new DateTime(now.Year, now.Month, now.Day, now.Hour + 1, 0, 0, 0, DateTimeKind.Utc);
+                //}
+                //else
+                //{
+                //    koth.nextCaptureInterval = new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute + 1, 0, 0, DateTimeKind.Utc);
+                //}
+                if (mission.enabled)
+                {
+                    mission.SetupMissionList();
+                    SurveyMissions.Add(mission);
                 }
             }
         }

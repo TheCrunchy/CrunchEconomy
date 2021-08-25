@@ -20,8 +20,8 @@ namespace CrunchEconomy.Contracts
         public ContractType type;
         public Boolean DoRareItemReward = false;
         public double ItemRewardChance = 1;
-        public string TypeIfHauling = "MyObjectBuilder_Ingot";
-        public string RewardItemType = "MyObjectBuilder_Ingot";
+        public string TypeIfHauling = "Ingot";
+        public string RewardItemType = "Ingot";
         public string RewardItemSubType = "Uranium";
         public double ItemRewardAmount = 5;
         public int MinimumRepRequiredForItem = 50;

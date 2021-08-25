@@ -23,5 +23,10 @@ namespace CrunchEconomy
         public Boolean SellingThisCancelsContract = false;
         public string ContractToCancel = "Example";
         public string FactionTagOwnerForCancelling = "GAIA";
+
+        public Boolean IndividualRefreshTimer = false;
+        public DateTime nextRefresh = DateTime.Now;
+        public int SecondsBetweenRefresh = 600;
+        public string path = "ignore me";
     }
 }

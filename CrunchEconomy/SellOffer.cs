@@ -21,5 +21,10 @@ namespace CrunchEconomy
         public string ContractName = "example";
         public Boolean BuyingGivesHaulingContract = false;
         public string IfGivesContractNPCTag = "GAIA";
+
+        public Boolean IndividualRefreshTimer = false;
+        public DateTime nextRefresh = DateTime.Now;
+        public int SecondsBetweenRefresh = 600;
+        public string path = "ignore me";
     }
 }

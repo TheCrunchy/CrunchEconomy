@@ -108,6 +108,8 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SellOffer.cs" />
     <Compile Include="Stations.cs" />
+    <Compile Include="SurveyMissions\SurveyMission.cs" />
+    <Compile Include="SurveyMissions\SurveyStage.cs" />
   </ItemGroup>
   <ItemGroup>
     <WCFMetadata Include="Connected Services\" />

@@ -1,4 +1,5 @@
 ﻿using CrunchEconomy.Contracts;
+using CrunchEconomy.SurveyMissions;
 using Sandbox.Game.World;
 using Sandbox.ModAPI;
 using System;
@@ -20,6 +21,22 @@ namespace CrunchEconomy
     {
         public static Dictionary<ulong, Dictionary<int, Guid>> ids = new Dictionary<ulong, Dictionary<int, Guid>>();
         public static Dictionary<ulong, int> playerMax = new Dictionary<ulong, int>();
+
+        [Command("admintest", "quit current contracts")]
+        [Permission(MyPromoteLevel.Admin)]
+        public void GenerateFile()
+        {
+            SurveyMission mission = new SurveyMission();
+            mission.configs.Add(new SurveyStage());
+            mission.configs.Add(new SurveyStage());
+            mission.configs.Add(new SurveyStage());
+            CrunchEconCore.utils.WriteToXmlFile<SurveyMission>(CrunchEconCore.path + "//survey.xml", mission);
+            SurveyMission mission2 = CrunchEconCore.utils.ReadFromXmlFile<SurveyMission>(CrunchEconCore.path + "//survey.xml");
+            foreach (SurveyStage stage in mission2.configs)
+            {
+                Context.Respond(stage.id.ToString());
+            }
+        }
 
         [Command("quit", "quit current contracts")]
         [Permission(MyPromoteLevel.None)]

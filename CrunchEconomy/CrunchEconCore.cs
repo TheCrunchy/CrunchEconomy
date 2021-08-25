@@ -44,6 +44,7 @@ using VRage.Game.ObjectBuilders.Definitions;
 using VRageMath;
 using NLog;
 using CrunchEconomy.Contracts;
+using CrunchEconomy.SurveyMissions;
 
 namespace CrunchEconomy
 {
@@ -330,7 +331,7 @@ namespace CrunchEconomy
         public static Boolean AlliancePluginEnabled = false;
         //i should really split this into multiple methods so i dont have one huge method for everything
         public static Dictionary<Guid, Contract> ContractSave = new Dictionary<Guid, Contract>();
-
+        public static Dictionary<Guid, SurveyMission> SurveySave = new Dictionary<Guid, SurveyMission>();
         public bool HandleDeliver(Contract contract, MyPlayer player, PlayerData data, MyCockpit controller)
         {
 
@@ -338,16 +339,22 @@ namespace CrunchEconomy
 
             if (contract.type == ContractType.Mining)
             {
-                if (contract.minedAmount >= contract.amountToMineOrDeliver)
+                if (config.MiningContractsEnabled)
                 {
-                    proceed = true;
+                    if (contract.minedAmount >= contract.amountToMineOrDeliver)
+                    {
+                        proceed = true;
+                    }
                 }
             }
             else
             {
                 if (contract.type == ContractType.Hauling)
                 {
-                    proceed = true;
+                    if (config.HaulingContractsEnabled)
+                    {
+                        proceed = true;
+                    }
                 }
             }
             if (proceed)
@@ -451,7 +458,7 @@ namespace CrunchEconomy
                             {
                                 if (MyDefinitionId.TryParse("MyObjectBuilder_" + contract.RewardItemType + " / " + contract.RewardItemSubType, out MyDefinitionId reward))
                                 {
-                                    Log.Info("Tried to do ");
+                                  //  Log.Info("Tried to do ");
                                     Random rand = new Random();
                                     double chance = rand.NextDouble();
                                     if (chance <= contract.ItemRewardChance)
@@ -678,6 +685,252 @@ namespace CrunchEconomy
         //    }
         //}
 
+        public static Dictionary<ulong, DateTime> playerSurveyTimes = new Dictionary<ulong, DateTime>();
+        public static Dictionary<ulong, DateTime> MessageCooldowns = new Dictionary<ulong, DateTime>();
+        public void GenerateNewSurveyMission(PlayerData data, MyPlayer player)
+        {
+            if (data.surveyMission != Guid.Empty)
+            {
+             //   Log.Info("Has survey");
+                bool ShouldReturn = false;
+                SurveyMission mission = data.GetLoadedMission();
+                if (mission != null)
+                {
+                 //   Log.Info("not null");
+                    float distance = Vector3.Distance(new Vector3(mission.CurrentPosX, mission.CurrentPosY, mission.CurrentPosZ), player.GetPosition());
+                    if (distance <= mission.getStage(mission.CurrentStage).RadiusNearLocationToBeInside)
+                    {
+                       // Log.Info("within distance");
+                        if (playerSurveyTimes.TryGetValue(player.Id.SteamId, out DateTime time))
+                        {
+                            var seconds = DateTime.Now.Subtract(time);
+                        
+                            mission.getStage(mission.CurrentStage).Progress += Convert.ToInt32(seconds.TotalSeconds);
+                          //  Log.Info("progress " + mission.getStage(mission.CurrentStage).Progress);
+                            if (mission.getStage(mission.CurrentStage).Progress >= mission.getStage(mission.CurrentStage).SecondsToStayInArea)
+                            {
+                               // Log.Info("Completed");
+                                mission.getStage(mission.CurrentStage).Completed = true;
+                                //do rewards
+                                long money = mission.getStage(mission.CurrentStage).CreditReward;
+                                if (AlliancePluginEnabled)
+                                {
+                                    //patch into alliances and process the payment there
+                                    //contract.AmountPaid = contract.contractPrice;
+                                    try
+                                    {
+                                        object[] MethodInput = new object[] { player.Id.SteamId, money, "Survey" };
+                                        money = (long)AllianceTaxes?.Invoke(null, MethodInput);
+
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Log.Error(ex);
+                                    }
+                                }
+                                if (mission.getStage(mission.CurrentStage).DoRareItemReward && data.SurveyReputation >= mission.getStage(mission.CurrentStage).MinimumRepRequiredForItem)
+                                {
+                                    if (MyDefinitionId.TryParse("MyObjectBuilder_" + mission.getStage(mission.CurrentStage).RewardItemType, mission.getStage(mission.CurrentStage).RewardItemSubType, out MyDefinitionId reward))
+                                    {
+
+                                        Random rand = new Random();
+                                        double chance = rand.NextDouble();
+                                        if (chance <= mission.getStage(mission.CurrentStage).ItemRewardChance)
+                                        {
+                                        
+                                                MyItemType itemType = new MyInventoryItemFilter(reward.TypeId + "/" + reward.SubtypeName).ItemType;
+                                                if (player.Character.GetInventory() != null && player.Character.GetInventory().CanItemsBeAdded((MyFixedPoint)mission.getStage(mission.CurrentStage).ItemRewardAmount, itemType))
+                                                {
+                                                player.Character.GetInventory().AddItems((MyFixedPoint)mission.getStage(mission.CurrentStage).ItemRewardAmount, (MyObjectBuilder_PhysicalObject)MyObjectBuilderSerializer.CreateNewObject(reward));
+                                                    SendMessage("Survey", "Bonus item reward in character inventory.", Color.Gold, (long)player.Id.SteamId);
+                                                }
+                                            }
+                                        
+                                    }
+                                }
+                                EconUtils.addMoney(player.Identity.IdentityId, money);
+                                
+                                SendMessage("Survey", mission.getStage(mission.CurrentStage).CompletionMessage, Color.Gold, (long)player.Id.SteamId);
+                                data.SurveyReputation += mission.getStage(mission.CurrentStage).ReputationGain;
+                                if (mission.getStage(mission.CurrentStage + 1) != null)
+                                {
+                                    mission.CurrentStage += 1;
+                                    data.NextSurveyMission = DateTime.Now.AddSeconds(60);
+                                    CrunchEconCore.SurveySave.Remove(mission.id);
+                                    CrunchEconCore.SurveySave.Add(mission.id, mission);
+                                    playerData[player.Id.SteamId] = data;
+                                    utils.WriteToJsonFile<PlayerData>(path + "//PlayerData//Data//" + data.steamId + ".json", data);
+                                }
+                                else
+                                {
+                                    mission.status = ContractStatus.Completed;
+                                    data.SetLoadedSurvey(null);
+                                    data.surveyMission = Guid.Empty;
+                                  
+                                    CrunchEconCore.SurveySave.Remove(mission.id);
+                                    CrunchEconCore.SurveySave.Add(mission.id, mission);
+                                    playerData[player.Id.SteamId] = data;
+                                    utils.WriteToJsonFile<PlayerData>(path + "//PlayerData//Data//" + data.steamId + ".json", data);
+                                }
+                                playerSurveyTimes.Remove(player.Id.SteamId);
+                               
+
+                                return;
+                            }
+                            else
+                            {
+                                if (MessageCooldowns.TryGetValue(player.Id.SteamId, out DateTime time2))
+                                {
+                                    if (DateTime.Now >= time2)
+                                    {
+                                        NotificationMessage message2 = new NotificationMessage();
+                                        
+                                            message2 = new NotificationMessage("Progress " + mission.getStage(mission.CurrentStage).Progress + "/" + mission.getStage(mission.CurrentStage).SecondsToStayInArea, 2000, "Green");
+                                            //this is annoying, need to figure out how to check the exact world time so a duplicate message isnt possible
+
+                                            ModCommunication.SendMessageTo(message2, player.Id.SteamId);
+                       
+                                   
+                                       // SendMessage("Survey", "Progress " + mission.getStage(mission.CurrentStage).Progress + "/" + mission.getStage(mission.CurrentStage).SecondsToStayInArea, Color.Gold, (long)player.Id.SteamId);
+                                        MessageCooldowns[player.Id.SteamId] = DateTime.Now.AddSeconds(1);
+                                    }
+                                }
+                                else
+                                {
+                                    NotificationMessage message2 = new NotificationMessage();
+
+                                    message2 = new NotificationMessage("Progress " + mission.getStage(mission.CurrentStage).Progress + "/" + mission.getStage(mission.CurrentStage).SecondsToStayInArea, 2000, "Green");
+                                    //this is annoying, need to figure out how to check the exact world time so a duplicate message isnt possible
+
+                                    ModCommunication.SendMessageTo(message2, player.Id.SteamId);
+
+
+                                    // SendMessage("Survey", "Progress " + mission.getStage(mission.CurrentStage).Progress + "/" + mission.getStage(mission.CurrentStage).SecondsToStayInArea, Color.Gold, (long)player.Id.SteamId);
+                                    MessageCooldowns[player.Id.SteamId] = DateTime.Now.AddSeconds(1);
+                                }
+                                data.SetLoadedSurvey(mission);
+                                playerData[player.Id.SteamId] = data;
+                                playerSurveyTimes[player.Id.SteamId] = DateTime.Now;
+                                ShouldReturn = true;
+                            }
+
+                        }
+                        else
+                        {
+                            playerSurveyTimes.Add(player.Id.SteamId, DateTime.Now);
+                            ShouldReturn = true;
+                        }
+                        data.SetLoadedSurvey(mission);
+                        data.NextSurveyMission = DateTime.Now.AddSeconds(60);
+                        CrunchEconCore.SurveySave.Remove(mission.id);
+                        CrunchEconCore.SurveySave.Add(mission.id, mission);
+                        playerData[player.Id.SteamId] = data;
+                       // utils.WriteToJsonFile<PlayerData>(path + "//PlayerData//Data//" + data.steamId + ".json", data);
+                    }
+                    else
+                    {
+                      //  Log.Info("not within distance");
+                        ShouldReturn = false;
+                    }
+                }
+                else
+                {
+                    ShouldReturn = false;
+                }
+                if (ShouldReturn)
+                {
+                    return;
+                }
+            }
+            if (DateTime.Now >= data.NextSurveyMission)
+            {
+
+                SurveyMission newSurvey = ContractUtils.GetNewMission(data);
+                if (newSurvey != null)
+                {
+                    List<IMyGps> playerList = new List<IMyGps>();
+                    MySession.Static.Gpss.GetGpsList(player.Identity.IdentityId, playerList);
+                    foreach (IMyGps gps in playerList)
+                    {
+                        if (gps.Description.Contains("SURVEY LOCATION."))
+                        {
+                            MyAPIGateway.Session?.GPS.RemoveGps(player.Identity.IdentityId, gps);
+                        }
+                    }
+                   
+                    data.surveyMission = newSurvey.id;
+                    if (newSurvey.getStage(1).FindRandomPositionAroundLocation)
+
+                    {
+                        MyGps gps = ContractUtils.ScanChat(newSurvey.getStage(1).LocationGPS);
+
+                        if (newSurvey.getStage(1).FindRandomPositionAroundLocation)
+                        {
+                            int negative = System.Math.Abs(newSurvey.getStage(1).RadiusToPickRandom) * (-1);
+                            int positive = newSurvey.getStage(1).RadiusToPickRandom;
+
+                            Random rand = new Random();
+                            int x = rand.Next(negative, positive);
+                            int y = rand.Next(negative, positive);
+                            int z = rand.Next(negative, positive);
+                            Vector3 offset = new Vector3(x, y, z);
+                            gps.Coords += offset;
+                        }
+
+                        newSurvey.CurrentPosX = gps.Coords.X;
+                        newSurvey.CurrentPosY = gps.Coords.Y;
+                        newSurvey.CurrentPosZ = gps.Coords.Z;
+                        StringBuilder sb = new StringBuilder();
+                        sb.AppendLine(newSurvey.getStage(1).GPSDescription);
+                        sb.AppendLine("");
+                        sb.AppendLine("Reward: " + String.Format("{0:n0}", newSurvey.getStage(1).CreditReward) + " SC.");
+                        sb.AppendLine("");
+                        sb.AppendLine("SURVEY LOCATION.");
+                        gps.Description = sb.ToString();
+                        gps.GPSColor = Color.Gold;
+                        gps.Name = newSurvey.getStage(1).GPSName;
+                        gps.ShowOnHud = true;
+                        gps.DiscardAt = new TimeSpan(6000);
+
+                        MyGpsCollection gpscol = (MyGpsCollection)MyAPIGateway.Session?.GPS;
+                        gpscol.SendAddGps(player.Identity.IdentityId, ref gps);
+                    }
+                    else
+                    {
+                        MyGps gps = ContractUtils.ScanChat(newSurvey.getStage(1).LocationGPS);
+                        newSurvey.CurrentPosX = gps.Coords.X;
+                        newSurvey.CurrentPosY = gps.Coords.Y;
+                        newSurvey.CurrentPosZ = gps.Coords.Z;
+                        StringBuilder sb = new StringBuilder();
+                        sb.AppendLine(newSurvey.getStage(1).GPSDescription);
+                        sb.AppendLine("");
+                        sb.AppendLine("Reward: " + String.Format("{0:n0}", newSurvey.getStage(1).CreditReward) + " SC.");
+                        sb.AppendLine("");
+                        sb.AppendLine("SURVEY LOCATION.");
+                        gps.Description = sb.ToString();
+                        gps.GPSColor = Color.Gold;
+                        gps.Name = newSurvey.getStage(1).GPSName;
+                        gps.ShowOnHud = true;
+                        gps.DiscardAt = new TimeSpan(6000);
+
+                        MyGpsCollection gpscol = (MyGpsCollection)MyAPIGateway.Session?.GPS;
+                        gpscol.SendAddGps(player.Identity.IdentityId, ref gps);
+                    }
+                    data.SetLoadedSurvey(newSurvey);
+                    data.NextSurveyMission = DateTime.Now.AddSeconds(config.SecondsBetweenSurveyMissions);
+                    CrunchEconCore.SurveySave.Remove(newSurvey.id);
+                    CrunchEconCore.SurveySave.Add(newSurvey.id, newSurvey);
+
+                    playerData[player.Id.SteamId] = data;
+                    utils.WriteToJsonFile<PlayerData>(path + "//PlayerData//Data//" + data.steamId + ".json", data);
+                }
+                else
+                {
+                //    Log.Info("null");
+                }
+            }
+        }
+
         public override void Update()
         {
             ticks++;
@@ -743,7 +996,7 @@ namespace CrunchEconomy
 
             }
 
-            if (ticks % 64 == 0 && TorchState == TorchSessionState.Loaded)
+            if (ticks % 128 == 0 && TorchState == TorchSessionState.Loaded)
             {
                 foreach (MyPlayer player in MySession.Static.Players.GetOnlinePlayers())
                 {
@@ -757,11 +1010,28 @@ namespace CrunchEconomy
                         DoContractDelivery(player, false);
                     }
 
+                    if (config != null && config.SurveyContractsEnabled)
+                    {
+                        if (playerData.TryGetValue(player.Id.SteamId, out PlayerData data))
+                        {
+
+
+                            GenerateNewSurveyMission(data, player);
+
+                        }
+                        else
+                        {
+
+                            data = new PlayerData();
+                            data.steamId = player.Id.SteamId;
+                            GenerateNewSurveyMission(data, player);
+                        }
+                    }
                 }
 
             }
 
-            if (ticks % 32 == 0 && TorchState == TorchSessionState.Loaded)
+            if (ticks % 64 == 0 && TorchState == TorchSessionState.Loaded)
             {
 
                 string type = "//Mining";
@@ -792,6 +1062,28 @@ namespace CrunchEconomy
 
                 }
                 ContractSave.Clear();
+
+                foreach (KeyValuePair<Guid, SurveyMission> keys in SurveySave)
+                {
+                    //  utils.SaveMiningData(AlliancePlugin.path + "//MiningStuff//PlayerData//" + keys.Key + ".xml", keys.Value);i
+                    SurveyMission contract = keys.Value;
+                    type = "//Survey";
+
+                    switch (contract.status)
+                    {
+                        case ContractStatus.InProgress:
+                            utils.WriteToXmlFile<SurveyMission>(path + "//PlayerData//" + type + "//InProgress//" + contract.id + ".xml", keys.Value);
+                            break;
+                        case ContractStatus.Completed:
+                            utils.WriteToXmlFile<SurveyMission>(path + "//PlayerData//" + type + "//Completed//" + contract.id + ".xml", keys.Value);
+                            break;
+                        case ContractStatus.Failed:
+                            utils.WriteToXmlFile<SurveyMission>(path + "//PlayerData//" + type + "//Failed//" + contract.id + ".xml", keys.Value);
+                            break;
+                    }
+
+                }
+                SurveySave.Clear();
                 DateTime now = DateTime.Now;
                 foreach (Stations station in stations)
                 {
@@ -820,6 +1112,7 @@ namespace CrunchEconomy
                                         if (now >= station.nextSellRefresh && station.DoSellOffers)
                                         {
                                             station.nextSellRefresh = now.AddSeconds(station.SecondsBetweenRefreshForSellOffers);
+
                                             if (sellOffers.TryGetValue(store.DisplayNameText, out List<SellOffer> offers))
                                             {
 
@@ -831,6 +1124,18 @@ namespace CrunchEconomy
 
                                                 foreach (SellOffer offer in offers)
                                                 {
+                                                    if (offer.IndividualRefreshTimer)
+                                                    {
+                                                        if (now < offer.nextRefresh)
+                                                        {
+                                                            continue;
+                                                        }
+                                                        else
+                                                        {
+                                                            offer.nextRefresh = now.AddSeconds(offer.SecondsBetweenRefresh);
+                                                            utils.WriteToXmlFile<SellOffer>(offer.path, offer);
+                                                        }
+                                                    }
                                                     double chance = rnd.NextDouble();
                                                     if (chance > offer.chance)
                                                     {
@@ -908,7 +1213,18 @@ namespace CrunchEconomy
                                                 Random rnd = new Random();
                                                 foreach (BuyOrder order in orders)
                                                 {
-
+                                                    if (order.IndividualRefreshTimer)
+                                                    {
+                                                        if (now < order.nextRefresh)
+                                                        {
+                                                            continue;
+                                                        }
+                                                        else
+                                                        {
+                                                            order.nextRefresh = now.AddSeconds(order.SecondsBetweenRefresh);
+                                                            utils.WriteToXmlFile<BuyOrder>(order.path, order);
+                                                        }
+                                                    }
                                                     if (MyDefinitionId.TryParse("MyObjectBuilder_" + order.typeId, order.subtypeId, out MyDefinitionId id))
                                                     {
 
@@ -1032,6 +1348,10 @@ namespace CrunchEconomy
                         BuyOrder order = utils.ReadFromXmlFile<BuyOrder>(s2);
                         if (order.Enabled)
                         {
+                            if (order.IndividualRefreshTimer)
+                            {
+                                order.path = s2;
+                            }
                             temporaryList.Add(order);
                         }
                     }
@@ -1082,6 +1402,10 @@ namespace CrunchEconomy
                         SellOffer order = utils.ReadFromXmlFile<SellOffer>(s2);
                         if (order.Enabled)
                         {
+                            if (order.IndividualRefreshTimer)
+                            {
+                                order.path = s2;
+                            }
                             temporaryList.Add(order);
                         }
                     }
@@ -1166,6 +1490,26 @@ namespace CrunchEconomy
                             break;
                         case ContractStatus.Failed:
                             utils.WriteToXmlFile<Contract>(path + "//PlayerData//" + type + "//Failed//" + contract.ContractId + ".xml", keys.Value);
+                            break;
+                    }
+
+                }
+                foreach (KeyValuePair<Guid, SurveyMission> keys in SurveySave)
+                {
+                    //  utils.SaveMiningData(AlliancePlugin.path + "//MiningStuff//PlayerData//" + keys.Key + ".xml", keys.Value);i
+                    SurveyMission contract = keys.Value;
+                    type = "//Survey";
+
+                    switch (contract.status)
+                    {
+                        case ContractStatus.InProgress:
+                            utils.WriteToXmlFile<SurveyMission>(path + "//PlayerData//" + type + "//InProgress//" + contract.id + ".xml", keys.Value);
+                            break;
+                        case ContractStatus.Completed:
+                            utils.WriteToXmlFile<SurveyMission>(path + "//PlayerData//" + type + "//Completed//" + contract.id + ".xml", keys.Value);
+                            break;
+                        case ContractStatus.Failed:
+                            utils.WriteToXmlFile<SurveyMission>(path + "//PlayerData//" + type + "//Failed//" + contract.id + ".xml", keys.Value);
                             break;
                     }
 
@@ -1285,6 +1629,18 @@ namespace CrunchEconomy
             {
                 Directory.CreateDirectory(path + "//GridSelling//Grids//");
             }
+
+            if (!Directory.Exists(path + "//ContractConfigs//Survey//"))
+            {
+                SurveyMission mission = new SurveyMission();
+                mission.configs.Add(new SurveyStage());
+                Directory.CreateDirectory(path + "//ContractConfigs//Survey//");
+                utils.WriteToXmlFile<SurveyMission>(path + "//ContractConfigs//Survey//Example1.xml", mission);
+                mission.configs.Add(new SurveyStage());
+                utils.WriteToXmlFile<SurveyMission>(path + "//ContractConfigs//Survey//Example2.xml", mission);
+                mission.configs.Add(new SurveyStage());
+                utils.WriteToXmlFile<SurveyMission>(path + "//ContractConfigs//Survey//Example3.xml", mission);
+            }
             if (!Directory.Exists(path + "//ContractConfigs//Mining//"))
             {
                 GeneratedContract contract = new GeneratedContract();
@@ -1326,6 +1682,18 @@ namespace CrunchEconomy
             if (!Directory.Exists(path + "//PlayerData//Hauling//InProgress//"))
             {
                 Directory.CreateDirectory(path + "//PlayerData//Hauling//InProgress//");
+            }
+            if (!Directory.Exists(path + "//PlayerData//Survey//Completed//"))
+            {
+                Directory.CreateDirectory(path + "//PlayerData//Survey//Completed//");
+            }
+            if (!Directory.Exists(path + "//PlayerData//Survey//Failed//"))
+            {
+                Directory.CreateDirectory(path + "//PlayerData//Survey//Failed//");
+            }
+            if (!Directory.Exists(path + "//PlayerData//Survey//InProgress//"))
+            {
+                Directory.CreateDirectory(path + "//PlayerData//Survey//InProgress//");
             }
             TorchBase = Torch;
         }

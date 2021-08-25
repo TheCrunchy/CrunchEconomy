@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CrunchEconomy.SurveyMissions;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -12,12 +13,42 @@ namespace CrunchEconomy.Contracts
         public List<Guid> MiningContracts = new List<Guid>();
         public List<Guid> HaulingContracts = new List<Guid>();
         public ulong steamId;
+        public Boolean HasHadSurveyBefore = false;
         public int MiningReputation = 0;
         public int HaulingReputation = 0;
+        public int SurveyReputation = 0;
 
         private Dictionary<Guid, Contract> loadedMining = new Dictionary<Guid, Contract>();
         private Dictionary<Guid, Contract> loadedHauling = new Dictionary<Guid, Contract>();
+        public Guid surveyMission = Guid.Empty;
+        public DateTime NextSurveyMission = DateTime.Now.AddSeconds(10);
+        private SurveyMission loadedMission = null;
+        public void SetLoadedSurvey(SurveyMission mission)
+        {
+            loadedMission = mission;
+        }
+        public SurveyMission GetLoadedMission()
+        {
+            return loadedMission;
+        }
+        public SurveyMission getMission()
+        {
+            if (surveyMission == Guid.Empty)
+            {
+                return null;
+            }
 
+            if (File.Exists(CrunchEconCore.path + "//PlayerData//Survey//InProgress//" + surveyMission.ToString() + ".xml"))
+            {
+             
+                    SurveyMission mission = CrunchEconCore.utils.ReadFromXmlFile<SurveyMission>(CrunchEconCore.path + "//PlayerData//Survey//InProgress//" + surveyMission.ToString() + ".xml");
+                mission.SetupMissionList();
+                loadedMission = mission;
+            }
+
+            return loadedMission;
+
+        }
         public void addMining(Contract contract)
         {
             if (!loadedMining.ContainsKey(contract.ContractId))
