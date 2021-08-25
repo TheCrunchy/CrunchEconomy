@@ -335,7 +335,7 @@ namespace CrunchEconomy
         {
 
             bool proceed = false;
-          
+
             if (contract.type == ContractType.Mining)
             {
                 if (contract.minedAmount >= contract.amountToMineOrDeliver)
@@ -388,9 +388,25 @@ namespace CrunchEconomy
                         if (ConsumeComponents(inventories, itemsToRemove, player.Id.SteamId))
                         {
 
+                            if (contract.type == ContractType.Mining)
+                            {
 
-                            data.MiningReputation += contract.reputation;
-                            data.MiningContracts.Remove(contract.ContractId);
+                                data.MiningReputation += contract.reputation;
+                                data.MiningContracts.Remove(contract.ContractId);
+                            }
+                            else
+                            {
+                                data.HaulingReputation += contract.reputation;
+                                data.HaulingContracts.Remove(contract.ContractId);
+                            }
+                            if (data.MiningReputation >= 5000)
+                            {
+                                data.MiningReputation = 5000;
+                            }
+                            if (data.HaulingReputation >= 5000)
+                            {
+                                data.HaulingReputation = 5000;
+                            }
                             if (data.MiningReputation >= 100)
                             {
                                 contract.contractPrice += Convert.ToInt64(contract.contractPrice * 0.05f);
@@ -411,6 +427,10 @@ namespace CrunchEconomy
                             {
                                 contract.contractPrice += Convert.ToInt64(contract.contractPrice * 0.05f);
                             }
+                            if (contract.DistanceBonus > 0)
+                            {
+                                contract.contractPrice += contract.DistanceBonus;
+                            }
                             if (AlliancePluginEnabled)
                             {
                                 //patch into alliances and process the payment there
@@ -426,7 +446,7 @@ namespace CrunchEconomy
                                     Log.Error(ex);
                                 }
                             }
-                               
+
                             if (contract.DoRareItemReward && data.MiningReputation >= contract.MinimumRepRequiredForItem)
                             {
                                 if (MyDefinitionId.TryParse("MyObjectBuilder_" + contract.RewardItemType + " / " + contract.RewardItemSubType, out MyDefinitionId reward))
@@ -438,6 +458,7 @@ namespace CrunchEconomy
                                     {
                                         if (SpawnLoot(controller.CubeGrid, reward, (MyFixedPoint)contract.ItemRewardAmount))
                                         {
+                                            contract.GivenItemReward = true;
                                             SendMessage("Boss Dave", "Heres a bonus for a job well done " + contract.ItemRewardAmount + " " + reward.ToString().Replace("MyObjectBuilder_", ""), Color.Gold, (long)player.Id.SteamId);
                                         }
                                     }
@@ -449,7 +470,7 @@ namespace CrunchEconomy
 
 
                             contract.PlayerSteamId = player.Id.SteamId;
-                  
+
 
 
                             FileUtils utils = new FileUtils();
@@ -461,7 +482,7 @@ namespace CrunchEconomy
                             playerData[player.Id.SteamId] = data;
 
                             return true;
-                        
+
                             //SAVE THE PLAYER DATA WITH INCREASED REPUTATION
 
                         }
@@ -482,7 +503,7 @@ namespace CrunchEconomy
                     {
                         if (data.getMiningContracts().Count == 0)
                         {
-                            GeneratedContract con = ContractUtils.GetRandomPlayerContract();
+                            GeneratedContract con = ContractUtils.GetRandomPlayerContract(ContractType.Mining);
                             if (con != null)
                             {
                                 data.addMining(ContractUtils.GeneratedToPlayer(con));
@@ -498,7 +519,7 @@ namespace CrunchEconomy
                     {
                         PlayerData newdata = new PlayerData();
                         newdata.steamId = player.Id.SteamId;
-                        GeneratedContract con = ContractUtils.GetRandomPlayerContract();
+                        GeneratedContract con = ContractUtils.GetRandomPlayerContract(ContractType.Mining);
                         if (con != null)
                         {
                             newdata.addMining(ContractUtils.GeneratedToPlayer(con));
@@ -535,18 +556,34 @@ namespace CrunchEconomy
                             {
                                 foreach (Contract contract in data.getMiningContracts().Values)
                                 {
-                                   if (HandleDeliver(contract, player, data, controller))
+                                    try
                                     {
+                                        if (HandleDeliver(contract, player, data, controller))
+                                        {
+                                            delete.Add(contract);
+
+                                        }
+                                    }
+                                    catch (Exception ex)
+                                    {
+
                                         delete.Add(contract);
-                                      
                                     }
                                 }
                                 foreach (Contract contract in data.getHaulingContracts().Values)
                                 {
-                                    if (HandleDeliver(contract, player, data, controller))
+                                    try
                                     {
-                                        delete.Add(contract);
+                                        if (HandleDeliver(contract, player, data, controller))
+                                        {
+                                            delete.Add(contract);
 
+                                        }
+                                    }
+                                    catch (Exception ex)
+                                    {
+
+                                        delete.Add(contract);
                                     }
                                 }
                                 foreach (Contract contract in delete)
@@ -561,7 +598,7 @@ namespace CrunchEconomy
                                         data.getHaulingContracts().Remove(contract.ContractId);
                                         data.MiningContracts.Remove(contract.ContractId);
                                     }
-                                 
+
                                 }
                                 playerData[player.Id.SteamId] = data;
                                 utils.WriteToJsonFile<PlayerData>(path + "//PlayerData//Data//" + data.steamId + ".json", data);
@@ -743,13 +780,13 @@ namespace CrunchEconomy
                     switch (contract.status)
                     {
                         case ContractStatus.InProgress:
-                            utils.WriteToXmlFile<Contract>(path + "//PlayerData//" + type+ "//InProgress//" + contract.ContractId + ".xml", keys.Value);
+                            utils.WriteToXmlFile<Contract>(path + "//PlayerData//" + type + "//InProgress//" + contract.ContractId + ".xml", keys.Value);
                             break;
                         case ContractStatus.Completed:
-                            utils.WriteToXmlFile<Contract>(path + "//PlayerData//" + type+"//Completed//" + contract.ContractId + ".xml", keys.Value);
+                            utils.WriteToXmlFile<Contract>(path + "//PlayerData//" + type + "//Completed//" + contract.ContractId + ".xml", keys.Value);
                             break;
                         case ContractStatus.Failed:
-                            utils.WriteToXmlFile<Contract>(path + "//PlayerData//" + type+"//Failed//" + contract.ContractId + ".xml", keys.Value);
+                            utils.WriteToXmlFile<Contract>(path + "//PlayerData//" + type + "//Failed//" + contract.ContractId + ".xml", keys.Value);
                             break;
                     }
 
@@ -1257,7 +1294,10 @@ namespace CrunchEconomy
             }
             if (!Directory.Exists(path + "//ContractConfigs//Hauling//"))
             {
+                GeneratedContract contract = new GeneratedContract();
                 Directory.CreateDirectory(path + "//ContractConfigs//Hauling//");
+                contract.type = ContractType.Hauling;
+                utils.WriteToXmlFile<GeneratedContract>(path + "//ContractConfigs//Hauling//Example.xml", contract);
             }
             if (!Directory.Exists(path + "//PlayerData//Data//"))
             {

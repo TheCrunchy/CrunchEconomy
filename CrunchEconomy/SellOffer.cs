@@ -18,7 +18,7 @@ namespace CrunchEconomy
         public int SpawnIfCargoLessThan = 10;
 
         public Boolean BuyingGivesMiningContract = false;
-        public string MiningContractName = "example";
+        public string ContractName = "example";
         public Boolean BuyingGivesHaulingContract = false;
         public string IfGivesContractNPCTag = "GAIA";
     }

@@ -34,7 +34,29 @@ namespace CrunchEconomy.Contracts
             contract.MinimumRepRequiredForItem = gen.MinimumRepRequiredForItem;
             return contract;
         }
-        public static GeneratedContract GetRandomPlayerContract()
+
+        public static MyGps GetDeliveryLocation(Contract contract)
+        {
+            List<MyGps> locations = new List<MyGps>();
+            foreach (Stations station in CrunchEconCore.stations)
+            {
+                if (station.getGPS() != null && station.UseAsDeliveryLocationForContracts)
+                {
+                    locations.Add(station.getGPS());
+                }
+            }
+
+            Random random = new Random();
+            if (locations.Count == 1)
+            {
+                return locations[0];
+            }
+            int r = random.Next(locations.Count);
+            return locations[r];
+
+        }
+
+        public static GeneratedContract GetRandomPlayerContract(ContractType type)
         {
             GeneratedContract output = null;
             Random random = new Random();
@@ -42,6 +64,10 @@ namespace CrunchEconomy.Contracts
             int count = 0;
             foreach (GeneratedContract contract in newContracts.Values)
             {
+                if (contract.type != type)
+                {
+                    continue;
+                }
                 count++;
                 double chance = random.Next(0, 101);
                 if (chance <= contract.chance)
@@ -85,8 +111,37 @@ namespace CrunchEconomy.Contracts
                 //else
                 //{
                 //    koth.nextCaptureInterval = new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute + 1, 0, 0, DateTimeKind.Utc);
+                //}     
+                if (newContracts.ContainsKey(contract.Name))
+                {
+                    CrunchEconCore.Log.Error("This file doesnt have unique contract name " + s);
+                    continue;
+                }
+                if (contract.Enabled)
+                {
+                    newContracts.Add(contract.Name, contract);
+                }
+            }
+            foreach (String s in Directory.GetFiles(CrunchEconCore.path + "//ContractConfigs//Hauling//"))
+            {
+
+
+                GeneratedContract contract = CrunchEconCore.utils.ReadFromXmlFile<GeneratedContract>(s);
+                //  DateTime now = DateTime.Now;
+                //if (now.Minute == 59 || now.Minute == 60)
+                //{
+                //    koth.nextCaptureInterval = new DateTime(now.Year, now.Month, now.Day, now.Hour + 1, 0, 0, 0, DateTimeKind.Utc);
                 //}
-                if (contract.Enabled && !newContracts.ContainsKey(contract.Name))
+                //else
+                //{
+                //    koth.nextCaptureInterval = new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute + 1, 0, 0, DateTimeKind.Utc);
+                //}
+                if (newContracts.ContainsKey(contract.Name))
+                {
+                    CrunchEconCore.Log.Error("This file doesnt have unique contract name " + s);
+                    continue;
+                }
+                if (contract.Enabled)
                 {
                     newContracts.Add(contract.Name, contract);
                 }
@@ -156,7 +211,7 @@ namespace CrunchEconomy.Contracts
             }
             if (generate)
             {
-                GeneratedContract newContract = GetRandomPlayerContract();
+                GeneratedContract newContract = GetRandomPlayerContract(ContractType.Mining);
 
                 if (newContract == null)
                 {

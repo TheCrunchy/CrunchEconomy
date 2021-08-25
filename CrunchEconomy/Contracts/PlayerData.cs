@@ -26,7 +26,14 @@ namespace CrunchEconomy.Contracts
                 MiningContracts.Add(contract.ContractId);
             }
         }
-
+        public void addHauling(Contract contract)
+        {
+            if (!loadedHauling.ContainsKey(contract.ContractId))
+            {
+                loadedHauling.Add(contract.ContractId, contract);
+                HaulingContracts.Add(contract.ContractId);
+            }
+        }
         public Dictionary<Guid, Contract> getMiningContracts()
         {
             if (loadedMining.Count > 0)

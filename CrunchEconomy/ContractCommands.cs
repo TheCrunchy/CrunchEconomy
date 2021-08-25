@@ -36,21 +36,49 @@ namespace CrunchEconomy
 
                 if (derp.ContainsKey(contractnum))
                 {
-                    Contract cancel = data.getMiningContracts()[derp[contractnum]];
-                    data.MiningReputation -= cancel.reputation * 2;
-
-                    data.getMiningContracts().Remove(derp[contractnum]);
-                    data.MiningContracts.Remove(derp[contractnum]);
-                    derp.Remove(contractnum);
-                    ids[Context.Player.SteamUserId] = derp;
                     StringBuilder sb = new StringBuilder();
-                    sb.AppendLine("Cancelled contract");
-                    sb.AppendLine("Mine " + cancel.SubType + " Ore " + String.Format("{0:n0}", cancel.minedAmount) + " / " + String.Format("{0:n0}", cancel.amountToMineOrDeliver));
+                    Contract cancel = null;
+                    if (data.getMiningContracts().ContainsKey(derp[contractnum]))
+                    {
+                        cancel = data.getMiningContracts()[derp[contractnum]];
+                        data.MiningReputation -= cancel.reputation * 2;
 
-                    sb.AppendLine("Reputation lowered by " + cancel.reputation * 2);
-                    sb.AppendLine();
-                    sb.AppendLine("Remaining Contracts");
-                    sb.AppendLine();
+                        data.getMiningContracts().Remove(derp[contractnum]);
+                        data.MiningContracts.Remove(derp[contractnum]);
+
+                        cancel.status = ContractStatus.Failed;
+                        sb.AppendLine("Cancelled contract");
+                        sb.AppendLine("Mine " + cancel.SubType + " Ore " + String.Format("{0:n0}", cancel.minedAmount) + " / " + String.Format("{0:n0}", cancel.amountToMineOrDeliver));
+
+                        sb.AppendLine("Reputation lowered by " + cancel.reputation * 2);
+                        sb.AppendLine();
+                        sb.AppendLine("Remaining Contracts");
+                        sb.AppendLine();
+                    }
+                    if (data.getHaulingContracts().ContainsKey(derp[contractnum]))
+                    {
+                        cancel = data.getHaulingContracts()[derp[contractnum]];
+                        data.HaulingReputation -= cancel.reputation * 2;
+
+                        data.getHaulingContracts().Remove(derp[contractnum]);
+                        data.HaulingContracts.Remove(derp[contractnum]);
+                        cancel.status = ContractStatus.Failed;
+
+                        sb.AppendLine("Cancelled contract");
+                        sb.AppendLine("Deliver " + cancel.SubType + " Ore " + String.Format("{0:n0}", cancel.amountToMineOrDeliver));
+                        sb.AppendLine("Reward : " + String.Format("{0:n0}", cancel.contractPrice) + " SC. and " + cancel.reputation + " reputation gain.");
+                        sb.AppendLine("Distance bonus :" + String.Format("{0:n0}", cancel.DistanceBonus) + " SC.");
+
+                        sb.AppendLine("Reputation lowered by " + cancel.reputation * 2);
+                        sb.AppendLine();
+                        sb.AppendLine("Remaining Contracts");
+                        sb.AppendLine();
+                    }
+                    if (cancel == null)
+                    {
+                        Context.Respond("Couldnt find the contract.");
+                        return;
+                    }
                     foreach (Contract c in data.getMiningContracts().Values)
                     {
 
@@ -67,14 +95,28 @@ namespace CrunchEconomy
                         }
                         sb.AppendLine("");
                     }
+                    foreach (Contract c in data.getHaulingContracts().Values)
+                    {
+
+                        sb.AppendLine("Deliver " + c.SubType + " Ore " + String.Format("{0:n0}", c.amountToMineOrDeliver));
+                        sb.AppendLine("Reward : " + String.Format("{0:n0}", c.contractPrice) + " SC. and " + c.reputation + " reputation gain.");
+                        sb.AppendLine("Distance bonus :" + String.Format("{0:n0}", c.DistanceBonus) + " SC.");
+
+
+                        sb.AppendLine("");
+                    }
+
+                    derp.Remove(contractnum);
+                    ids[Context.Player.SteamUserId] = derp;
                     DialogMessage m = new DialogMessage("Contract", "Cancel", sb.ToString());
                     ModCommunication.SendMessageTo(m, Context.Player.SteamUserId);
-                    cancel.status = ContractStatus.Failed;
+                  
                     File.Delete(CrunchEconCore.path + "//PlayerData//Mining//InProgress//" + cancel.ContractId + ".xml");
                     CrunchEconCore.ContractSave.Remove(cancel.ContractId);
                     CrunchEconCore.ContractSave.Add(cancel.ContractId, cancel);
                     CrunchEconCore.utils.WriteToJsonFile<PlayerData>(CrunchEconCore.path + "//PlayerData//Data//" + data.steamId + ".json", data);
-                }else
+                }
+                else
                 {
                     Context.Respond("Cannot find that contract.");
                 }
@@ -90,7 +132,7 @@ namespace CrunchEconomy
                 ids.TryGetValue(Context.Player.SteamUserId, out Dictionary<int, Guid> derp);
                 if (derp == null)
                 {
-                  //  Context.Respond("ids didnt contain");
+                    //  Context.Respond("ids didnt contain");
                     derp = new Dictionary<int, Guid>();
                     num = 0;
                 }
@@ -124,13 +166,13 @@ namespace CrunchEconomy
                 contractDetails.AppendLine("");
                 foreach (Contract c in data.getMiningContracts().Values)
                 {
-               
+
                     if (c.minedAmount >= c.amountToMineOrDeliver)
                     {
                         c.DoPlayerGps(Context.Player.Identity.IdentityId);
                         contractDetails.AppendLine("Deliver " + c.SubType + " Ore " + String.Format("{0:n0}", c.amountToMineOrDeliver));
                         contractDetails.AppendLine("Reward : " + String.Format("{0:n0}", c.contractPrice) + " SC. and " + c.reputation + " reputation gain.");
-                        
+
                     }
                     else
                     {
@@ -148,8 +190,32 @@ namespace CrunchEconomy
                         num++;
                         derp.Add(num, c.ContractId);
                         contractDetails.AppendLine("To quit use !contract quit " + num);
-                     
+
                     }
+                    contractDetails.AppendLine("");
+                }
+
+                foreach (Contract c in data.getHaulingContracts().Values)
+                {
+
+                    contractDetails.AppendLine("Deliver " + c.SubType + " Ore " + String.Format("{0:n0}", c.amountToMineOrDeliver));
+                    contractDetails.AppendLine("Reward : " + String.Format("{0:n0}", c.contractPrice) + " SC. and " + c.reputation + " reputation gain.");
+                    contractDetails.AppendLine("Distance bonus :" + String.Format("{0:n0}", c.DistanceBonus) + " SC.");
+
+                    if (derp.ContainsValue(c.ContractId))
+                    {
+                        contractDetails.AppendLine("To quit use !contract quit " + temp[c.ContractId]);
+                        //Context.Respond("1");
+                    }
+                    else
+                    {
+                        //  Context.Respond("2");
+                        num++;
+                        derp.Add(num, c.ContractId);
+                        contractDetails.AppendLine("To quit use !contract quit " + num);
+
+                    }
+
                     contractDetails.AppendLine("");
                 }
                 ids.Remove(Context.Player.SteamUserId);

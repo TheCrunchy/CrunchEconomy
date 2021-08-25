@@ -26,8 +26,9 @@ namespace CrunchEconomy.Contracts
         public double ItemRewardAmount = 5;
         public int MinimumRepRequiredForItem = 50;
         public string ContractName;
-        public ulong PlayerSteamId; 
-
+        public ulong PlayerSteamId;
+        public Boolean GivenItemReward = false;
+        public long DistanceBonus = 0;
         public long contractPrice = 0;
 
         public int reputation = 1;
@@ -51,8 +52,8 @@ namespace CrunchEconomy.Contracts
                 gpsRef.ShowOnHud = true;
 
                 gpsRef.Description = sb.ToString() ;
-                gpsRef.DisplayName = "Ore Delivery Location. " + SubType;
-                gpsRef.Name = "Ore Delivery Location. " + SubType;
+                gpsRef.DisplayName = "Delivery Location. " + SubType;
+                gpsRef.Name = "Delivery Location. " + SubType;
                 gpsRef.DiscardAt = new TimeSpan(600);
                 gpscol.SendAddGps(identityId, ref gpsRef);
             }
@@ -68,8 +69,8 @@ namespace CrunchEconomy.Contracts
                 gpsRef.GPSColor = Color.DarkOrange;
                 gpsRef.ShowOnHud = true;
                 gpsRef.Description = sb.ToString();
-                gpsRef.DisplayName = "Ore Delivery Location. " + SubType;
-                gpsRef.Name = "Ore Delivery Location. " + SubType;
+                gpsRef.DisplayName = "Delivery Location. " + SubType;
+                gpsRef.Name = "Delivery Location. " + SubType;
                 gpsRef.DiscardAt = new TimeSpan(600);
 
 

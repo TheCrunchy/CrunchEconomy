@@ -53,7 +53,7 @@ namespace CrunchEconomy
         {
 
             ctx.GetPattern(update).Prefixes.Add(storePatch);
-             ctx.GetPattern(updateTwo).Prefixes.Add(storePatchTwo);
+            ctx.GetPattern(updateTwo).Prefixes.Add(storePatchTwo);
         }
 
         ////patch this to see if sell was success SendSellItemResult
@@ -92,12 +92,24 @@ namespace CrunchEconomy
                                     return false;
                                 }
                                 List<Contract> maybeCancel = new List<Contract>();
-
-                                foreach (Contract contract in data.getMiningContracts().Values)
+                                if (gen.type == ContractType.Mining)
                                 {
-                                    if (contract.ContractName.Equals(gen.Name))
+                                    foreach (Contract contract in data.getMiningContracts().Values)
                                     {
-                                        maybeCancel.Add(contract);
+                                        if (contract.ContractName.Equals(gen.Name))
+                                        {
+                                            maybeCancel.Add(contract);
+                                        }
+                                    }
+                                }
+                                if (gen.type == ContractType.Hauling)
+                                {
+                                    foreach (Contract contract in data.getHaulingContracts().Values)
+                                    {
+                                        if (contract.ContractName.Equals(gen.Name))
+                                        {
+                                            maybeCancel.Add(contract);
+                                        }
                                     }
                                 }
                                 Contract cancel = null;
@@ -133,7 +145,7 @@ namespace CrunchEconomy
                                     StringBuilder sb = new StringBuilder();
                                     sb.AppendLine("Cancelled contract");
                                     sb.AppendLine("Mine " + cancel.SubType + " Ore " + String.Format("{0:n0}", cancel.minedAmount) + " / " + String.Format("{0:n0}", cancel.amountToMineOrDeliver));
-                            
+
                                     sb.AppendLine("Reputation lowered by " + cancel.reputation * 2);
                                     sb.AppendLine();
                                     sb.AppendLine("Remaining Contracts");
@@ -232,7 +244,7 @@ namespace CrunchEconomy
 
                         if (!CrunchEconCore.gridsForSale.ContainsKey(storeItem.Item.Value.SubtypeName) && !CrunchEconCore.sellOffers.ContainsKey(store.DisplayNameText))
                         {
-                          //  CrunchEconCore.Log.Info("bruh");
+                            //  CrunchEconCore.Log.Info("bruh");
                             return true;
                         }
                         else if (amount > storeItem.Amount)
@@ -250,7 +262,7 @@ namespace CrunchEconomy
                             }
                             else
                             {
-                             //   CrunchEconCore.Log.Info("grids?");
+                                //   CrunchEconCore.Log.Info("grids?");
                                 if (CrunchEconCore.gridsForSale.TryGetValue(storeItem.Item.Value.SubtypeName, out GridSale sale))
                                 {
                                     if (amount > 1)
@@ -284,30 +296,30 @@ namespace CrunchEconomy
                                 }
                                 else
                                 {
-                               //     CrunchEconCore.Log.Info("not a grid sale");
+                                    //     CrunchEconCore.Log.Info("not a grid sale");
                                     if (CrunchEconCore.sellOffers.TryGetValue(store.DisplayNameText, out List<SellOffer> offers))
                                     {
-                                    //     CrunchEconCore.Log.Info("1");
+                                        //     CrunchEconCore.Log.Info("1");
                                         foreach (SellOffer offer in offers)
                                         {//
 
                                             if (offer.BuyingGivesHaulingContract || offer.BuyingGivesMiningContract)
                                             {
-                                               //   CrunchEconCore.Log.Info("has a contract");
+                                                //   CrunchEconCore.Log.Info("has a contract");
                                                 if (!store.GetOwnerFactionTag().Equals(offer.IfGivesContractNPCTag))
                                                 {
-                                                      //  CrunchEconCore.Log.Info("not the faction tag");
+                                                    //  CrunchEconCore.Log.Info("not the faction tag");
                                                     continue;
                                                 }
-                                              //  CrunchEconCore.Log.Info("is the faction tag");
-                                               //  CrunchEconCore.Log.Info(storeItem.Item.Value.TypeIdString + " " + storeItem.Item.Value.SubtypeName) ;
+                                                //  CrunchEconCore.Log.Info("is the faction tag");
+                                                //  CrunchEconCore.Log.Info(storeItem.Item.Value.TypeIdString + " " + storeItem.Item.Value.SubtypeName) ;
                                                 if (offer.typeId.Equals(storeItem.Item.Value.TypeIdString.Replace("MyObjectBuilder_", "")) && offer.subtypeId.Equals(storeItem.Item.Value.SubtypeName))
                                                 {
 
                                                     CrunchEconCore.playerData.TryGetValue(player.Id.SteamId, out PlayerData data);
                                                     if (data == null)
                                                     {
-                                                   //       CrunchEconCore.Log.Info("Data was null");
+                                                        //       CrunchEconCore.Log.Info("Data was null");
                                                         data = new PlayerData();
                                                         data.steamId = player.Id.SteamId;
                                                     }
@@ -330,7 +342,7 @@ namespace CrunchEconomy
                                                         {
                                                             max++;
                                                         }
-                                                     //   CrunchEconCore.Log.Info(data.getMiningContracts().Count);
+                                                        //   CrunchEconCore.Log.Info(data.getMiningContracts().Count);
                                                         if (data.getMiningContracts().Count < max)
                                                         {
                                                             if (amount > max || data.getMiningContracts().Count + amount > max)
@@ -343,7 +355,7 @@ namespace CrunchEconomy
                                                                 ModCommunication.SendMessageTo(m, player.Id.SteamId);
                                                                 return false;
                                                             }
-                                                            if (ContractUtils.newContracts.TryGetValue(offer.MiningContractName, out GeneratedContract contract))
+                                                            if (ContractUtils.newContracts.TryGetValue(offer.ContractName, out GeneratedContract contract))
                                                             {
 
                                                                 for (int i = 1; i <= amount; i++)
@@ -410,12 +422,98 @@ namespace CrunchEconomy
 
                                                     if (offer.BuyingGivesHaulingContract)
                                                     {
+                                                        int max = 1;
+                                                        if (data.HaulingReputation >= 100)
+                                                        {
+                                                            max++;
+                                                        }
+                                                        if (data.HaulingReputation >= 200)
+                                                        {
+                                                            max++;
+                                                        }
+                                                        if (data.HaulingReputation >= 300)
+                                                        {
+                                                            max++;
+                                                        }
+                                                        if (data.HaulingReputation >= 400)
+                                                        {
+                                                            max++;
+                                                        }
+                                                        //   CrunchEconCore.Log.Info(data.getHaulingContracts().Count);
+                                                        if (data.getHaulingContracts().Count < max)
+                                                        {
+                                                            if (amount > max || data.getHaulingContracts().Count + amount > max)
+                                                            {
 
+                                                                StringBuilder sb = new StringBuilder();
+                                                                sb.AppendLine("Cannot purchase more than " + max + " contracts!");
+                                                                sb.AppendLine("Maximum you can purchase is " + (max - data.getHaulingContracts().Count).ToString());
+                                                                DialogMessage m = new DialogMessage("Shop Error", "", sb.ToString());
+                                                                ModCommunication.SendMessageTo(m, player.Id.SteamId);
+                                                                return false;
+                                                            }
+                                                            if (ContractUtils.newContracts.TryGetValue(offer.ContractName, out GeneratedContract contract))
+                                                            {
+
+                                                                for (int i = 1; i <= amount; i++)
+                                                                {
+
+                                                                    Contract temp = ContractUtils.GeneratedToPlayer(contract);
+                                                                    MyGps delivery = ContractUtils.GetDeliveryLocation(temp);
+                                                                    float distance = Vector3.Distance(player.GetPosition(), delivery.Coords);
+                                                                    long deliveryBonus = Convert.ToInt64(distance / 100000) * 50000;
+                                                                    temp.DeliveryLocation = delivery.ToString();
+                                                                    temp.DistanceBonus = deliveryBonus;
+                                                                    data.addHauling(temp);
+                                                                    temp.PlayerSteamId = player.Id.SteamId;
+
+
+                                                                    //do this the lazy way instead of checking then setting by the key
+                                                                    CrunchEconCore.playerData.Remove(player.Id.SteamId);
+                                                                    CrunchEconCore.playerData.Add(player.Id.SteamId, data);
+
+
+                                                                    CrunchEconCore.ContractSave.Remove(temp.ContractId);
+                                                                    CrunchEconCore.ContractSave.Add(temp.ContractId, temp);
+
+                                                                    CrunchEconCore.utils.WriteToJsonFile<PlayerData>(CrunchEconCore.path + "//PlayerData//Data//" + data.steamId + ".json", data);
+
+
+
+                                                                }
+                                                                StringBuilder contractDetails = new StringBuilder();
+                                                                foreach (Contract c in data.getHaulingContracts().Values)
+                                                                {
+                                                                    c.DoPlayerGps(player.Identity.IdentityId);
+                                                                    contractDetails.AppendLine("Deliver " + c.SubType + " Ore " + String.Format("{0:n0}", c.amountToMineOrDeliver));
+                                                                    contractDetails.AppendLine("Reward : " + String.Format("{0:n0}", c.contractPrice) + " SC. and " + c.reputation + " reputation gain.");
+                                                                    contractDetails.AppendLine("Distance bonus :" + String.Format("{0:n0}", c.DistanceBonus) + " SC.");
+
+                                                                    contractDetails.AppendLine("");
+                                                                }
+                                                                contractDetails.AppendLine("View all contract details with !contract info");
+                                                                DialogMessage m2 = new DialogMessage("Contract Details", "Instructions", contractDetails.ToString());
+                                                                ModCommunication.SendMessageTo(m2, player.Id.SteamId);
+                                                                return true;
+                                                            }
+                                                            else
+                                                            {
+                                                                DialogMessage m = new DialogMessage("Shop Error", "Failed to find contract.");
+                                                                ModCommunication.SendMessageTo(m, player.Id.SteamId);
+                                                                return false;
+                                                            }
+                                                        }
+                                                        else
+                                                        {
+                                                            DialogMessage m = new DialogMessage("Shop Error", "", "You already have the maximum amount of Hauling contracts. View them with !contract info");
+                                                            ModCommunication.SendMessageTo(m, player.Id.SteamId);
+                                                            return false;
+                                                        }
                                                     }
 
                                                     else
                                                     {
-                                                        DialogMessage m = new DialogMessage("Shop Error", "", "You already have the maximum amount of mining contracts. View them with !contract info");
+                                                        DialogMessage m = new DialogMessage("Shop Error", "", "You already have the maximum amount of Hauling contracts. View them with !contract info");
                                                         ModCommunication.SendMessageTo(m, player.Id.SteamId);
                                                         return false;
                                                     }
