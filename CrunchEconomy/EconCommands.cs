@@ -17,6 +17,13 @@ namespace CrunchEconomy
     [Category("crunchecon")]
     public class EconCommands : CommandModule
     {
+        [Command("reload", "stop the economy refreshing")]
+        [Permission(MyPromoteLevel.Admin)]
+        public void Reload()
+        {
+            Context.Respond("reloading");
+            CrunchEconCore.LoadConfig();
+        }
         [Command("pause", "stop the economy refreshing")]
         [Permission(MyPromoteLevel.Admin)]
         public void Pause()
