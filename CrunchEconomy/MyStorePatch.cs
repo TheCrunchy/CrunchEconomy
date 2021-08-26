@@ -323,7 +323,7 @@ namespace CrunchEconomy
                                                         data = new PlayerData();
                                                         data.steamId = player.Id.SteamId;
                                                     }
-                                                    if (offer.BuyingGivesMiningContract)
+                                                    if (offer.BuyingGivesMiningContract && CrunchEconCore.config.MiningContractsEnabled)
                                                     {
                                                         int max = 1;
                                                         if (data.MiningReputation >= 100)
@@ -420,7 +420,7 @@ namespace CrunchEconomy
                                                         }
                                                     }
 
-                                                    if (offer.BuyingGivesHaulingContract)
+                                                    if (offer.BuyingGivesHaulingContract && CrunchEconCore.config.HaulingContractsEnabled)
                                                     {
                                                         int max = 1;
                                                         if (data.HaulingReputation >= 100)
@@ -509,13 +509,6 @@ namespace CrunchEconomy
                                                             ModCommunication.SendMessageTo(m, player.Id.SteamId);
                                                             return false;
                                                         }
-                                                    }
-
-                                                    else
-                                                    {
-                                                        DialogMessage m = new DialogMessage("Shop Error", "", "You already have the maximum amount of Hauling contracts. View them with !contract info");
-                                                        ModCommunication.SendMessageTo(m, player.Id.SteamId);
-                                                        return false;
                                                     }
 
                                                 }

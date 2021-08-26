@@ -501,49 +501,53 @@ namespace CrunchEconomy
         }
         public void DoContractDelivery(MyPlayer player, bool DoNewContract)
         {
-            if (DoNewContract)
+            if (config.MiningContractsEnabled)
             {
-
-                try
+                if (DoNewContract)
                 {
-                    if (playerData.TryGetValue(player.Id.SteamId, out PlayerData data))
+
+                    try
                     {
-                        if (data.getMiningContracts().Count == 0)
+
+                        if (playerData.TryGetValue(player.Id.SteamId, out PlayerData data))
                         {
+                            if (data.getMiningContracts().Count == 0)
+                            {
+                                GeneratedContract con = ContractUtils.GetRandomPlayerContract(ContractType.Mining);
+                                if (con != null)
+                                {
+                                    data.addMining(ContractUtils.GeneratedToPlayer(con));
+                                    playerData[player.Id.SteamId] = data;
+                                    utils.WriteToJsonFile<PlayerData>(path + "//PlayerData//Data//" + data.steamId + ".json", data);
+
+                                }
+
+                            }
+                            SendMessage("Boss Dave", "Check contracts with !contract info", Color.Gold, (long)player.Id.SteamId);
+                        }
+                        else
+                        {
+                            PlayerData newdata = new PlayerData();
+                            newdata.steamId = player.Id.SteamId;
                             GeneratedContract con = ContractUtils.GetRandomPlayerContract(ContractType.Mining);
                             if (con != null)
                             {
-                                data.addMining(ContractUtils.GeneratedToPlayer(con));
-                                playerData[player.Id.SteamId] = data;
+                                newdata.addMining(ContractUtils.GeneratedToPlayer(con));
+                                playerData.Add(player.Id.SteamId, newdata);
                                 utils.WriteToJsonFile<PlayerData>(path + "//PlayerData//Data//" + data.steamId + ".json", data);
 
                             }
-
+                            SendMessage("Boss Dave", "Heres a new job !contract info", Color.Gold, (long)player.Id.SteamId);
                         }
-                        SendMessage("Boss Dave", "Check contracts with !contract info", Color.Gold, (long)player.Id.SteamId);
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        PlayerData newdata = new PlayerData();
-                        newdata.steamId = player.Id.SteamId;
-                        GeneratedContract con = ContractUtils.GetRandomPlayerContract(ContractType.Mining);
-                        if (con != null)
-                        {
-                            newdata.addMining(ContractUtils.GeneratedToPlayer(con));
-                            playerData.Add(player.Id.SteamId, newdata);
-                            utils.WriteToJsonFile<PlayerData>(path + "//PlayerData//Data//" + data.steamId + ".json", data);
+                        Log.Error("Probably a null contract " + ex.ToString());
 
-                        }
-                        SendMessage("Boss Dave", "Heres a new job !contract info", Color.Gold, (long)player.Id.SteamId);
+
                     }
-                }
-                catch (Exception ex)
-                {
-                    Log.Error("Probably a null contract " + ex.ToString());
-
 
                 }
-
             }
             if (player.GetPosition() != null)
             {
@@ -1092,18 +1096,21 @@ namespace CrunchEconomy
 
             if (ticks % 128 == 0 && TorchState == TorchSessionState.Loaded)
             {
+                
                 foreach (MyPlayer player in MySession.Static.Players.GetOnlinePlayers())
                 {
-                    if (DateTime.Now >= ContractUtils.chat)
+                    if (config.MiningContractsEnabled || config.HaulingContractsEnabled)
                     {
-                        ContractUtils.chat = DateTime.Now.AddSeconds(config.SecondsBetweenMiningContracts);
-                        DoContractDelivery(player, true);
+                        if (DateTime.Now >= ContractUtils.chat)
+                        {
+                            ContractUtils.chat = DateTime.Now.AddSeconds(config.SecondsBetweenMiningContracts);
+                            DoContractDelivery(player, true);
+                        }
+                        else
+                        {
+                            DoContractDelivery(player, false);
+                        }
                     }
-                    else
-                    {
-                        DoContractDelivery(player, false);
-                    }
-
                     if (config != null && config.SurveyContractsEnabled)
                     {
                         if (playerData.TryGetValue(player.Id.SteamId, out PlayerData data))
