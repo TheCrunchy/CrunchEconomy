@@ -33,6 +33,8 @@ namespace CrunchEconomy.Contracts
             contract.RewardItemSubType = gen.RewardItemSubType;
             contract.ItemRewardAmount = gen.ItemRewardAmount;
             contract.MinimumRepRequiredForItem = gen.MinimumRepRequiredForItem;
+            contract.PutInStation = gen.PutInStation;
+            contract.CargoName = gen.StationCargoName;
             return contract;
         }
         public static List<SurveyMission> SurveyMissions = new List<SurveyMission>();
@@ -82,14 +84,14 @@ namespace CrunchEconomy.Contracts
             return null;
         }
 
-        public static MyGps GetDeliveryLocation(Contract contract)
+        public static Stations GetDeliveryLocation(Contract contract)
         {
-            List<MyGps> locations = new List<MyGps>();
+            List<Stations> locations = new List<Stations>();
             foreach (Stations station in CrunchEconCore.stations)
             {
                 if (station.getGPS() != null && station.UseAsDeliveryLocationForContracts)
                 {
-                    locations.Add(station.getGPS());
+                    locations.Add(station);
                 }
             }
 
@@ -260,48 +262,48 @@ namespace CrunchEconomy.Contracts
 
 
         public static DateTime chat = DateTime.Now;
-        public void GenerateNewMiningContracts(MyPlayer player)
-        {
-            Contract contract;
-            Boolean generate = false;
-            CrunchEconCore.playerData.TryGetValue(player.Id.SteamId, out PlayerData data);
-            if (data == null)
-            {
-                data = new PlayerData();
-                data.steamId = player.Id.SteamId;
-            }
+        //public void GenerateNewMiningContracts(MyPlayer player)
+        //{
+        //    Contract contract;
+        //    Boolean generate = false;
+        //    CrunchEconCore.playerData.TryGetValue(player.Id.SteamId, out PlayerData data);
+        //    if (data == null)
+        //    {
+        //        data = new PlayerData();
+        //        data.steamId = player.Id.SteamId;
+        //    }
 
-            if (data.getMiningContracts().Count == 0)
-            {
+        //    if (data.getMiningContracts().Count == 0)
+        //    {
 
-                contract = new Contract();
-                generate = true;
+        //        contract = new Contract();
+        //        generate = true;
 
-            }
-            if (generate)
-            {
-                GeneratedContract newContract = GetRandomPlayerContract(ContractType.Mining);
+        //    }
+        //    if (generate)
+        //    {
+        //        GeneratedContract newContract = GetRandomPlayerContract(ContractType.Mining);
 
-                if (newContract == null)
-                {
-                    CrunchEconCore.SendMessage("Big Boss Dave", "No contract available.", Color.Gold, (long)MySession.Static.Players.TryGetSteamId(player.Identity.IdentityId));
-                    return;
-                }
-                contract = GeneratedToPlayer(newContract);
-                contract.PlayerSteamId = player.Id.SteamId;
+        //        if (newContract == null)
+        //        {
+        //            CrunchEconCore.SendMessage("Big Boss Dave", "No contract available.", Color.Gold, (long)MySession.Static.Players.TryGetSteamId(player.Identity.IdentityId));
+        //            return;
+        //        }
+        //        contract = GeneratedToPlayer(newContract);
+        //        contract.PlayerSteamId = player.Id.SteamId;
 
-                CrunchEconCore.SendMessage("Big Boss Dave", "New job for you, !mc info or !mc quit", Color.Gold, (long)MySession.Static.Players.TryGetSteamId(player.Identity.IdentityId));
-                CrunchEconCore.ContractSave.Remove(contract.ContractId);
-                CrunchEconCore.ContractSave.Add(contract.ContractId, contract);
-                CrunchEconCore.utils.WriteToJsonFile<PlayerData>(CrunchEconCore.path + "//PlayerData//Data//" + data.steamId + ".json", data);
-            }
-            else
-            {
+        //        CrunchEconCore.SendMessage("Big Boss Dave", "New job for you, !contract info", Color.Gold, (long)MySession.Static.Players.TryGetSteamId(player.Identity.IdentityId));
+        //        CrunchEconCore.ContractSave.Remove(contract.ContractId);
+        //        CrunchEconCore.ContractSave.Add(contract.ContractId, contract);
+        //        CrunchEconCore.utils.WriteToJsonFile<PlayerData>(CrunchEconCore.path + "//PlayerData//Data//" + data.steamId + ".json", data);
+        //    }
+        //    else
+        //    {
 
-                CrunchEconCore.SendMessage("Big Boss Dave", "Check contract info with !contract info", Color.Gold, (long)MySession.Static.Players.TryGetSteamId(player.Identity.IdentityId));
+        //        CrunchEconCore.SendMessage("Big Boss Dave", "Check contract info with !contract info", Color.Gold, (long)MySession.Static.Players.TryGetSteamId(player.Identity.IdentityId));
 
-            }
-        }
+        //    }
+        //}
 
 
 

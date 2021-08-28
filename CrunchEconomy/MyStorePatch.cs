@@ -1,4 +1,7 @@
 ﻿using CrunchEconomy.Contracts;
+using NLog;
+using NLog.Config;
+using NLog.Targets;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.Game.Entities.Blocks;
@@ -47,13 +50,46 @@ namespace CrunchEconomy
         internal static readonly MethodInfo storePatchTwo =
              typeof(MyStorePatch).GetMethod(nameof(StorePatchMethodTwo), BindingFlags.Static | BindingFlags.Public) ??
              throw new Exception("Failed to find patch method");
+        public static Logger log = LogManager.GetLogger("Stores");
+        public static void ApplyLogging()
+        {
+
+            var rules = LogManager.Configuration.LoggingRules;
+
+            for (int i = rules.Count - 1; i >= 0; i--)
+            {
+
+                var rule = rules[i];
+
+                if (rule.LoggerNamePattern == "Stores")
+                    rules.RemoveAt(i);
+            }
+
+
+
+            var logTarget = new FileTarget
+            {
+                FileName = "Logs/Stores-" + DateTime.Now.Day + "-" + DateTime.Now.Month + "-" + DateTime.Now.Year + ".txt",
+                Layout = "${var:logStamp} ${var:logContent}"
+            };
+
+            var logRule = new LoggingRule("Stores", LogLevel.Debug, logTarget)
+            {
+                Final = true
+            };
+
+            rules.Insert(0, logRule);
+
+            LogManager.Configuration.Reload();
+        }
 
 
         public static void Patch(PatchContext ctx)
         {
-
+            ApplyLogging();
             ctx.GetPattern(update).Prefixes.Add(storePatch);
             ctx.GetPattern(updateTwo).Prefixes.Add(storePatchTwo);
+          
         }
 
         ////patch this to see if sell was success SendSellItemResult
@@ -77,7 +113,7 @@ namespace CrunchEconomy
                     {
                         return false;
                     }
-
+                    
                     foreach (BuyOrder order in orders)
                     {
                         if (order.SellingThisCancelsContract && store.GetOwnerFactionTag().Equals(order.FactionTagOwnerForCancelling) && order.typeId.Equals(myStoreItem.Item.Value.TypeIdString.Replace("MyObjectBuilder_", "")) && order.subtypeId.Equals(myStoreItem.Item.Value.SubtypeName))
@@ -188,18 +224,37 @@ namespace CrunchEconomy
                             }
                         }
                     }
+
+                    log.Info(player.Id.SteamId + ",sold," + amount + "," + myStoreItem.Item.Value.TypeIdString + "," + myStoreItem.Item.Value.SubtypeName + "," + myStoreItem.PricePerUnit * (long)amount + "," + store.CubeGrid.EntityId + "," + store.GetOwnerFactionTag());
                 }
             }
             return true;
         }
+        public static MyIdentity GetIdentityByNameOrId(string playerNameOrSteamId)
+        {
+            foreach (var identity in MySession.Static.Players.GetAllIdentities())
+            {
+                if (identity.DisplayName == playerNameOrSteamId)
+                    return identity;
+                if (ulong.TryParse(playerNameOrSteamId, out ulong steamId))
+                {
+                    ulong id = MySession.Static.Players.TryGetSteamId(identity.IdentityId);
+                    if (id == steamId)
+                        return identity;
+                    if (identity.IdentityId == (long)steamId)
+                        return identity;
+                }
 
+            }
+            return null;
+        }
         public static Boolean StorePatchMethod(long id,
       int amount,
       long targetEntityId,
       MyPlayer player,
       MyAccountInfo playerAccountInfo, MyStoreBlock __instance)
         {
-            CrunchEconCore.Log.Info("bruh");
+          //  CrunchEconCore.Log.Info("bruh");
             if (__instance is MyStoreBlock store)
             {
 
@@ -262,6 +317,7 @@ namespace CrunchEconomy
                             }
                             else
                             {
+                              
                                 //   CrunchEconCore.Log.Info("grids?");
                                 if (CrunchEconCore.gridsForSale.TryGetValue(storeItem.Item.Value.SubtypeName, out GridSale sale))
                                 {
@@ -289,6 +345,14 @@ namespace CrunchEconomy
                                             }
                                             else
                                             {
+                                                if (sale.PayPercentageToPlayer)
+                                                {
+                                                    MyIdentity ident = GetIdentityByNameOrId(sale.steamId.ToString());
+                                                    if (ident != null)
+                                                    {
+                                                        EconUtils.addMoney(ident.IdentityId, Convert.ToInt64(storeItem.PricePerUnit * sale.percentage));
+                                                    }
+                                                }
                                                 CrunchEconCore.Log.Info(player.Id.SteamId + " purchased grid " + sale.ExportedGridName);
                                             }
                                         }
@@ -364,8 +428,9 @@ namespace CrunchEconomy
                                                                     Contract temp = ContractUtils.GeneratedToPlayer(contract);
 
                                                                     MyGps gps = new MyGps();
-                                                                    gps.Coords = player.GetPosition();
+                                                                    gps.Coords = store.CubeGrid.PositionComp.GetPosition();
                                                                     temp.DeliveryLocation = gps.ToString();
+                                                                    temp.StationEntityId = store.CubeGrid.EntityId;
                                                                     data.addMining(temp);
                                                                     temp.PlayerSteamId = player.Id.SteamId;
 
@@ -459,7 +524,9 @@ namespace CrunchEconomy
                                                                 {
 
                                                                     Contract temp = ContractUtils.GeneratedToPlayer(contract);
-                                                                    MyGps delivery = ContractUtils.GetDeliveryLocation(temp);
+                                                                    Stations station = ContractUtils.GetDeliveryLocation(temp);
+                                                                    MyGps delivery = station.getGPS();
+                                                                    temp.StationEntityId = station.StationEntityId;
                                                                     float distance = Vector3.Distance(player.GetPosition(), delivery.Coords);
                                                                     long deliveryBonus = Convert.ToInt64(distance / 100000) * 50000;
                                                                     temp.DeliveryLocation = delivery.ToString();
@@ -519,7 +586,7 @@ namespace CrunchEconomy
                                     }
                                 }
 
-
+                                log.Info(player.Id.SteamId + ",Bought," + amount + "," + storeItem.Item.Value.TypeIdString + "," + storeItem.Item.Value.SubtypeName + "," + totalPrice + "," + store.CubeGrid.EntityId + "," + store.GetOwnerFactionTag());
                             }
                             return true;
                         }

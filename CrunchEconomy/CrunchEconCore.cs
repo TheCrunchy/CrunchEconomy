@@ -456,7 +456,7 @@ namespace CrunchEconomy
 
                             if (contract.DoRareItemReward && data.MiningReputation >= contract.MinimumRepRequiredForItem)
                             {
-                                if (MyDefinitionId.TryParse("MyObjectBuilder_" + contract.RewardItemType + " / " + contract.RewardItemSubType, out MyDefinitionId reward))
+                                if (MyDefinitionId.TryParse("MyObjectBuilder_" + contract.RewardItemType + "/" + contract.RewardItemSubType, out MyDefinitionId reward))
                                 {
                                     //  Log.Info("Tried to do ");
                                     Random rand = new Random();
@@ -470,6 +470,38 @@ namespace CrunchEconomy
                                         }
                                     }
                                 }
+                            }
+                            BoundingSphereD sphere = new BoundingSphereD(coords, 400);
+                            MyCubeGrid grid = MyAPIGateway.Entities.GetEntityById(contract.StationEntityId) as MyCubeGrid;
+                            if (grid != null)
+                            {
+                                List<MyStoreBlock> stores = grid.GetFatBlocks().OfType<MyStoreBlock>() as List<MyStoreBlock>;
+                                if (stores.Count > 0)
+                                {
+                                    foreach (RewardItem item in contract.PutInStation)
+                                    {
+                                        if (item.Enabled)
+                                        {
+                                            Random random = new Random();
+                                            if (random.NextDouble() <= item.chance)
+                                            {
+                                                if (MyDefinitionId.TryParse("MyObjectBuilder_" + item.TypeId + "/" + item.SubTypeId, out MyDefinitionId newid))
+                                                {
+                                                    int amount = random.Next(item.ItemMinAmount, item.ItemMaxAmount);
+                                                    Stations station = new Stations();
+                                                    station.CargoName = contract.CargoName;
+                                                    station.ViewOnlyNamedCargo = true;
+                                                    SpawnItems(grid, newid, amount, station);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                            }
+                            else
+                            {
+                                Log.Error("Couldnt find station to put items in! Did it get cut and pasted? at "  + coords.ToString());
                             }
                             contract.AmountPaid = contract.contractPrice;
 
@@ -625,69 +657,7 @@ namespace CrunchEconomy
                 }
             }
         }
-        //public void DoHaulingContractDelivery(MyPlayer player)
-        //{
-        //    if (config.HaulingContractsEnabled)
-        //    {
-        //        try
-        //        {
-        //            //do if config enabled
-        //            if (HaulingCore.activeContracts.TryGetValue(player.Id.SteamId, out HaulingContract haulContract))
-        //            {
-        //                MyPlayer playerOnline = player;
-        //                if (player.Character != null && player?.Controller.ControlledEntity is MyCockpit controller)
-        //                {
-        //                    MyCubeGrid grid = controller.CubeGrid;
-        //                    Vector3D coords = haulContract.GetDeliveryLocation().Coords;
-        //                    float distance = Vector3.Distance(coords, controller.PositionComp.GetPosition());
-        //                    if (distance <= 500)
-        //                    {
-        //                        Dictionary<MyDefinitionId, int> itemsToRemove = new Dictionary<MyDefinitionId, int>();
 
-        //                        int pay = 0;
-        //                        //calculate the pay since we only show the player the minimum they can get, this could be removed if the pay is made part of the contract
-        //                        //when its generated and stored in the db, reputation when completed could give a bonus percent
-        //                        foreach (ContractItems item in haulContract.getItemsInContract())
-        //                        {
-        //                            if (MyDefinitionId.TryParse("MyObjectBuilder_" + item.ItemType, item.SubType, out MyDefinitionId id))
-        //                            {
-        //                                itemsToRemove.Add(id, item.AmountToDeliver);
-        //                                pay += item.AmountToDeliver * item.GetPrice();
-        //                            }
-        //                        }
-
-        //                        List<VRage.Game.ModAPI.IMyInventory> inventories = ShipyardCommands.GetInventories(grid);
-
-        //                        if (FacUtils.IsOwnerOrFactionOwned(grid, player.Identity.IdentityId, true))
-        //                        {
-        //                            if (ShipyardCommands.ConsumeComponents(inventories, itemsToRemove, player.Id.SteamId))
-        //                            {
-        //                                if (AlliancePlugin.TaxesToBeProcessed.ContainsKey(player.Identity.IdentityId))
-        //                                {
-
-        //                                    AlliancePlugin.TaxesToBeProcessed[player.Identity.IdentityId] += pay;
-        //                                }
-        //                                else
-        //                                {
-        //                                    AlliancePlugin.TaxesToBeProcessed.Add(player.Identity.IdentityId, pay);
-
-        //                                }
-        //                                EconUtils.addMoney(player.Identity.IdentityId, pay);
-        //                                ShipyardCommands.SendMessage("Big Boss Dave", "Good job, heres the money", Color.Gold, (long)player.Id.SteamId);
-        //                                HaulingCore.RemoveContract(player.Id.SteamId, player.Identity.IdentityId);
-        //                                File.Delete(AlliancePlugin.path + "//HaulingStuff//PlayerData//" + player.Id.SteamId + ".json");
-        //                            }
-        //                        }
-        //                    }
-        //                }
-        //            }
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            Log.Error(ex);
-        //        }
-        //    }
-        //}
 
         public static Dictionary<ulong, DateTime> playerSurveyTimes = new Dictionary<ulong, DateTime>();
         public static Dictionary<ulong, DateTime> MessageCooldowns = new Dictionary<ulong, DateTime>();
@@ -1096,7 +1066,7 @@ namespace CrunchEconomy
 
             if (ticks % 128 == 0 && TorchState == TorchSessionState.Loaded)
             {
-                
+
                 foreach (MyPlayer player in MySession.Static.Players.GetOnlinePlayers())
                 {
                     if (config.MiningContractsEnabled || config.HaulingContractsEnabled)
@@ -1209,7 +1179,7 @@ namespace CrunchEconomy
                                 {
                                     if (store.GetOwnerFactionTag().Equals(station.OwnerFactionTag))
                                     {
-
+                                        station.StationEntityId = store.CubeGrid.EntityId;
                                         if (now >= station.nextSellRefresh && station.DoSellOffers)
                                         {
                                             station.nextSellRefresh = now.AddSeconds(station.SecondsBetweenRefreshForSellOffers);
@@ -1225,18 +1195,7 @@ namespace CrunchEconomy
 
                                                 foreach (SellOffer offer in offers)
                                                 {
-                                                    if (offer.IndividualRefreshTimer)
-                                                    {
-                                                        if (now < offer.nextRefresh)
-                                                        {
-                                                            continue;
-                                                        }
-                                                        else
-                                                        {
-                                                            offer.nextRefresh = now.AddSeconds(offer.SecondsBetweenRefresh);
-                                                            utils.WriteToXmlFile<SellOffer>(offer.path, offer);
-                                                        }
-                                                    }
+
                                                     double chance = rnd.NextDouble();
                                                     if (chance > offer.chance)
                                                     {
@@ -1250,11 +1209,30 @@ namespace CrunchEconomy
                                                         {
                                                             if (hasAmount < offer.SpawnIfCargoLessThan && offer.SpawnItemsIfNeeded)
                                                             {
-                                                                int amountToSpawn = offer.SpawnIfCargoLessThan - hasAmount;
+                                                                int amountSpawned = 0;
+                                                                rnd = new Random();
+                                                                amountSpawned = rnd.Next(offer.minAmountToSpawn, offer.maxAmountToSpawn);
+                                                                if (offer.IndividualRefreshTimer)
+                                                                {
+                                                                    if (now > offer.nextRefresh)
+                                                                    {
+                                                                        offer.nextRefresh = now.AddSeconds(offer.SecondsBetweenRefresh);
+                                                                        utils.WriteToXmlFile<SellOffer>(offer.path, offer);
 
-                                                                //spawn items
-                                                                SpawnItems(grid, id, (MyFixedPoint)amountToSpawn, station);
-                                                                hasAmount += amountToSpawn;
+
+                                                                        //spawn items
+                                                                        SpawnItems(grid, id, (MyFixedPoint)amountSpawned, station);
+                                                                        hasAmount += amountSpawned;
+                                                                    }
+
+                                                                }
+                                                                else
+                                                                {
+                                                                    //spawn items
+                                                                    SpawnItems(grid, id, (MyFixedPoint)amountSpawned, station);
+                                                                    hasAmount += amountSpawned;
+                                                                }
+
                                                             }
 
                                                             SerializableDefinitionId itemId = new SerializableDefinitionId(id.TypeId, offer.subtypeId);
@@ -1275,7 +1253,31 @@ namespace CrunchEconomy
                                                         {
                                                             if (offer.SpawnItemsIfNeeded)
                                                             {
-                                                                SpawnItems(grid, id, (MyFixedPoint)offer.SpawnIfCargoLessThan, station);
+                                                                int amountSpawned = 0;
+                                                                rnd = new Random();
+                                                                amountSpawned = rnd.Next(offer.minAmountToSpawn, offer.maxAmountToSpawn);
+                                                                if (offer.IndividualRefreshTimer)
+                                                                {
+                                                                    if (now > offer.nextRefresh)
+                                                                    {
+                                                                        offer.nextRefresh = now.AddSeconds(offer.SecondsBetweenRefresh);
+                                                                        utils.WriteToXmlFile<SellOffer>(offer.path, offer);
+
+
+                                                                        //spawn items
+                                                                        SpawnItems(grid, id, (MyFixedPoint)offer.SpawnIfCargoLessThan, station);
+
+                                                                    }
+
+                                                                }
+                                                                else
+                                                                {
+
+
+                                                                    //spawn items
+                                                                    SpawnItems(grid, id, (MyFixedPoint)offer.SpawnIfCargoLessThan, station);
+                                                                }
+
 
                                                                 SerializableDefinitionId itemId = new SerializableDefinitionId(id.TypeId, offer.subtypeId);
 

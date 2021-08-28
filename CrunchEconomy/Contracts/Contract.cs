@@ -30,7 +30,9 @@ namespace CrunchEconomy.Contracts
         public Boolean GivenItemReward = false;
         public long DistanceBonus = 0;
         public long contractPrice = 0;
-
+        public string CargoName = "default";
+        public long StationEntityId = 0;
+        public List<RewardItem> PutInStation = new List<RewardItem>();
         public int reputation = 1;
 
         public string SubType;

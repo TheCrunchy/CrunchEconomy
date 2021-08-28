@@ -17,6 +17,8 @@ namespace CrunchEconomy
         public Boolean SpawnItemsIfNeeded = false;
         public int SpawnIfCargoLessThan = 10;
 
+        public int minAmountToSpawn = 1;
+        public int maxAmountToSpawn = 5; 
         public Boolean BuyingGivesMiningContract = false;
         public string ContractName = "example";
         public Boolean BuyingGivesHaulingContract = false;

@@ -22,9 +22,12 @@ namespace CrunchEconomy.Contracts
         public int MinimumRepRequiredForItem = 50;
         public Boolean DoRareItemReward = false;
         public double ItemRewardChance = 1;
-      
+ 
         public string RewardItemType = "Ingot";
         public string RewardItemSubType = "Uranium";
         public double ItemRewardAmount = 5;
+
+        public string StationCargoName = "Change this";
+        public List<RewardItem> PutInStation = new List<RewardItem>();
     }
 }

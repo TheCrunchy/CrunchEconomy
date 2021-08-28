@@ -95,6 +95,7 @@
     <Compile Include="Contracts\DrillPatch.cs" />
     <Compile Include="Contracts\GeneratedContract.cs" />
     <Compile Include="Contracts\PlayerData.cs" />
+    <Compile Include="Contracts\RewardItem.cs" />
     <Compile Include="CrunchEconCore.cs" />
     <Compile Include="EconCommands.cs" />
     <Compile Include="EconUtils.cs" />
