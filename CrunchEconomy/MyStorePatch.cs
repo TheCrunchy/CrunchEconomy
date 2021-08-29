@@ -65,7 +65,7 @@ namespace CrunchEconomy
                     rules.RemoveAt(i);
             }
 
-
+           
 
             var logTarget = new FileTarget
             {
@@ -225,7 +225,7 @@ namespace CrunchEconomy
                         }
                     }
 
-                    log.Info(player.Id.SteamId + ",sold," + amount + "," + myStoreItem.Item.Value.TypeIdString + "," + myStoreItem.Item.Value.SubtypeName + "," + myStoreItem.PricePerUnit * (long)amount + "," + store.CubeGrid.EntityId + "," + store.GetOwnerFactionTag());
+                    log.Info("SteamId:" + player.Id.SteamId + ",action:sold,Amount:" + amount + ",TypeId:" + myStoreItem.Item.Value.TypeIdString + ",SubTypeId:" + myStoreItem.Item.Value.SubtypeName + ",TotalMoney:" + myStoreItem.PricePerUnit * (long)amount + ",GridId:" + store.CubeGrid.EntityId + ",FacTag:" + store.GetOwnerFactionTag());
                 }
             }
             return true;
@@ -586,7 +586,7 @@ namespace CrunchEconomy
                                     }
                                 }
 
-                                log.Info(player.Id.SteamId + ",Bought," + amount + "," + storeItem.Item.Value.TypeIdString + "," + storeItem.Item.Value.SubtypeName + "," + totalPrice + "," + store.CubeGrid.EntityId + "," + store.GetOwnerFactionTag());
+                                log.Info("SteamId:" + player.Id.SteamId + ",action:bought,Amount:" + amount + ",TypeId:" + storeItem.Item.Value.TypeIdString + ",SubTypeId:" + storeItem.Item.Value.SubtypeName + ",TotalMoney:" + storeItem.PricePerUnit * (long)amount + ",GridId:" + store.CubeGrid.EntityId + ",FacTag:" + store.GetOwnerFactionTag());
                             }
                             return true;
                         }
