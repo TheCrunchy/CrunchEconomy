@@ -37,7 +37,12 @@ namespace CrunchEconomy
         public void Start()
         {
             Context.Respond("Starting the economy refreshing.");
-            CrunchEconCore.NextFileRefresh = DateTime.Now;
+            CrunchEconCore.LoadAllStations();
+            foreach (Stations station in CrunchEconCore.stations)
+            {
+                station.nextBuyRefresh = DateTime.Now;
+                station.nextSellRefresh = DateTime.Now;
+            }
             CrunchEconCore.paused = false;
         }
 

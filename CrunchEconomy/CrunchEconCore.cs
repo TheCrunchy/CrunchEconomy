@@ -567,9 +567,9 @@ namespace CrunchEconomy
                                 newdata.addMining(ContractUtils.GeneratedToPlayer(con));
                                 playerData.Add(player.Id.SteamId, newdata);
                                 utils.WriteToJsonFile<PlayerData>(path + "//PlayerData//Data//" + data.steamId + ".json", data);
-
+                                SendMessage("Boss Dave", "Heres a new job !contract info", Color.Gold, (long)player.Id.SteamId);
                             }
-                            SendMessage("Boss Dave", "Heres a new job !contract info", Color.Gold, (long)player.Id.SteamId);
+                       
                         }
                     }
                     catch (Exception ex)
@@ -1162,7 +1162,7 @@ namespace CrunchEconomy
                     try
                     {
 
-                        if (now >= station.nextBuyRefresh || now >= station.nextSellRefresh || now >= station.nextGridInventoryClear)
+                        if (now >= station.nextBuyRefresh || now >= station.nextSellRefresh)
                         {
                             MyGps gps = station.getGPS();
                             BoundingSphereD sphere = new BoundingSphereD(gps.Coords, 200);
@@ -1372,15 +1372,21 @@ namespace CrunchEconomy
 
                                     }
                                 }
+                                bool save = false;
                                 if (AddSellTime)
                                 {
                                     station.nextSellRefresh = now.AddSeconds(station.SecondsBetweenRefreshForSellOffers);
+                                    save = true;
                                 }
                                 if (AddBuyTime)
                                 {
                                     station.nextBuyRefresh = now.AddSeconds(station.SecondsBetweenRefreshForBuyOrders);
+                                    save = true;
                                 }
-                                SaveStation(station);
+                               if (save)
+                                {
+                                    SaveStation(station);
+                                }
                             }
                         }
                     }
@@ -1439,7 +1445,7 @@ namespace CrunchEconomy
         public static Dictionary<String, List<BuyOrder>> buyOrders = new Dictionary<string, List<BuyOrder>>();
         public static Dictionary<String, List<SellOffer>> sellOffers = new Dictionary<string, List<SellOffer>>();
         public static FileUtils utils = new FileUtils();
-        public void LoadAllStations()
+        public static void LoadAllStations()
         {
             stations.Clear();
             foreach (String s in Directory.GetFiles(path + "//Stations//"))
