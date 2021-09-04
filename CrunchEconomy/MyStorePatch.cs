@@ -336,7 +336,11 @@ namespace CrunchEconomy
                                             {
                                                 idd = (ulong)store.OwnerId;
                                             }
-                                            if (!GridManager.LoadGrid(CrunchEconCore.path + "//GridSelling//Grids//" + sale.ExportedGridName + ".sbc", player.Character.PositionComp.GetPosition(), false, idd, storeItem.Item.Value.SubtypeName, false))
+                                            Vector3 Position = player.Character.PositionComp.GetPosition();
+                                            Random random = new Random();
+
+                                            Position.Add(new Vector3(random.Next(400, 2000), random.Next(400, 2000), random.Next(400, 2000)));
+                                            if (!GridManager.LoadGrid(CrunchEconCore.path + "//GridSelling//Grids//" + sale.ExportedGridName + ".sbc", Position, false, idd, storeItem.Item.Value.SubtypeName, false))
                                             {
                                                 CrunchEconCore.Log.Info(player.Id.SteamId + " failure when purchasing grid");
                                                 DialogMessage m = new DialogMessage("Shop Error", "Unable to paste the grid, is it obstructed?");
