@@ -454,19 +454,23 @@ namespace CrunchEconomy
                                 }
                             }
 
-                            if (contract.DoRareItemReward && data.MiningReputation >= contract.MinimumRepRequiredForItem)
+                            if (contract.DoRareItemReward)
                             {
-                                if (MyDefinitionId.TryParse("MyObjectBuilder_" + contract.RewardItemType + "/" + contract.RewardItemSubType, out MyDefinitionId reward))
+                                foreach (RewardItem item in contract.PlayerLoot)
                                 {
-                                    //  Log.Info("Tried to do ");
-                                    Random rand = new Random();
-                                    double chance = rand.NextDouble();
-                                    if (chance <= contract.ItemRewardChance)
+                                    if (MyDefinitionId.TryParse("MyObjectBuilder_" + item.TypeId + "/" + item.SubTypeId, out MyDefinitionId reward) && item.Enabled)
                                     {
-                                        if (SpawnLoot(controller.CubeGrid, reward, (MyFixedPoint)contract.ItemRewardAmount))
+                                        //  Log.Info("Tried to do ");
+                                        Random rand = new Random();
+                                        int amount = rand.Next(item.ItemMinAmount, item.ItemMaxAmount);
+                                        double chance = rand.NextDouble();
+                                        if (chance <= item.chance)
                                         {
-                                            contract.GivenItemReward = true;
-                                            SendMessage("Boss Dave", "Heres a bonus for a job well done " + contract.ItemRewardAmount + " " + reward.ToString().Replace("MyObjectBuilder_", ""), Color.Gold, (long)player.Id.SteamId);
+                                            if (SpawnLoot(controller.CubeGrid, reward, (MyFixedPoint) amount))
+                                            {
+                                                contract.GivenItemReward = true;
+                                                SendMessage("Boss Dave", "Heres a bonus for a job well done " + amount + " " + reward.ToString().Replace("MyObjectBuilder_", ""), Color.Gold, (long)player.Id.SteamId);
+                                            }
                                         }
                                     }
                                 }
@@ -569,7 +573,7 @@ namespace CrunchEconomy
                                 utils.WriteToJsonFile<PlayerData>(path + "//PlayerData//Data//" + data.steamId + ".json", data);
                                 SendMessage("Boss Dave", "Heres a new job !contract info", Color.Gold, (long)player.Id.SteamId);
                             }
-                       
+
                         }
                     }
                     catch (Exception ex)
@@ -1383,7 +1387,7 @@ namespace CrunchEconomy
                                     station.nextBuyRefresh = now.AddSeconds(station.SecondsBetweenRefreshForBuyOrders);
                                     save = true;
                                 }
-                               if (save)
+                                if (save)
                                 {
                                     SaveStation(station);
                                 }
@@ -1786,6 +1790,8 @@ namespace CrunchEconomy
                 GeneratedContract contract = new GeneratedContract();
 
                 Directory.CreateDirectory(path + "//ContractConfigs//Mining//");
+                contract.PlayerLoot.Add(new RewardItem());
+                contract.PutInStation.Add(new RewardItem());
                 utils.WriteToXmlFile<GeneratedContract>(path + "//ContractConfigs//Mining//Example.xml", contract);
             }
             if (!Directory.Exists(path + "//ContractConfigs//Hauling//"))
@@ -1793,6 +1799,8 @@ namespace CrunchEconomy
                 GeneratedContract contract = new GeneratedContract();
                 Directory.CreateDirectory(path + "//ContractConfigs//Hauling//");
                 contract.type = ContractType.Hauling;
+                contract.PlayerLoot.Add(new RewardItem());
+                contract.PutInStation.Add(new RewardItem());
                 utils.WriteToXmlFile<GeneratedContract>(path + "//ContractConfigs//Hauling//Example.xml", contract);
             }
             if (!Directory.Exists(path + "//PlayerData//Data//"))

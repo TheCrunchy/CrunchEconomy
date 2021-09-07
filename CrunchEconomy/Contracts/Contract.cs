@@ -19,12 +19,7 @@ namespace CrunchEconomy.Contracts
         public Guid ContractId = Guid.NewGuid();
         public ContractType type;
         public Boolean DoRareItemReward = false;
-        public double ItemRewardChance = 1;
         public string TypeIfHauling = "Ingot";
-        public string RewardItemType = "Ingot";
-        public string RewardItemSubType = "Uranium";
-        public double ItemRewardAmount = 5;
-        public int MinimumRepRequiredForItem = 50;
         public string ContractName;
         public ulong PlayerSteamId;
         public Boolean GivenItemReward = false;
@@ -32,6 +27,7 @@ namespace CrunchEconomy.Contracts
         public long contractPrice = 0;
         public string CargoName = "default";
         public long StationEntityId = 0;
+        public List<RewardItem> PlayerLoot = new List<RewardItem>();
         public List<RewardItem> PutInStation = new List<RewardItem>();
         public int reputation = 1;
 

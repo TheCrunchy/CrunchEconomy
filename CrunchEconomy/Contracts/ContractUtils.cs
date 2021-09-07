@@ -27,12 +27,7 @@ namespace CrunchEconomy.Contracts
             contract.minedAmount = 0;
             contract.ContractName = gen.Name;
 
-            contract.DoRareItemReward = gen.DoRareItemReward;
-            contract.ItemRewardChance = gen.ItemRewardChance;
-            contract.RewardItemType = gen.RewardItemType;
-            contract.RewardItemSubType = gen.RewardItemSubType;
-            contract.ItemRewardAmount = gen.ItemRewardAmount;
-            contract.MinimumRepRequiredForItem = gen.MinimumRepRequiredForItem;
+            contract.PlayerLoot = gen.PlayerLoot;
             contract.PutInStation = gen.PutInStation;
             contract.CargoName = gen.StationCargoName;
             return contract;

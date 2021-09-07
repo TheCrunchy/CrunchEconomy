@@ -19,14 +19,7 @@ namespace CrunchEconomy.Contracts
         public int maximum = 500000;
         public int PricePerOre = 450;
 
-        public int MinimumRepRequiredForItem = 50;
-        public Boolean DoRareItemReward = false;
-        public double ItemRewardChance = 1;
- 
-        public string RewardItemType = "Ingot";
-        public string RewardItemSubType = "Uranium";
-        public double ItemRewardAmount = 5;
-
+        public List<RewardItem> PlayerLoot = new List<RewardItem>();
         public string StationCargoName = "Change this";
         public List<RewardItem> PutInStation = new List<RewardItem>();
     }
