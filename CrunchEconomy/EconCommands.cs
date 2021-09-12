@@ -1,4 +1,6 @@
 ﻿using CrunchEconomy.Contracts;
+using Sandbox.Game.Entities;
+using Sandbox.Game.Entities.Blocks;
 using Sandbox.Game.World;
 using Sandbox.ModAPI;
 using System;
@@ -11,12 +13,34 @@ using Torch.Commands.Permissions;
 using Torch.Mod;
 using Torch.Mod.Messages;
 using VRage.Game.ModAPI;
+using VRage.Groups;
+using VRageMath;
 
 namespace CrunchEconomy
 {
     [Category("crunchecon")]
     public class EconCommands : CommandModule
     {
+        [Command("storeids", "grab ids from store offers")]
+        [Permission(MyPromoteLevel.Admin)]
+        public void GrabIds()
+        {
+
+            BoundingSphereD sphere = new BoundingSphereD(Context.Player.GetPosition(), 400);
+
+            foreach (MyStoreBlock store in MyAPIGateway.Entities.GetEntitiesInSphere(ref sphere).OfType<MyStoreBlock>())
+            {
+         
+                foreach (MyStoreItem item  in store.PlayerItems)
+                {
+                    Context.Respond(item.Item.Value.ToString());
+                }
+
+            }
+
+
+        }
+
         [Command("reload", "stop the economy refreshing")]
         [Permission(MyPromoteLevel.Admin)]
         public void Reload()
@@ -46,6 +70,6 @@ namespace CrunchEconomy
             CrunchEconCore.paused = false;
         }
 
-  
+
     }
 }
