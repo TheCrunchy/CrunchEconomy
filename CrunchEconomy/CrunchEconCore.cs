@@ -84,6 +84,10 @@ namespace CrunchEconomy
 
             foreach (var block in grid.GetFatBlocks())
             {
+                if (block is MyReactor reactor)
+                {
+                    continue;
+                }
                 for (int i = 0; i < block.InventoryCount; i++)
                 {
 
@@ -102,6 +106,10 @@ namespace CrunchEconomy
             foreach (var block in grid.GetFatBlocks())
             {
                 if (!block.GetOwnerFactionTag().Equals(station.OwnerFactionTag))
+                {
+                    continue;
+                }
+                if (block is MyReactor reactor)
                 {
                     continue;
                 }
@@ -1412,23 +1420,23 @@ namespace CrunchEconomy
                                         }
                                     }
                                 }
-                                    bool save = false;
-                                    if (AddSellTime)
-                                    {
-                                        station.nextSellRefresh = now.AddSeconds(station.SecondsBetweenRefreshForSellOffers);
-                                        save = true;
-                                    }
-                                    if (AddBuyTime)
-                                    {
-                                        station.nextBuyRefresh = now.AddSeconds(station.SecondsBetweenRefreshForBuyOrders);
-                                        save = true;
-                                    }
-                                    if (save)
-                                    {
-                                        SaveStation(station);
-                                    }
+                                bool save = false;
+                                if (AddSellTime)
+                                {
+                                    station.nextSellRefresh = now.AddSeconds(station.SecondsBetweenRefreshForSellOffers);
+                                    save = true;
                                 }
-                            
+                                if (AddBuyTime)
+                                {
+                                    station.nextBuyRefresh = now.AddSeconds(station.SecondsBetweenRefreshForBuyOrders);
+                                    save = true;
+                                }
+                                if (save)
+                                {
+                                    SaveStation(station);
+                                }
+                            }
+
                         }
                     }
                     catch (Exception ex)
