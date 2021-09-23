@@ -1,4 +1,5 @@
-﻿using Sandbox.Game.World;
+﻿using CrunchEconomy;
+using Sandbox.Game.World;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -6,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AlliancesPlugin.ShipMarket
+namespace ShipMarket
 {
     public class MarketList
     {
@@ -34,7 +35,7 @@ namespace AlliancesPlugin.ShipMarket
                 }
             }
             items.Clear();
-            foreach (String s in Directory.GetFiles(AlliancePlugin.path + "//ShipMarket//ForSale"))
+            foreach (String s in Directory.GetFiles(CrunchEconCore.path + "//ShipMarket//ForSale"))
             {
                 MarketItem item = utils.ReadFromJsonFile<MarketItem>(s);
                 if (tempKeys.ContainsKey(item.ItemId))
@@ -52,7 +53,7 @@ namespace AlliancesPlugin.ShipMarket
             if (items.ContainsKey(key))
             {
                 MarketItem item = items[key];
-                MyIdentity SellerId = AlliancePlugin.TryGetIdentity(item.SellerSteamId.ToString());
+                MyIdentity SellerId = TryGetIdentity(item.SellerSteamId.ToString());
                 if (SellerId != null)
                 {
                     EconUtils.addMoney(SellerId.IdentityId, item.Price);
@@ -61,7 +62,24 @@ namespace AlliancesPlugin.ShipMarket
                 }
             }
         }
+        public static MyIdentity TryGetIdentity(string playerNameOrSteamId)
+        {
+            foreach (var identity in MySession.Static.Players.GetAllIdentities())
+            {
+                if (identity.DisplayName == playerNameOrSteamId)
+                    return identity;
+                if (ulong.TryParse(playerNameOrSteamId, out ulong steamId))
+                {
+                    ulong id = MySession.Static.Players.TryGetSteamId(identity.IdentityId);
+                    if (id == steamId)
+                        return identity;
+                    if (identity.IdentityId == (long)steamId)
+                        return identity;
+                }
 
+            }
+            return null;
+        }
         public Boolean AddItem(MarketItem item)
         {
             bool added = false;

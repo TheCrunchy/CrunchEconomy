@@ -32,7 +32,21 @@ namespace CrunchEconomy
     [PatchShim]
     public static class MyStorePatch
     {
+        internal static readonly MethodInfo logupdate =
+         typeof(MyStoreBlock).GetMethod("SendSellItemResult", BindingFlags.Instance | BindingFlags.NonPublic, null, new Type[] { typeof(long), typeof(string), typeof(long), typeof(int), typeof(MyStoreSellItemResults) }, null) ??
+         throw new Exception("Failed to find patch method");
 
+        internal static readonly MethodInfo storePatchLog =
+            typeof(MyStorePatch).GetMethod(nameof(StorePatchMethodSell), BindingFlags.Static | BindingFlags.Public) ??
+            throw new Exception("Failed to find patch method");
+
+        internal static readonly MethodInfo logupdate2 =
+  typeof(MyStoreBlock).GetMethod("SendBuyItemResult", BindingFlags.Instance | BindingFlags.NonPublic, null, new Type[] { typeof(long), typeof(string), typeof(long), typeof(int), typeof(MyStoreBuyItemResults) }, null) ??
+  throw new Exception("Failed to find patch method");
+
+        internal static readonly MethodInfo storePatchLog2 =
+            typeof(MyStorePatch).GetMethod(nameof(StorePatchMethodBuy), BindingFlags.Static | BindingFlags.Public) ??
+            throw new Exception("Failed to find patch method");
 
         internal static readonly MethodInfo update =
             typeof(MyStoreBlock).GetMethod("BuyFromPlayer", BindingFlags.Instance | BindingFlags.NonPublic) ??
@@ -87,145 +101,185 @@ namespace CrunchEconomy
         public static void Patch(PatchContext ctx)
         {
             ApplyLogging();
+            ctx.GetPattern(logupdate).Suffixes.Add(storePatchLog);
+            ctx.GetPattern(logupdate2).Suffixes.Add(storePatchLog2);
             ctx.GetPattern(update).Prefixes.Add(storePatch);
             ctx.GetPattern(updateTwo).Prefixes.Add(storePatchTwo);
           
         }
-
+        //        log.Info("SteamId:" + player.Id.SteamId + ",action:sold,Amount:" + amount + ",TypeId:" + myStoreItem.Item.Value.TypeIdString + ",SubTypeId:" + myStoreItem.Item.Value.SubtypeName + ",TotalMoney:" + myStoreItem.PricePerUnit * (long)amount + ",GridId:" + store.CubeGrid.EntityId + ",FacTag:" + store.GetOwnerFactionTag());
         ////patch this to see if sell was success SendSellItemResult
+        ///
+        public static Dictionary<long, string> PossibleLogs = new Dictionary<long, string>();
+
+        public static void StorePatchMethodSell(long id, string name, long price, int amount, MyStoreSellItemResults result)
+        {
+          
+            //  AlliancePlugin.Log.Info("sold to store");
+            if (result == MyStoreSellItemResults.Success && PossibleLogs.ContainsKey(id))
+            {
+                log.Info(PossibleLogs[id]);
+
+               
+            }
+            PossibleLogs.Remove(id);
+            return;
+        }
+
+        public static void StorePatchMethodBuy(long id, string name, long price, int amount, MyStoreBuyItemResults result)
+        {
+            
+            //  AlliancePlugin.Log.Info("sold to store");
+            if (result == MyStoreBuyItemResults.Success && PossibleLogs.ContainsKey(id))
+            {
+                log.Info(PossibleLogs[id]);
+
+               
+            }
+            PossibleLogs.Remove(id);
+            return;
+        }
         public static Boolean StorePatchMethodTwo(long id, int amount, long sourceEntityId, MyPlayer player, MyStoreBlock __instance)
         {
+            if (__instance is MyStoreBlock store) {
+                MyStoreItem myStoreItem = (MyStoreItem)null;
+
+                foreach (MyStoreItem playerItem in store.PlayerItems)
+                {
+                    if (playerItem.Id == id)
+                    {
+                        myStoreItem = playerItem;
+                        break;
+                    }
+                }
+                if (myStoreItem == null)
+                {
+                    return false;
+                }
+
+                if (!PossibleLogs.ContainsKey(id))
+                {
+                    PossibleLogs.Add(id, "SteamId:" + player.Id.SteamId + ",action:sold,Amount:" + amount + ",TypeId:" + myStoreItem.Item.Value.TypeIdString + ",SubTypeId:" + myStoreItem.Item.Value.SubtypeName + ",TotalMoney:" + myStoreItem.PricePerUnit * (long)amount + ",GridId:" + store.CubeGrid.EntityId + ",FacTag:" + store.GetOwnerFactionTag());
+                }
+            
             if (CrunchEconCore.playerData.TryGetValue(player.Id.SteamId, out PlayerData data))
             {
-                if (__instance is MyStoreBlock store && store.DisplayNameText != null && CrunchEconCore.buyOrders.TryGetValue(store.DisplayNameText, out List<BuyOrder> orders))
-                {
-                    MyStoreItem myStoreItem = (MyStoreItem)null;
-
-                    foreach (MyStoreItem playerItem in store.PlayerItems)
+                    if (store.DisplayNameText != null && CrunchEconCore.buyOrders.TryGetValue(store.DisplayNameText, out List<BuyOrder> orders))
                     {
-                        if (playerItem.Id == id)
-                        {
-                            myStoreItem = playerItem;
-                            break;
-                        }
-                    }
-                    if (myStoreItem == null)
-                    {
-                        return false;
-                    }
                     
-                    foreach (BuyOrder order in orders)
-                    {
-                        if (order.SellingThisCancelsContract && store.GetOwnerFactionTag().Equals(order.FactionTagOwnerForCancelling) && order.typeId.Equals(myStoreItem.Item.Value.TypeIdString.Replace("MyObjectBuilder_", "")) && order.subtypeId.Equals(myStoreItem.Item.Value.SubtypeName))
-                        {
-                            //this should cancel
 
-                            if (ContractUtils.newContracts.TryGetValue(order.ContractToCancel, out GeneratedContract gen))
+                        foreach (BuyOrder order in orders)
+                        {
+                            if (order.SellingThisCancelsContract && store.GetOwnerFactionTag().Equals(order.FactionTagOwnerForCancelling) && order.typeId.Equals(myStoreItem.Item.Value.TypeIdString.Replace("MyObjectBuilder_", "")) && order.subtypeId.Equals(myStoreItem.Item.Value.SubtypeName))
                             {
-                                if (amount > 1)
+                                //this should cancel
+
+                                if (ContractUtils.newContracts.TryGetValue(order.ContractToCancel, out GeneratedContract gen))
                                 {
-                                    CrunchEconCore.SendMessage("Boss Dave", "Cannot cancel more than one contract a time!", Color.Red, (long)player.Id.SteamId);
-                                    return false;
-                                }
-                                List<Contract> maybeCancel = new List<Contract>();
-                                if (gen.type == ContractType.Mining)
-                                {
-                                    foreach (Contract contract in data.getMiningContracts().Values)
+                                    if (amount > 1)
                                     {
-                                        if (contract.ContractName.Equals(gen.Name))
-                                        {
-                                            maybeCancel.Add(contract);
-                                        }
+                                        CrunchEconCore.SendMessage("Boss Dave", "Cannot cancel more than one contract a time!", Color.Red, (long)player.Id.SteamId);
+                                        return false;
                                     }
-                                }
-                                if (gen.type == ContractType.Hauling)
-                                {
-                                    foreach (Contract contract in data.getHaulingContracts().Values)
+                                    List<Contract> maybeCancel = new List<Contract>();
+                                    if (gen.type == ContractType.Mining)
                                     {
-                                        if (contract.ContractName.Equals(gen.Name))
+                                        foreach (Contract contract in data.getMiningContracts().Values)
                                         {
-                                            maybeCancel.Add(contract);
-                                        }
-                                    }
-                                }
-                                Contract cancel = null;
-                                List<Contract> cancelIfNoOthers = new List<Contract>();
-                                foreach (Contract contract in maybeCancel)
-                                {
-                                    if (cancel == null)
-                                    {
-                                        cancel = contract;
-                                        continue;
-                                    }
-                                    if (contract.type == ContractType.Mining)
-                                    {
-                                        if (contract.minedAmount >= contract.amountToMineOrDeliver)
-                                        {
-                                            cancelIfNoOthers.Add(contract);
-                                        }
-                                        else
-                                        {
-                                            if (contract.minedAmount < cancel.minedAmount && contract.amountToMineOrDeliver < cancel.amountToMineOrDeliver)
+                                            if (contract.ContractName.Equals(gen.Name))
                                             {
-                                                cancel = contract;
+                                                maybeCancel.Add(contract);
                                             }
                                         }
                                     }
-                                }
-                                if (cancel != null)
-                                {
-                                    data.getMiningContracts().Remove(cancel.ContractId);
-                                    data.MiningContracts.Remove(cancel.ContractId);
-                                    data.MiningReputation -= cancel.reputation * 2;
-                                    CrunchEconCore.playerData[player.Id.SteamId] = data;
-                                    StringBuilder sb = new StringBuilder();
-                                    sb.AppendLine("Cancelled contract");
-                                    sb.AppendLine("Mine " + cancel.SubType + " Ore " + String.Format("{0:n0}", cancel.minedAmount) + " / " + String.Format("{0:n0}", cancel.amountToMineOrDeliver));
+                                    if (gen.type == ContractType.Hauling)
+                                    {
+                                        foreach (Contract contract in data.getHaulingContracts().Values)
+                                        {
+                                            if (contract.ContractName.Equals(gen.Name))
+                                            {
+                                                maybeCancel.Add(contract);
+                                            }
+                                        }
+                                    }
+                                    Contract cancel = null;
+                                    List<Contract> cancelIfNoOthers = new List<Contract>();
+                                    foreach (Contract contract in maybeCancel)
+                                    {
+                                        if (cancel == null)
+                                        {
+                                            cancel = contract;
+                                            continue;
+                                        }
+                                        if (contract.type == ContractType.Mining)
+                                        {
+                                            if (contract.minedAmount >= contract.amountToMineOrDeliver)
+                                            {
+                                                cancelIfNoOthers.Add(contract);
+                                            }
+                                            else
+                                            {
+                                                if (contract.minedAmount < cancel.minedAmount && contract.amountToMineOrDeliver < cancel.amountToMineOrDeliver)
+                                                {
+                                                    cancel = contract;
+                                                }
+                                            }
+                                        }
+                                    }
+                                    if (cancel != null)
+                                    {
+                                        data.getMiningContracts().Remove(cancel.ContractId);
+                                        data.MiningContracts.Remove(cancel.ContractId);
+                                        data.MiningReputation -= cancel.reputation * 2;
+                                        CrunchEconCore.playerData[player.Id.SteamId] = data;
+                                        StringBuilder sb = new StringBuilder();
+                                        sb.AppendLine("Cancelled contract");
+                                        sb.AppendLine("Mine " + cancel.SubType + " Ore " + String.Format("{0:n0}", cancel.minedAmount) + " / " + String.Format("{0:n0}", cancel.amountToMineOrDeliver));
 
-                                    sb.AppendLine("Reputation lowered by " + cancel.reputation * 2);
-                                    sb.AppendLine();
-                                    sb.AppendLine("Remaining Contracts");
-                                    sb.AppendLine();
-                                    foreach (Contract c in data.getMiningContracts().Values)
+                                        sb.AppendLine("Reputation lowered by " + cancel.reputation * 2);
+                                        sb.AppendLine();
+                                        sb.AppendLine("Remaining Contracts");
+                                        sb.AppendLine();
+                                        foreach (Contract c in data.getMiningContracts().Values)
+                                        {
+
+                                            if (c.minedAmount >= c.amountToMineOrDeliver)
+                                            {
+                                                c.DoPlayerGps(player.Identity.IdentityId);
+                                                sb.AppendLine("Deliver " + c.SubType + " Ore " + String.Format("{0:n0}", c.amountToMineOrDeliver));
+                                                sb.AppendLine("Reward : " + String.Format("{0:n0}", c.contractPrice) + " SC. and " + c.reputation + " reputation gain.");
+                                            }
+                                            else
+                                            {
+                                                sb.AppendLine("Mine " + c.SubType + " Ore " + String.Format("{0:n0}", c.minedAmount) + " / " + String.Format("{0:n0}", c.amountToMineOrDeliver));
+                                                sb.AppendLine("Reward : " + String.Format("{0:n0}", c.contractPrice) + " SC. and " + c.reputation + " reputation gain.");
+
+                                            }
+                                            sb.AppendLine("");
+                                        }
+                                        DialogMessage m = new DialogMessage("Contract", "Cancel", sb.ToString());
+                                        ModCommunication.SendMessageTo(m, player.Id.SteamId);
+                                        cancel.status = ContractStatus.Failed;
+                                        File.Delete(CrunchEconCore.path + "//PlayerData//Mining//InProgress//" + cancel.ContractId + ".xml");
+                                        CrunchEconCore.ContractSave.Remove(cancel.ContractId);
+                                        CrunchEconCore.ContractSave.Add(cancel.ContractId, cancel);
+                                        CrunchEconCore.utils.WriteToJsonFile<PlayerData>(CrunchEconCore.path + "//PlayerData//Data//" + data.steamId + ".json", data);
+                                        return true;
+                                    }
+                                    else
                                     {
 
-                                        if (c.minedAmount >= c.amountToMineOrDeliver)
-                                        {
-                                            c.DoPlayerGps(player.Identity.IdentityId);
-                                            sb.AppendLine("Deliver " + c.SubType + " Ore " + String.Format("{0:n0}", c.amountToMineOrDeliver));
-                                            sb.AppendLine("Reward : " + String.Format("{0:n0}", c.contractPrice) + " SC. and " + c.reputation + " reputation gain.");
-                                        }
-                                        else
-                                        {
-                                            sb.AppendLine("Mine " + c.SubType + " Ore " + String.Format("{0:n0}", c.minedAmount) + " / " + String.Format("{0:n0}", c.amountToMineOrDeliver));
-                                            sb.AppendLine("Reward : " + String.Format("{0:n0}", c.contractPrice) + " SC. and " + c.reputation + " reputation gain.");
-
-                                        }
-                                        sb.AppendLine("");
+                                        return false;
                                     }
-                                    DialogMessage m = new DialogMessage("Contract", "Cancel", sb.ToString());
-                                    ModCommunication.SendMessageTo(m, player.Id.SteamId);
-                                    cancel.status = ContractStatus.Failed;
-                                    File.Delete(CrunchEconCore.path + "//PlayerData//Mining//InProgress//" + cancel.ContractId + ".xml");
-                                    CrunchEconCore.ContractSave.Remove(cancel.ContractId);
-                                    CrunchEconCore.ContractSave.Add(cancel.ContractId, cancel);
-                                    CrunchEconCore.utils.WriteToJsonFile<PlayerData>(CrunchEconCore.path + "//PlayerData//Data//" + data.steamId + ".json", data);
-                                    return true;
                                 }
                                 else
                                 {
-
-                                    return false;
+                                    //cancel hauling here
                                 }
                             }
-                            else
-                            {
-                                //cancel hauling here
-                            }
                         }
-                    }
 
-                    log.Info("SteamId:" + player.Id.SteamId + ",action:sold,Amount:" + amount + ",TypeId:" + myStoreItem.Item.Value.TypeIdString + ",SubTypeId:" + myStoreItem.Item.Value.SubtypeName + ",TotalMoney:" + myStoreItem.PricePerUnit * (long)amount + ",GridId:" + store.CubeGrid.EntityId + ",FacTag:" + store.GetOwnerFactionTag());
+                    }
                 }
             }
             return true;
@@ -248,6 +302,8 @@ namespace CrunchEconomy
             }
             return null;
         }
+
+
         public static Boolean StorePatchMethod(long id,
       int amount,
       long targetEntityId,
@@ -296,7 +352,10 @@ namespace CrunchEconomy
 
                             return true;
                         }
-
+                        if (!PossibleLogs.ContainsKey(id))
+                        {
+                            PossibleLogs.Add(id, "SteamId:" + player.Id.SteamId + ",action:bought,Amount:" + amount + ",TypeId:" + storeItem.Item.Value.TypeIdString + ",SubTypeId:" + storeItem.Item.Value.SubtypeName + ",TotalMoney:" + storeItem.PricePerUnit * (long)amount + ",GridId:" + store.CubeGrid.EntityId + ",FacTag:" + store.GetOwnerFactionTag());
+                        }
                         if (!CrunchEconCore.gridsForSale.ContainsKey(storeItem.Item.Value.SubtypeName) && !CrunchEconCore.sellOffers.ContainsKey(store.DisplayNameText))
                         {
                             //  CrunchEconCore.Log.Info("bruh");
@@ -339,7 +398,7 @@ namespace CrunchEconomy
                                             Vector3 Position = player.Character.PositionComp.GetPosition();
                                             Random random = new Random();
 
-                                            Position.Add(new Vector3(random.Next(400, 2000), random.Next(400, 2000), random.Next(400, 2000)));
+                                            Position.Add(new Vector3(random.Next(1000, 2000), random.Next(1000, 2000), random.Next(1000, 2000)));
                                             if (!GridManager.LoadGrid(CrunchEconCore.path + "//GridSelling//Grids//" + sale.ExportedGridName + ".sbc", Position, false, idd, storeItem.Item.Value.SubtypeName, false))
                                             {
                                                 CrunchEconCore.Log.Info(player.Id.SteamId + " failure when purchasing grid");
@@ -368,6 +427,7 @@ namespace CrunchEconomy
                                     if (CrunchEconCore.sellOffers.TryGetValue(store.DisplayNameText, out List<SellOffer> offers))
                                     {
                                         //     CrunchEconCore.Log.Info("1");
+                                        //improve this, store the offers by their object builder in a dictionary
                                         foreach (SellOffer offer in offers)
                                         {//
 
@@ -377,6 +437,7 @@ namespace CrunchEconomy
                                                 if (!store.GetOwnerFactionTag().Equals(offer.IfGivesContractNPCTag))
                                                 {
                                                     //  CrunchEconCore.Log.Info("not the faction tag");
+
                                                     continue;
                                                 }
                                                 //  CrunchEconCore.Log.Info("is the faction tag");
@@ -583,14 +644,16 @@ namespace CrunchEconomy
                                                     }
 
                                                 }
-
+                                                //DialogMessage m3 = new DialogMessage("Shop Error", "", "Something failed here to provide a contract.");
+                                                //ModCommunication.SendMessageTo(m3, player.Id.SteamId);
+                                                //return false;
                                             }
                                         }
 
                                     }
                                 }
 
-                                log.Info("SteamId:" + player.Id.SteamId + ",action:bought,Amount:" + amount + ",TypeId:" + storeItem.Item.Value.TypeIdString + ",SubTypeId:" + storeItem.Item.Value.SubtypeName + ",TotalMoney:" + storeItem.PricePerUnit * (long)amount + ",GridId:" + store.CubeGrid.EntityId + ",FacTag:" + store.GetOwnerFactionTag());
+         
                             }
                             return true;
                         }

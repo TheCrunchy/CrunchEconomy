@@ -13,53 +13,30 @@ using VRageMath;
 
 namespace CrunchEconomy.Contracts
 {
-    public class Contract
+    public class ShipContract
     {
+        public string Name = "Example";
         public ContractStatus status = ContractStatus.InProgress;
-        public Guid ContractId = Guid.NewGuid();
-        public ContractType type;
-        public Boolean DoRareItemReward = false;
-        public string TypeIfHauling = "Ingot";
-        public string ContractName;
-        public ulong PlayerSteamId;
-        public Boolean GivenItemReward = false;
-        public long DistanceBonus = 0;
-        public long contractPrice = 0;
-        public string CargoName = "default";
-        public long StationEntityId = 0;
+        public Guid ContractId = Guid.Empty;
+        public long BasePrice = 50000;
+        public long BonusIfBelowStock = 50000;
+        public string LinkedToStore = "Put a store name here that sells ships";
+        public string LinkedTypeId = "Type id";
+        public string LinkedSubTypeId = "Subtype id";
+        public int LinkedBonusUntilStockLevel = 5;
+        public Boolean PickRandomFromList = false;
+
         public List<RewardItem> PlayerLoot = new List<RewardItem>();
         public List<RewardItem> PutInStation = new List<RewardItem>();
-        public int reputation = 1;
+        public long StationEntityId = 0;
+        public List<ShipItem> blocksRequired = new List<ShipItem>();
 
-        public string SubType;
-
-        public int minedAmount = 0;
-
-        public int amountToMineOrDeliver = 0;
-        public long AmountPaid = 0;
+        public String DeliveryLocation;
         public void DoPlayerGps(long identityId)
         {
             MyGpsCollection gpscol = (MyGpsCollection)MyAPIGateway.Session?.GPS;
             StringBuilder sb = new StringBuilder();
-            sb.AppendLine("Deliver " + amountToMineOrDeliver + " " + SubType + " Ore. !contract info");
-            sb.AppendLine("Contract Delivery Location.");
-            if (ScanChat(DeliveryLocation) != null)
-            {
-                MyGps gpsRef = ScanChat(DeliveryLocation);
-                gpsRef.GPSColor = Color.DarkOrange;
-                gpsRef.ShowOnHud = true;
-
-                gpsRef.Description = sb.ToString() ;
-                gpsRef.DisplayName = "Delivery Location. " + SubType;
-                gpsRef.Name = "Delivery Location. " + SubType;
-                gpsRef.DiscardAt = new TimeSpan(600);
-                gpscol.SendAddGps(identityId, ref gpsRef);
-            }
-        }
-        public Vector3 getCoords()
-        {
-            StringBuilder sb = new StringBuilder();
-            sb.AppendLine("Deliver " + amountToMineOrDeliver + " " + SubType + " Ore. !contract info");
+            sb.AppendLine("Deliver grid !contract info");
             sb.AppendLine("Contract Delivery Location.");
             if (ScanChat(DeliveryLocation) != null)
             {
@@ -67,8 +44,25 @@ namespace CrunchEconomy.Contracts
                 gpsRef.GPSColor = Color.DarkOrange;
                 gpsRef.ShowOnHud = true;
                 gpsRef.Description = sb.ToString();
-                gpsRef.DisplayName = "Delivery Location. " + SubType;
-                gpsRef.Name = "Delivery Location. " + SubType;
+                gpsRef.DisplayName = "Grid Delivery Location. ";
+                gpsRef.Name = "Grid Delivery Location. ";
+                gpsRef.DiscardAt = new TimeSpan(600);
+                gpscol.SendAddGps(identityId, ref gpsRef);
+            }
+        }
+        public Vector3 getCoords()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("Deliver grid !contract info");
+            sb.AppendLine("Contract Delivery Location.");
+            if (ScanChat(DeliveryLocation) != null)
+            {
+                MyGps gpsRef = ScanChat(DeliveryLocation);
+                gpsRef.GPSColor = Color.DarkOrange;
+                gpsRef.ShowOnHud = true;
+                gpsRef.Description = sb.ToString();
+                gpsRef.DisplayName = "Grid Delivery Location. ";
+                gpsRef.Name = "Grid Delivery Location. ";
                 gpsRef.DiscardAt = new TimeSpan(600);
 
 
@@ -117,26 +111,13 @@ namespace CrunchEconomy.Contracts
             }
             return null;
         }
-
-        public void GenerateAmountToMine(int min, int max)
+        public class ShipItem
         {
-            Random rnd = new Random();
-            amountToMineOrDeliver = rnd.Next(min - 1, max + 1);
-
+            public int Minimum = 0;
+            public int Maximum = 1;
+            public string ObjectBuilder = "You can create a ship contract by looking at a grid and using !shipcontract create <name>";
+            public int DeliverAmount = 1;
+            public long PricePerBlockIfRandom = 500;
         }
-
-        public Boolean AddToContractAmount(int amount)
-        {
-            minedAmount += amount;
-            if (minedAmount >= amountToMineOrDeliver)
-            {
-                return true;
-            }
-            return false;
-        }
-
-        public String DeliveryLocation;
-
     }
 }
-

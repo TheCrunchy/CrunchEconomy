@@ -170,7 +170,7 @@ namespace CrunchEconomy
                 MySession.Static.Gpss.GetGpsList(Context.Player.IdentityId, playerList);
                 foreach (IMyGps gps in playerList)
                 {
-                    if (gps.Description.Contains("Contract Delivery Location."))
+                    if (gps.Description != null && gps.Description.Contains("Contract Delivery Location."))
                     {
                         MyAPIGateway.Session?.GPS.RemoveGps(Context.Player.Identity.IdentityId, gps);
                     }
@@ -183,7 +183,7 @@ namespace CrunchEconomy
                 contractDetails.AppendLine("");
                 foreach (Contract c in data.getMiningContracts().Values)
                 {
-
+                    
                     if (c.minedAmount >= c.amountToMineOrDeliver)
                     {
                         c.DoPlayerGps(Context.Player.Identity.IdentityId);
@@ -218,7 +218,7 @@ namespace CrunchEconomy
                     contractDetails.AppendLine("Deliver " + c.SubType + " Ore " + String.Format("{0:n0}", c.amountToMineOrDeliver));
                     contractDetails.AppendLine("Reward : " + String.Format("{0:n0}", c.contractPrice) + " SC. and " + c.reputation + " reputation gain.");
                     contractDetails.AppendLine("Distance bonus :" + String.Format("{0:n0}", c.DistanceBonus) + " SC.");
-
+                    c.DoPlayerGps(Context.Player.IdentityId);
                     if (derp.ContainsValue(c.ContractId))
                     {
                         contractDetails.AppendLine("To quit use !contract quit " + temp[c.ContractId]);

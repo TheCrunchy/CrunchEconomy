@@ -45,6 +45,7 @@ using VRageMath;
 using NLog;
 using CrunchEconomy.Contracts;
 using CrunchEconomy.SurveyMissions;
+using ShipMarket;
 
 namespace CrunchEconomy
 {
@@ -322,6 +323,37 @@ namespace CrunchEconomy
                 data.getMiningContracts();
                 data.getHaulingContracts();
                 playerData.Add(p.SteamId, data);
+                long id = MySession.Static.Players.TryGetIdentityId(p.SteamId);
+                if (id == 0)
+                {
+                    return;
+                }
+                List<IMyGps> playerList = new List<IMyGps>();
+                MySession.Static.Gpss.GetGpsList(id, playerList);
+                foreach (IMyGps gps in playerList)
+                {
+                    if (gps.Description != null && gps.Description.Contains("Contract Delivery Location."))
+                    {
+                        MyAPIGateway.Session?.GPS.RemoveGps(id, gps);
+                    }
+                }
+
+                foreach (Contract c in data.getMiningContracts().Values)
+                {
+
+                    if (c.minedAmount >= c.amountToMineOrDeliver)
+                    {
+                        c.DoPlayerGps(id);
+                    }
+
+                }
+
+                foreach (Contract c in data.getHaulingContracts().Values)
+                {
+
+                    c.DoPlayerGps(id);
+
+                }
             }
         }
         public static void Logout(IPlayer p)
@@ -490,32 +522,30 @@ namespace CrunchEconomy
                                 }
                             }
 
-                            BoundingSphereD sphere = new BoundingSphereD(coords, 400);
+                            //  BoundingSphereD sphere = new BoundingSphereD(coords, 400);
                             MyCubeGrid grid = MyAPIGateway.Entities.GetEntityById(contract.StationEntityId) as MyCubeGrid;
                             if (grid != null)
                             {
-                                List<MyStoreBlock> stores = grid.GetFatBlocks().OfType<MyStoreBlock>() as List<MyStoreBlock>;
-                                if (stores.Count > 0)
+
+                                foreach (RewardItem item in contract.PutInStation)
                                 {
-                                    foreach (RewardItem item in contract.PutInStation)
+                                    if (item.Enabled)
                                     {
-                                        if (item.Enabled)
+                                        Random random = new Random();
+                                        if (random.NextDouble() <= item.chance)
                                         {
-                                            Random random = new Random();
-                                            if (random.NextDouble() <= item.chance)
+                                            if (MyDefinitionId.TryParse("MyObjectBuilder_" + item.TypeId + "/" + item.SubTypeId, out MyDefinitionId newid))
                                             {
-                                                if (MyDefinitionId.TryParse("MyObjectBuilder_" + item.TypeId + "/" + item.SubTypeId, out MyDefinitionId newid))
-                                                {
-                                                    int amount = random.Next(item.ItemMinAmount, item.ItemMaxAmount);
-                                                    Stations station = new Stations();
-                                                    station.CargoName = contract.CargoName;
-                                                    station.ViewOnlyNamedCargo = true;
-                                                    SpawnItems(grid, newid, amount, station);
-                                                }
+                                                int amount = random.Next(item.ItemMinAmount, item.ItemMaxAmount);
+                                                Stations station = new Stations();
+                                                station.CargoName = contract.CargoName;
+                                                station.ViewOnlyNamedCargo = true;
+                                                SpawnItems(grid, newid, amount, station);
                                             }
                                         }
                                     }
                                 }
+
 
                             }
                             else
@@ -562,34 +592,34 @@ namespace CrunchEconomy
 
                         if (playerData.TryGetValue(player.Id.SteamId, out PlayerData data))
                         {
-                            if (data.getMiningContracts().Count == 0)
-                            {
-                                GeneratedContract con = ContractUtils.GetRandomPlayerContract(ContractType.Mining);
-                                if (con != null)
-                                {
-                                    data.addMining(ContractUtils.GeneratedToPlayer(con));
-                                    playerData[player.Id.SteamId] = data;
-                                    utils.WriteToJsonFile<PlayerData>(path + "//PlayerData//Data//" + data.steamId + ".json", data);
+                            //if (data.getMiningContracts().Count == 0)
+                            //{
+                            //    GeneratedContract con = ContractUtils.GetRandomPlayerContract(ContractType.Mining);
+                            //    if (con != null)
+                            //    {
+                            //        data.addMining(ContractUtils.GeneratedToPlayer(con));
+                            //        playerData[player.Id.SteamId] = data;
+                            //        utils.WriteToJsonFile<PlayerData>(path + "//PlayerData//Data//" + data.steamId + ".json", data);
 
-                                }
+                            //    }
 
-                            }
+                            //}
                             SendMessage("Boss Dave", "Check contracts with !contract info", Color.Gold, (long)player.Id.SteamId);
                         }
-                        else
-                        {
-                            PlayerData newdata = new PlayerData();
-                            newdata.steamId = player.Id.SteamId;
-                            GeneratedContract con = ContractUtils.GetRandomPlayerContract(ContractType.Mining);
-                            if (con != null)
-                            {
-                                newdata.addMining(ContractUtils.GeneratedToPlayer(con));
-                                playerData.Add(player.Id.SteamId, newdata);
-                                utils.WriteToJsonFile<PlayerData>(path + "//PlayerData//Data//" + data.steamId + ".json", data);
-                                SendMessage("Boss Dave", "Heres a new job !contract info", Color.Gold, (long)player.Id.SteamId);
-                            }
+                        //else
+                        //{
+                        //    PlayerData newdata = new PlayerData();
+                        //    newdata.steamId = player.Id.SteamId;
+                        //    GeneratedContract con = ContractUtils.GetRandomPlayerContract(ContractType.Mining);
+                        //    if (con != null)
+                        //    {
+                        //        newdata.addMining(ContractUtils.GeneratedToPlayer(con));
+                        //        playerData.Add(player.Id.SteamId, newdata);
+                        //        utils.WriteToJsonFile<PlayerData>(path + "//PlayerData//Data//" + newdata.steamId + ".json", newdata);
+                        //        SendMessage("Boss Dave", "Heres a new job !contract info", Color.Gold, (long)player.Id.SteamId);
+                        //    }
 
-                        }
+                        //}
                     }
                     catch (Exception ex)
                     {
@@ -609,13 +639,14 @@ namespace CrunchEconomy
                 {
                     if (config.MiningContractsEnabled)
                     {
-                        MyPlayer playerOnline = player;
-                        if (player.Character != null && player?.Controller.ControlledEntity is MyCockpit controller)
+                        if (playerData.TryGetValue(player.Id.SteamId, out PlayerData data))
                         {
-                            MyCubeGrid grid = controller.CubeGrid;
-                            List<Contract> delete = new List<Contract>();
-                            if (playerData.TryGetValue(player.Id.SteamId, out PlayerData data))
+                            MyPlayer playerOnline = player;
+                            if (player.Character != null && player?.Controller.ControlledEntity is MyCockpit controller)
                             {
+                                MyCubeGrid grid = controller.CubeGrid;
+                                List<Contract> delete = new List<Contract>();
+
                                 foreach (Contract contract in data.getMiningContracts().Values)
                                 {
                                     try
@@ -628,7 +659,7 @@ namespace CrunchEconomy
                                     }
                                     catch (Exception ex)
                                     {
-
+                                        Log.Error(ex.ToString());
                                         delete.Add(contract);
                                     }
                                 }
@@ -644,7 +675,7 @@ namespace CrunchEconomy
                                     }
                                     catch (Exception ex)
                                     {
-
+                                        Log.Error(ex.ToString());
                                         delete.Add(contract);
                                     }
                                 }
@@ -844,7 +875,7 @@ namespace CrunchEconomy
                                     MySession.Static.Gpss.GetGpsList(player.Identity.IdentityId, playerList);
                                     foreach (IMyGps gps in playerList)
                                     {
-                                        if (gps.Description.Contains("SURVEY LOCATION."))
+                                        if (gps.Description != null && gps.Description.Contains("SURVEY LOCATION."))
                                         {
                                             MyAPIGateway.Session?.GPS.RemoveGps(player.Identity.IdentityId, gps);
                                         }
@@ -929,7 +960,7 @@ namespace CrunchEconomy
                         MySession.Static.Gpss.GetGpsList(player.Identity.IdentityId, playerList);
                         foreach (IMyGps gps in playerList)
                         {
-                            if (gps.Description.Contains("SURVEY LOCATION."))
+                            if (gps.Description != null && gps.Description.Contains("SURVEY LOCATION."))
                             {
                                 MyAPIGateway.Session?.GPS.RemoveGps(player.Identity.IdentityId, gps);
                             }
@@ -1017,7 +1048,36 @@ namespace CrunchEconomy
                 throw;
             }
         }
+        public static string GetPlayerName(ulong steamId)
+        {
+            MyIdentity id = GetIdentityByNameOrId(steamId.ToString());
+            if (id != null && id.DisplayName != null)
+            {
+                return id.DisplayName;
+            }
+            else
+            {
+                return steamId.ToString();
+            }
+        }
+        public static MyIdentity GetIdentityByNameOrId(string playerNameOrSteamId)
+        {
+            foreach (var identity in MySession.Static.Players.GetAllIdentities())
+            {
+                if (identity.DisplayName == playerNameOrSteamId)
+                    return identity;
+                if (ulong.TryParse(playerNameOrSteamId, out ulong steamId))
+                {
+                    ulong id = MySession.Static.Players.TryGetSteamId(identity.IdentityId);
+                    if (id == steamId)
+                        return identity;
+                    if (identity.IdentityId == (long)steamId)
+                        return identity;
+                }
 
+            }
+            return null;
+        }
         public override void Update()
         {
             ticks++;
@@ -1031,6 +1091,14 @@ namespace CrunchEconomy
             {
                 NextFileRefresh = DateTime.Now.AddMinutes(1);
                 Log.Info("Loading stuff for CrunchEcon");
+                try
+                {
+                    //MarketCommands.list.RefreshList();
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex);
+                }
                 try
                 {
                     ContractUtils.LoadAllContracts();
@@ -1083,7 +1151,7 @@ namespace CrunchEconomy
 
             }
 
-            if (ticks % 128 == 0 && TorchState == TorchSessionState.Loaded)
+            if (ticks % 256 == 0 && TorchState == TorchSessionState.Loaded)
             {
 
                 foreach (MyPlayer player in MySession.Static.Players.GetOnlinePlayers())
@@ -1092,7 +1160,7 @@ namespace CrunchEconomy
                     {
                         if (DateTime.Now >= ContractUtils.chat)
                         {
-                            ContractUtils.chat = DateTime.Now.AddSeconds(config.SecondsBetweenMiningContracts);
+                            ContractUtils.chat = DateTime.Now.AddMinutes(10);
                             DoContractDelivery(player, true);
                         }
                         else

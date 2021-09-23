@@ -9,7 +9,7 @@ using VRage;
 using VRage.Game;
 using VRage.Game.Entity;
 
-namespace AlliancesPlugin.ShipMarket
+namespace ShipMarket
 {
     public class MarketItem
     {

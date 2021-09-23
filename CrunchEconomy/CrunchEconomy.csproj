@@ -96,6 +96,7 @@
     <Compile Include="Contracts\GeneratedContract.cs" />
     <Compile Include="Contracts\PlayerData.cs" />
     <Compile Include="Contracts\RewardItem.cs" />
+    <Compile Include="Contracts\ShipContract.cs" />
     <Compile Include="CrunchEconCore.cs" />
     <Compile Include="EconCommands.cs" />
     <Compile Include="EconUtils.cs" />
@@ -108,6 +109,10 @@
     <Compile Include="PendingSale.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SellOffer.cs" />
+    <Compile Include="ShipMarket\ItemStatus.cs" />
+    <Compile Include="ShipMarket\MarketCommands.cs" />
+    <Compile Include="ShipMarket\MarketItem.cs" />
+    <Compile Include="ShipMarket\MarketList.cs" />
     <Compile Include="Stations.cs" />
     <Compile Include="SurveyMissions\SurveyMission.cs" />
     <Compile Include="SurveyMissions\SurveyStage.cs" />

@@ -1,6 +1,7 @@
 ﻿using NLog;
 using Sandbox.Definitions;
 using Sandbox.Engine.Physics;
+using Sandbox.Game;
 using Sandbox.Game.Entities.Character;
 using Sandbox.Game.Screens.Helpers;
 using Sandbox.Game.Weapons;
@@ -84,6 +85,8 @@ namespace CrunchEconomy.Contracts
             Log.Info("Patching Successful CrunchDrill!");
 
         }
+
+        public static Dictionary<long, int> NotificationIds = new Dictionary<long, int>();
         public static Type drill = null;
         public static FileUtils utils = new FileUtils();
         public static void TestPatchMethod(MyDrillBase __instance, MyVoxelMaterialDefinition material,
@@ -122,7 +125,9 @@ namespace CrunchEconomy.Contracts
                                 MyCharacter pilot = cockpit.Pilot as MyCharacter;
                                 if (CrunchEconCore.playerData.TryGetValue(MySession.Static.Players.TryGetSteamId(pilot.GetPlayerIdentityId()), out PlayerData data))
                                 {
-                                    
+
+                                    //USE THIS FOR ADDING AND REMOVING NOTIFICATIONS
+                                    // 
 
                                     playerId = pilot.GetPlayerIdentityId();
                                     MyObjectBuilder_Ore newObject = MyObjectBuilderSerializer.CreateNewObject<MyObjectBuilder_Ore>(material.MinedOre);
@@ -154,7 +159,8 @@ namespace CrunchEconomy.Contracts
                                         if (contract.SubType.Equals(material.MinedOre))
                                         {
                                             
-                                            if (contract.AddToContractAmount(totalAmount.ToIntSafe()))
+                                            contract.AddToContractAmount(totalAmount.ToIntSafe());
+                                            if (contract.minedAmount >= contract.amountToMineOrDeliver)
                                             {
                                               
                                                 if (contract.DeliveryLocation == string.Empty || contract.DeliveryLocation == null)
@@ -167,11 +173,20 @@ namespace CrunchEconomy.Contracts
                                                         contract.DoPlayerGps(playerId);
                                                     }
                                                 }
-                           
-                                                    CrunchEconCore.SendMessage("Boss Dave", "Contract Ready to be completed, Deliver " + String.Format("{0:n0}", contract.amountToMineOrDeliver) + " " + contract.SubType + " to the delivery GPS.", Color.Gold, (long)MySession.Static.Players.TryGetSteamId(playerId));
-
+                                                if (NotificationIds.TryGetValue(playerId, out int numbbbb))
+                                                {
+                                                    MyVisualScriptLogicProvider.RemoveNotification(numbbbb, playerId);
+                                                    NotificationIds[playerId] = MyVisualScriptLogicProvider.AddNotification("Ready to deliver, " + String.Format("{0:n0}", contract.amountToMineOrDeliver) + " " + contract.SubType + " to the delivery GPS.", "Gold", playerId);
+                                                }
+                                                else
+                                                {
+                                                    NotificationIds.Add(playerId, MyVisualScriptLogicProvider.AddNotification("Ready to deliver, " + String.Format("{0:n0}", contract.amountToMineOrDeliver) + " " + contract.SubType + " to the delivery GPS.", "Gold", playerId));
+                                                }
+                              
+                                                    CrunchEconCore.SendMessage("Boss Dave", "Contract Ready to be completed, Deliver " + , Color.Gold, (long)MySession.Static.Players.TryGetSteamId(playerId));
+                                                contract.DoPlayerGps(pilot.GetPlayerIdentityId());
                                                 messageCooldown.Remove(MySession.Static.Players.TryGetSteamId(playerId));
-                                                    messageCooldown.Add(MySession.Static.Players.TryGetSteamId(playerId), DateTime.Now.AddSeconds(3));
+                                                    messageCooldown.Add(MySession.Static.Players.TryGetSteamId(playerId), DateTime.Now.AddSeconds(5));
                                                 
                                                 //im not sure i need this anymore, since the contract data is saved seperately
                                                 data.getMiningContracts()[contract.ContractId] = contract;
@@ -187,15 +202,15 @@ namespace CrunchEconomy.Contracts
                                                 {
                                                     if (DateTime.Now >= time)
                                                     {
-                                                        if (contract.minedAmount == 0)
+                                                        if (contract.minedAmount < 1)
                                                         {
                                                             CrunchEconCore.SendMessage("Boss Dave", "Progress: " + material.MinedOre + " " + String.Format("{0:n0}", totalAmount.ToIntSafe()) + " / " + String.Format("{0:n0}", contract.amountToMineOrDeliver), Color.Gold, (long)MySession.Static.Players.TryGetSteamId(playerId));
-                                                            messageCooldown[MySession.Static.Players.TryGetSteamId(playerId)] = DateTime.Now.AddSeconds(0.5);
+                                                            messageCooldown[MySession.Static.Players.TryGetSteamId(playerId)] = DateTime.Now.AddSeconds(5);
                                                         }
                                                         else
                                                         {
                                                             CrunchEconCore.SendMessage("Boss Dave", "Progress: " + material.MinedOre + " " + String.Format("{0:n0}", contract.minedAmount) + " / " + String.Format("{0:n0}", contract.amountToMineOrDeliver), Color.Gold, (long)MySession.Static.Players.TryGetSteamId(playerId));
-                                                            messageCooldown[MySession.Static.Players.TryGetSteamId(playerId)] = DateTime.Now.AddSeconds(0.5);
+                                                            messageCooldown[MySession.Static.Players.TryGetSteamId(playerId)] = DateTime.Now.AddSeconds(5);
 
                                                         }
                                                   
@@ -203,7 +218,7 @@ namespace CrunchEconomy.Contracts
                                                 }
                                                 else
                                                 {
-                                                    if (contract.minedAmount == 0)
+                                                    if (contract.minedAmount < 1)
                                                     {
                                                         CrunchEconCore.SendMessage("Boss Dave", "Progress: " + material.MinedOre + " " + String.Format("{0:n0}", totalAmount.ToIntSafe()) + " / " + String.Format("{0:n0}", contract.amountToMineOrDeliver), Color.Gold, (long)MySession.Static.Players.TryGetSteamId(playerId));
                                                        
@@ -214,7 +229,7 @@ namespace CrunchEconomy.Contracts
                                                   
 
                                                     }
-                                                    messageCooldown.Add(MySession.Static.Players.TryGetSteamId(playerId), DateTime.Now.AddSeconds(0.5));
+                                                    messageCooldown.Add(MySession.Static.Players.TryGetSteamId(playerId), DateTime.Now.AddSeconds(5));
                                                 }
                                                 //im not sure i need this anymore, since the contract data is saved seperately
                                                 data.getMiningContracts()[contract.ContractId] = contract;

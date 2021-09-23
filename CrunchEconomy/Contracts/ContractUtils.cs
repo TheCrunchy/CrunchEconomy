@@ -26,7 +26,7 @@ namespace CrunchEconomy.Contracts
             contract.contractPrice = contract.amountToMineOrDeliver * gen.PricePerOre;
             contract.minedAmount = 0;
             contract.ContractName = gen.Name;
-
+            contract.reputation = gen.ReputationGain;
             contract.PlayerLoot = gen.PlayerLoot;
             contract.PutInStation = gen.PutInStation;
             contract.CargoName = gen.StationCargoName;
@@ -61,6 +61,10 @@ namespace CrunchEconomy.Contracts
                         }
                     }
                 }
+            }
+            if (Possible.Count == 0)
+            {
+                return null;
             }
             if (Possible.Count == 1)
             {
