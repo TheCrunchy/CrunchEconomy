@@ -34,7 +34,8 @@ namespace CrunchEconomy.Contracts
         public string SubType;
 
         public int minedAmount = 0;
-
+        public Boolean SpawnItemsInPlayerInventory;
+        
         public int amountToMineOrDeliver = 0;
         public long AmountPaid = 0;
         public void DoPlayerGps(long identityId)

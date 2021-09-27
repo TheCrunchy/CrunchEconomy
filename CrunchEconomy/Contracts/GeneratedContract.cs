@@ -18,7 +18,7 @@ namespace CrunchEconomy.Contracts
         public int minimum = 450000;
         public int maximum = 500000;
         public int PricePerOre = 450;
-
+        public Boolean SpawnItemsInPlayerInvent = false;
         public List<RewardItem> PlayerLoot = new List<RewardItem>();
         public string StationCargoName = "Change this";
         public List<RewardItem> PutInStation = new List<RewardItem>();

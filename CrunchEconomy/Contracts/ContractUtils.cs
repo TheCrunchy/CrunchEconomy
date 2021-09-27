@@ -26,6 +26,7 @@ namespace CrunchEconomy.Contracts
             contract.contractPrice = contract.amountToMineOrDeliver * gen.PricePerOre;
             contract.minedAmount = 0;
             contract.ContractName = gen.Name;
+            contract.SpawnItemsInPlayerInventory = gen.SpawnItemsInPlayerInvent;
             contract.reputation = gen.ReputationGain;
             contract.PlayerLoot = gen.PlayerLoot;
             contract.PutInStation = gen.PutInStation;

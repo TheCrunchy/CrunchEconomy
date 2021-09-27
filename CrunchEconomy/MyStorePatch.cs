@@ -10,6 +10,7 @@ using Sandbox.Game.GameSystems.BankingAndCurrency;
 using Sandbox.Game.Screens.Helpers;
 using Sandbox.Game.SessionComponents;
 using Sandbox.Game.World;
+using Sandbox.ModAPI.Ingame;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -23,6 +24,7 @@ using Torch.Mod.Messages;
 using VRage;
 using VRage.Game;
 using VRage.Game.Entity;
+using VRage.Game.ModAPI.Ingame;
 using VRage.Game.ObjectBuilders.Definitions;
 using VRage.ObjectBuilders;
 using VRageMath;
@@ -79,7 +81,7 @@ namespace CrunchEconomy
                     rules.RemoveAt(i);
             }
 
-           
+
 
             var logTarget = new FileTarget
             {
@@ -105,7 +107,7 @@ namespace CrunchEconomy
             ctx.GetPattern(logupdate2).Suffixes.Add(storePatchLog2);
             ctx.GetPattern(update).Prefixes.Add(storePatch);
             ctx.GetPattern(updateTwo).Prefixes.Add(storePatchTwo);
-          
+
         }
         //        log.Info("SteamId:" + player.Id.SteamId + ",action:sold,Amount:" + amount + ",TypeId:" + myStoreItem.Item.Value.TypeIdString + ",SubTypeId:" + myStoreItem.Item.Value.SubtypeName + ",TotalMoney:" + myStoreItem.PricePerUnit * (long)amount + ",GridId:" + store.CubeGrid.EntityId + ",FacTag:" + store.GetOwnerFactionTag());
         ////patch this to see if sell was success SendSellItemResult
@@ -114,13 +116,13 @@ namespace CrunchEconomy
 
         public static void StorePatchMethodSell(long id, string name, long price, int amount, MyStoreSellItemResults result)
         {
-          
+
             //  AlliancePlugin.Log.Info("sold to store");
             if (result == MyStoreSellItemResults.Success && PossibleLogs.ContainsKey(id))
             {
                 log.Info(PossibleLogs[id]);
 
-               
+
             }
             PossibleLogs.Remove(id);
             return;
@@ -128,20 +130,21 @@ namespace CrunchEconomy
 
         public static void StorePatchMethodBuy(long id, string name, long price, int amount, MyStoreBuyItemResults result)
         {
-            
+
             //  AlliancePlugin.Log.Info("sold to store");
             if (result == MyStoreBuyItemResults.Success && PossibleLogs.ContainsKey(id))
             {
                 log.Info(PossibleLogs[id]);
 
-               
+
             }
             PossibleLogs.Remove(id);
             return;
         }
         public static Boolean StorePatchMethodTwo(long id, int amount, long sourceEntityId, MyPlayer player, MyStoreBlock __instance)
         {
-            if (__instance is MyStoreBlock store) {
+            if (__instance is MyStoreBlock store)
+            {
                 MyStoreItem myStoreItem = (MyStoreItem)null;
 
                 foreach (MyStoreItem playerItem in store.PlayerItems)
@@ -161,12 +164,12 @@ namespace CrunchEconomy
                 {
                     PossibleLogs.Add(id, "SteamId:" + player.Id.SteamId + ",action:sold,Amount:" + amount + ",TypeId:" + myStoreItem.Item.Value.TypeIdString + ",SubTypeId:" + myStoreItem.Item.Value.SubtypeName + ",TotalMoney:" + myStoreItem.PricePerUnit * (long)amount + ",GridId:" + store.CubeGrid.EntityId + ",FacTag:" + store.GetOwnerFactionTag());
                 }
-            
-            if (CrunchEconCore.playerData.TryGetValue(player.Id.SteamId, out PlayerData data))
-            {
+
+                if (CrunchEconCore.playerData.TryGetValue(player.Id.SteamId, out PlayerData data))
+                {
                     if (store.DisplayNameText != null && CrunchEconCore.buyOrders.TryGetValue(store.DisplayNameText, out List<BuyOrder> orders))
                     {
-                    
+
 
                         foreach (BuyOrder order in orders)
                         {
@@ -310,7 +313,7 @@ namespace CrunchEconomy
       MyPlayer player,
       MyAccountInfo playerAccountInfo, MyStoreBlock __instance)
         {
-          //  CrunchEconCore.Log.Info("bruh");
+            //  CrunchEconCore.Log.Info("bruh");
             if (__instance is MyStoreBlock store)
             {
 
@@ -376,7 +379,7 @@ namespace CrunchEconomy
                             }
                             else
                             {
-                              
+
                                 //   CrunchEconCore.Log.Info("grids?");
                                 if (CrunchEconCore.gridsForSale.TryGetValue(storeItem.Item.Value.SubtypeName, out GridSale sale))
                                 {
@@ -428,9 +431,10 @@ namespace CrunchEconomy
                                     {
                                         //     CrunchEconCore.Log.Info("1");
                                         //improve this, store the offers by their object builder in a dictionary
+                                 
                                         foreach (SellOffer offer in offers)
                                         {//
-
+                                       
                                             if (offer.BuyingGivesHaulingContract || offer.BuyingGivesMiningContract)
                                             {
                                                 //   CrunchEconCore.Log.Info("has a contract");
@@ -439,6 +443,15 @@ namespace CrunchEconomy
                                                     //  CrunchEconCore.Log.Info("not the faction tag");
 
                                                     continue;
+                                                }
+                                                if (amount > 1)
+                                                {
+                                                    StringBuilder sb = new StringBuilder();
+                                                    sb.AppendLine("Cannot purchase more than 1 contract in single purchase!");
+
+                                                    DialogMessage m = new DialogMessage("Shop Error", "", sb.ToString());
+                                                    ModCommunication.SendMessageTo(m, player.Id.SteamId);
+                                                    return false;
                                                 }
                                                 //  CrunchEconCore.Log.Info("is the faction tag");
                                                 //  CrunchEconCore.Log.Info(storeItem.Item.Value.TypeIdString + " " + storeItem.Item.Value.SubtypeName) ;
@@ -455,19 +468,7 @@ namespace CrunchEconomy
                                                     if (offer.BuyingGivesMiningContract && CrunchEconCore.config.MiningContractsEnabled)
                                                     {
                                                         int max = 1;
-                                                        if (data.MiningReputation >= 100)
-                                                        {
-                                                            max++;
-                                                        }
-                                                        if (data.MiningReputation >= 200)
-                                                        {
-                                                            max++;
-                                                        }
-                                                        if (data.MiningReputation >= 300)
-                                                        {
-                                                            max++;
-                                                        }
-                                                        if (data.MiningReputation >= 400)
+                                                        if (data.MiningReputation >= 250)
                                                         {
                                                             max++;
                                                         }
@@ -487,32 +488,31 @@ namespace CrunchEconomy
                                                             if (ContractUtils.newContracts.TryGetValue(offer.ContractName, out GeneratedContract contract))
                                                             {
 
-                                                                for (int i = 1; i <= amount; i++)
-                                                                {
-
-                                                                    Contract temp = ContractUtils.GeneratedToPlayer(contract);
-
-                                                                    MyGps gps = new MyGps();
-                                                                    gps.Coords = store.CubeGrid.PositionComp.GetPosition();
-                                                                    temp.DeliveryLocation = gps.ToString();
-                                                                    temp.StationEntityId = store.CubeGrid.EntityId;
-                                                                    data.addMining(temp);
-                                                                    temp.PlayerSteamId = player.Id.SteamId;
 
 
-                                                                    //do this the lazy way instead of checking then setting by the key
-                                                                    CrunchEconCore.playerData.Remove(player.Id.SteamId);
-                                                                    CrunchEconCore.playerData.Add(player.Id.SteamId, data);
+                                                                Contract temp = ContractUtils.GeneratedToPlayer(contract);
+
+                                                                MyGps gps = new MyGps();
+                                                                gps.Coords = store.CubeGrid.PositionComp.GetPosition();
+                                                                temp.DeliveryLocation = gps.ToString();
+                                                                temp.StationEntityId = store.CubeGrid.EntityId;
+                                                                data.addMining(temp);
+                                                                temp.PlayerSteamId = player.Id.SteamId;
 
 
-                                                                    CrunchEconCore.ContractSave.Remove(temp.ContractId);
-                                                                    CrunchEconCore.ContractSave.Add(temp.ContractId, temp);
-
-                                                                    CrunchEconCore.utils.WriteToJsonFile<PlayerData>(CrunchEconCore.path + "//PlayerData//Data//" + data.steamId + ".json", data);
-
+                                                                //do this the lazy way instead of checking then setting by the key
+                                                                CrunchEconCore.playerData.Remove(player.Id.SteamId);
+                                                                CrunchEconCore.playerData.Add(player.Id.SteamId, data);
 
 
-                                                                }
+                                                                CrunchEconCore.ContractSave.Remove(temp.ContractId);
+                                                                CrunchEconCore.ContractSave.Add(temp.ContractId, temp);
+
+                                                                CrunchEconCore.utils.WriteToJsonFile<PlayerData>(CrunchEconCore.path + "//PlayerData//Data//" + data.steamId + ".json", data);
+
+
+
+
                                                                 StringBuilder contractDetails = new StringBuilder();
                                                                 foreach (Contract c in data.getMiningContracts().Values)
                                                                 {
@@ -552,20 +552,17 @@ namespace CrunchEconomy
 
                                                     if (offer.BuyingGivesHaulingContract && CrunchEconCore.config.HaulingContractsEnabled)
                                                     {
+                                                        if (amount > 1)
+                                                        {
+                                                            StringBuilder sb = new StringBuilder();
+                                                            sb.AppendLine("Cannot purchase more than 1 contract in single purchase!");
+
+                                                            DialogMessage m = new DialogMessage("Shop Error", "", sb.ToString());
+                                                            ModCommunication.SendMessageTo(m, player.Id.SteamId);
+                                                            return false;
+                                                        }
                                                         int max = 1;
-                                                        if (data.HaulingReputation >= 100)
-                                                        {
-                                                            max++;
-                                                        }
-                                                        if (data.HaulingReputation >= 200)
-                                                        {
-                                                            max++;
-                                                        }
-                                                        if (data.HaulingReputation >= 300)
-                                                        {
-                                                            max++;
-                                                        }
-                                                        if (data.HaulingReputation >= 400)
+                                                        if (data.HaulingReputation >= 250)
                                                         {
                                                             max++;
                                                         }
@@ -585,34 +582,56 @@ namespace CrunchEconomy
                                                             if (ContractUtils.newContracts.TryGetValue(offer.ContractName, out GeneratedContract contract))
                                                             {
 
-                                                                for (int i = 1; i <= amount; i++)
+
+
+                                                                Contract temp = ContractUtils.GeneratedToPlayer(contract);
+                                                                Stations station = ContractUtils.GetDeliveryLocation(temp);
+                                                                MyGps delivery = station.getGPS();
+                                                                temp.StationEntityId = station.StationEntityId;
+                                                                float distance = Vector3.Distance(player.GetPosition(), delivery.Coords);
+                                                                long deliveryBonus = Convert.ToInt64(distance / 100000) * 50000;
+                                                                temp.DeliveryLocation = delivery.ToString();
+                                                                temp.DistanceBonus = deliveryBonus;
+                                                                data.addHauling(temp);
+                                                                temp.PlayerSteamId = player.Id.SteamId;
+
+                                                                if (contract.SpawnItemsInPlayerInvent)
                                                                 {
-
-                                                                    Contract temp = ContractUtils.GeneratedToPlayer(contract);
-                                                                    Stations station = ContractUtils.GetDeliveryLocation(temp);
-                                                                    MyGps delivery = station.getGPS();
-                                                                    temp.StationEntityId = station.StationEntityId;
-                                                                    float distance = Vector3.Distance(player.GetPosition(), delivery.Coords);
-                                                                    long deliveryBonus = Convert.ToInt64(distance / 100000) * 50000;
-                                                                    temp.DeliveryLocation = delivery.ToString();
-                                                                    temp.DistanceBonus = deliveryBonus;
-                                                                    data.addHauling(temp);
-                                                                    temp.PlayerSteamId = player.Id.SteamId;
-
-
-                                                                    //do this the lazy way instead of checking then setting by the key
-                                                                    CrunchEconCore.playerData.Remove(player.Id.SteamId);
-                                                                    CrunchEconCore.playerData.Add(player.Id.SteamId, data);
-
-
-                                                                    CrunchEconCore.ContractSave.Remove(temp.ContractId);
-                                                                    CrunchEconCore.ContractSave.Add(temp.ContractId, temp);
-
-                                                                    CrunchEconCore.utils.WriteToJsonFile<PlayerData>(CrunchEconCore.path + "//PlayerData//Data//" + data.steamId + ".json", data);
-
-
-
+                                                                    if (MyDefinitionId.TryParse("MyObjectBuilder_" + contract.type + "/" + contract.SubType, out MyDefinitionId itemId))
+                                                                    {
+                                                                        MyItemType itemType = new MyInventoryItemFilter(itemId.TypeId + "/" + itemId.SubtypeName).ItemType;
+                                                                        if (!player.Character.GetInventory().CanItemsBeAdded(temp.amountToMineOrDeliver, itemType))
+                                                                        {
+                                                                            StringBuilder sb = new StringBuilder();
+                                                                            sb.AppendLine("Cannot add items to character inventory!");
+                                                                            DialogMessage m = new DialogMessage("Shop Error", "", sb.ToString());
+                                                                            ModCommunication.SendMessageTo(m, player.Id.SteamId);
+                                                                            return false;
+                                                                        }
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        StringBuilder sb = new StringBuilder();
+                                                                        sb.AppendLine("Cannot add items to character inventory, definition id does not parse!");
+                                                                        DialogMessage m = new DialogMessage("Shop Error", "", sb.ToString());
+                                                                        ModCommunication.SendMessageTo(m, player.Id.SteamId);
+                                                                        return false;
+                                                                    }
+                                                                    player.Character.GetInventory().AddItems(temp.amountToMineOrDeliver, (MyObjectBuilder_PhysicalObject)MyObjectBuilderSerializer.CreateNewObject(itemId));
                                                                 }
+                                                                //do this the lazy way instead of checking then setting by the key
+                                                                CrunchEconCore.playerData.Remove(player.Id.SteamId);
+                                                                CrunchEconCore.playerData.Add(player.Id.SteamId, data);
+
+
+                                                                CrunchEconCore.ContractSave.Remove(temp.ContractId);
+                                                                CrunchEconCore.ContractSave.Add(temp.ContractId, temp);
+
+                                                                CrunchEconCore.utils.WriteToJsonFile<PlayerData>(CrunchEconCore.path + "//PlayerData//Data//" + data.steamId + ".json", data);
+
+
+
+
                                                                 StringBuilder contractDetails = new StringBuilder();
                                                                 foreach (Contract c in data.getHaulingContracts().Values)
                                                                 {
@@ -653,7 +672,7 @@ namespace CrunchEconomy
                                     }
                                 }
 
-         
+
                             }
                             return true;
                         }

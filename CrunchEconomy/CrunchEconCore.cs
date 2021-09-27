@@ -490,7 +490,7 @@ namespace CrunchEconomy
                                 //contract.AmountPaid = contract.contractPrice;
                                 try
                                 {
-                                    object[] MethodInput = new object[] { player.Id.SteamId, contract.contractPrice, "Mining" };
+                                    object[] MethodInput = new object[] { player.Id.SteamId, contract.contractPrice, "Mining", player.GetPosition() };
                                     contract.contractPrice = (long)AllianceTaxes?.Invoke(null, MethodInput);
 
                                 }
@@ -745,7 +745,7 @@ namespace CrunchEconomy
                                         //contract.AmountPaid = contract.contractPrice;
                                         try
                                         {
-                                            object[] MethodInput = new object[] { player.Id.SteamId, money, "Survey" };
+                                            object[] MethodInput = new object[] { player.Id.SteamId, money, "Survey", player.GetPosition() };
                                             money = (long)AllianceTaxes?.Invoke(null, MethodInput);
 
                                         }
@@ -1048,6 +1048,8 @@ namespace CrunchEconomy
                 throw;
             }
         }
+        public static Dictionary<long, DateTime> individualTimers = new Dictionary<long, DateTime>();
+
         public static string GetPlayerName(ulong steamId)
         {
             MyIdentity id = GetIdentityByNameOrId(steamId.ToString());
@@ -1078,6 +1080,8 @@ namespace CrunchEconomy
             }
             return null;
         }
+
+        public static Random rnd = new Random();
         public override void Update()
         {
             ticks++;
@@ -1284,7 +1288,7 @@ namespace CrunchEconomy
                                                 ClearStoreOfPlayersBuyingOffers(store);
                                                 List<VRage.Game.ModAPI.IMyInventory> inventories = new List<VRage.Game.ModAPI.IMyInventory>();
                                                 inventories.AddRange(GetInventories(grid, station));
-                                                Random rnd = new Random();
+                                               
                                                 //  Log.Info("now its checking offers");
 
                                                 foreach (SellOffer offer in offers)
@@ -1306,23 +1310,41 @@ namespace CrunchEconomy
                                                                 if (hasAmount < offer.SpawnIfCargoLessThan && offer.SpawnItemsIfNeeded)
                                                                 {
                                                                     int amountSpawned = 0;
-                                                                    rnd = new Random();
+                                                                
                                                                     amountSpawned = rnd.Next(offer.minAmountToSpawn, offer.maxAmountToSpawn);
                                                                     if (offer.IndividualRefreshTimer)
                                                                     {
-                                                                        if (now > offer.nextRefresh)
+                                                                        if (individualTimers.TryGetValue(store.EntityId, out DateTime refresh))
                                                                         {
-                                                                            offer.nextRefresh = now.AddSeconds(offer.SecondsBetweenRefresh);
-                                                                            utils.WriteToXmlFile<SellOffer>(offer.path, offer);
+                                                                            if (now >= refresh)
+                                                                            {
+                                                                                individualTimers[store.EntityId] = DateTime.Now.AddSeconds(offer.SecondsBetweenRefresh);
+
+
+                                                                                if (chance <= offer.chance)
+                                                                                {
+                                                                                    SpawnItems(grid, id, (MyFixedPoint)amountSpawned, station);
+                                                                                    hasAmount += amountSpawned;
+                                                                                }
+                                                                            }
+                                                                            else
+                                                                            {
+                                                                                continue;
+                                                                            }
+                                                                        }
+                                                                        else
+                                                                        {
+                                                                            individualTimers.Add(store.EntityId, DateTime.Now.AddSeconds(offer.SecondsBetweenRefresh));
+
+
 
                                                                             if (chance <= offer.chance)
                                                                             {
                                                                                 SpawnItems(grid, id, (MyFixedPoint)amountSpawned, station);
                                                                                 hasAmount += amountSpawned;
                                                                             }
-                                                                            //spawn items
-
                                                                         }
+
 
                                                                     }
                                                                     else
@@ -1340,8 +1362,7 @@ namespace CrunchEconomy
                                                                 SerializableDefinitionId itemId = new SerializableDefinitionId(id.TypeId, offer.subtypeId);
 
 
-                                                                rnd = new Random();
-
+                                                          
                                                                 int price = rnd.Next((int)offer.minPrice, (int)offer.maxPrice);
 
                                                                 MyStoreItemData item = new MyStoreItemData(itemId, hasAmount, price, null, null);
@@ -1358,19 +1379,39 @@ namespace CrunchEconomy
                                                                 if (offer.SpawnItemsIfNeeded)
                                                                 {
                                                                     int amountSpawned = 0;
-                                                                    rnd = new Random();
+                                                                 
                                                                     amountSpawned = rnd.Next(offer.minAmountToSpawn, offer.maxAmountToSpawn);
                                                                     if (offer.IndividualRefreshTimer)
                                                                     {
-                                                                        if (now > offer.nextRefresh)
+                                                                        if (individualTimers.TryGetValue(store.EntityId, out DateTime refresh))
                                                                         {
-                                                                            offer.nextRefresh = now.AddSeconds(offer.SecondsBetweenRefresh);
-                                                                            utils.WriteToXmlFile<SellOffer>(offer.path, offer);
+                                                                            if (now >= refresh)
+                                                                            {
+                                                                                individualTimers[store.EntityId] = DateTime.Now.AddSeconds(offer.SecondsBetweenRefresh);
 
 
-                                                                            //spawn items
-                                                                            SpawnItems(grid, id, (MyFixedPoint)offer.SpawnIfCargoLessThan, station);
+                                                                                if (chance <= offer.chance)
+                                                                                {
+                                                                                    SpawnItems(grid, id, (MyFixedPoint)amountSpawned, station);
+                                                                                    hasAmount += amountSpawned;
+                                                                                }
+                                                                            }
+                                                                            else
+                                                                            {
+                                                                                continue;
+                                                                            }
+                                                                        }
+                                                                        else
+                                                                        {
+                                                                            individualTimers.Add(store.EntityId, DateTime.Now.AddSeconds(offer.SecondsBetweenRefresh));
 
+
+
+                                                                            if (chance <= offer.chance)
+                                                                            {
+                                                                                SpawnItems(grid, id, (MyFixedPoint)amountSpawned, station);
+                                                                                hasAmount += amountSpawned;
+                                                                            }
                                                                         }
 
                                                                     }
@@ -1386,7 +1427,7 @@ namespace CrunchEconomy
                                                                     SerializableDefinitionId itemId = new SerializableDefinitionId(id.TypeId, offer.subtypeId);
 
 
-                                                                    rnd = new Random();
+                                                                
 
                                                                     int price = rnd.Next((int)offer.minPrice, (int)offer.maxPrice);
 
@@ -1433,21 +1474,28 @@ namespace CrunchEconomy
                                                 ClearStoreOfPlayersSellingOrders(store);
                                                 List<VRage.Game.ModAPI.IMyInventory> inventories = new List<VRage.Game.ModAPI.IMyInventory>();
                                                 inventories.AddRange(GetInventories(grid, station));
-                                                Random rnd = new Random();
+                                              
                                                 foreach (BuyOrder order in orders)
                                                 {
+                                                    
                                                     try
                                                     {
                                                         if (order.IndividualRefreshTimer)
                                                         {
-                                                            if (now < order.nextRefresh)
+                                                            if (individualTimers.TryGetValue(store.EntityId, out DateTime refresh))
                                                             {
-                                                                continue;
+                                                                if (now < refresh)
+                                                                {
+                                                                    continue;
+                                                                }
+                                                                else
+                                                                {
+                                                                    individualTimers[store.EntityId] = DateTime.Now.AddSeconds(order.SecondsBetweenRefresh);
+                                                                }
                                                             }
                                                             else
                                                             {
-                                                                order.nextRefresh = now.AddSeconds(order.SecondsBetweenRefresh);
-                                                                utils.WriteToXmlFile<BuyOrder>(order.path, order);
+                                                                individualTimers.Add(store.EntityId, DateTime.Now.AddSeconds(order.SecondsBetweenRefresh));
                                                             }
                                                         }
                                                         if (MyDefinitionId.TryParse("MyObjectBuilder_" + order.typeId, order.subtypeId, out MyDefinitionId id))
@@ -1455,7 +1503,7 @@ namespace CrunchEconomy
 
                                                             SerializableDefinitionId itemId = new SerializableDefinitionId(id.TypeId, order.subtypeId);
 
-                                                            rnd = new Random();
+                                                        
                                                             double chance = rnd.NextDouble();
                                                             if (chance <= order.chance)
                                                             {
@@ -1776,7 +1824,7 @@ namespace CrunchEconomy
                     Type alli = All.GetType().Assembly.GetType("AlliancesPlugin.AlliancePlugin");
                     try
                     {
-                        AllianceTaxes = All.GetType().GetMethod("AddToTaxes", BindingFlags.Public | BindingFlags.Static, null, new Type[3] { typeof(ulong), typeof(long), typeof(string) }, null);
+                        AllianceTaxes = All.GetType().GetMethod("AddToTaxes", BindingFlags.Public | BindingFlags.Static, null, new Type[4] { typeof(ulong), typeof(long), typeof(string), typeof(Vector3) }, null);
                         //    BackupGrid = GridBackupPlugin.GetType().GetMethod("BackupGridsManuallyWithBuilders", BindingFlags.Public | BindingFlags.Instance, null, new Type[2] { typeof(List<MyObjectBuilder_CubeGrid>), typeof(long) }, null);
                     }
                     catch (Exception ex)
