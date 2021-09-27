@@ -31,6 +31,7 @@ namespace CrunchEconomy.Contracts
             contract.PlayerLoot = gen.PlayerLoot;
             contract.PutInStation = gen.PutInStation;
             contract.CargoName = gen.StationCargoName;
+            contract.PutTheHaulInStation = gen.PutTheHaulInStation;
             return contract;
         }
         public static List<SurveyMission> SurveyMissions = new List<SurveyMission>();

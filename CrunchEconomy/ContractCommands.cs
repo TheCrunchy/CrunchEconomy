@@ -139,6 +139,9 @@ namespace CrunchEconomy
                 }
             }
         }
+
+      
+
         [Command("info", "view current contracts")]
         [Permission(MyPromoteLevel.None)]
         public void DoContractDetails()

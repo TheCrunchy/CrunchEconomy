@@ -32,7 +32,7 @@ namespace CrunchEconomy.Contracts
         public int reputation = 1;
 
         public string SubType;
-
+        public Boolean PutTheHaulInStation = false;
         public int minedAmount = 0;
         public Boolean SpawnItemsInPlayerInventory;
         

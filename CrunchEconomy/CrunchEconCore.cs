@@ -545,7 +545,16 @@ namespace CrunchEconomy
                                         }
                                     }
                                 }
-
+                                if (contract.PutTheHaulInStation)
+                                {
+                                    foreach (KeyValuePair<MyDefinitionId, int> pair in itemsToRemove)
+                                    {
+                                        Stations station = new Stations();
+                                        station.CargoName = contract.CargoName;
+                                        station.ViewOnlyNamedCargo = true;
+                                        SpawnItems(grid, pair.Key, pair.Value, station);
+                                    }
+                                }
 
                             }
                             else

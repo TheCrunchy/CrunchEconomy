@@ -5,6 +5,7 @@ using Sandbox.Game.World;
 using Sandbox.ModAPI;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -40,7 +41,75 @@ namespace CrunchEconomy
 
 
         }
+        [Command("moneys", "view all money added through contracts")]
+        [Permission(MyPromoteLevel.Admin)]
+        public async void HowMuchMoneys(String type)
+        {
+            Context.Respond("Doing this async, may take a while");
+            if (Enum.TryParse(type, out ContractType contract))
+            {
+                long output = await Task.Run(() => CountMoney(contract));
+                Context.Respond(String.Format("{0:n0}", output) + " SC Added to economy through " + type + " contracts.");
+            }
 
+        }
+        public long CountMoney(ContractType type)
+        {
+            Dictionary<string, long> MoneyFromTypes = new Dictionary<string, long>();
+            Dictionary<string, int> AmountCompleted = new Dictionary<string, int>();
+            long output = 0;
+            switch (type)
+            {
+
+                case ContractType.Mining:
+
+                    foreach (String s in Directory.GetFiles(CrunchEconCore.path + "//PlayerData//Mining//Completed//"))
+                    {
+
+                        Contract contract = CrunchEconCore.utils.ReadFromXmlFile<Contract>(s);
+                        if (MoneyFromTypes.ContainsKey(contract.SubType))
+                        {
+                            MoneyFromTypes[contract.SubType] += contract.AmountPaid;
+                            AmountCompleted[contract.SubType] += 1;
+                        }
+                        else
+                        {
+                            MoneyFromTypes.Add(contract.SubType, contract.AmountPaid);
+                            AmountCompleted.Add(contract.SubType, 1);
+                        }
+
+                        output += contract.AmountPaid;
+                    }
+                    break;
+                case ContractType.Hauling:
+                    foreach (String s in Directory.GetFiles(CrunchEconCore.path + "//PlayerData//Hauling//Completed//"))
+                    {
+
+
+                        Contract contract = CrunchEconCore.utils.ReadFromXmlFile<Contract>(s);
+                        if (MoneyFromTypes.ContainsKey(contract.SubType))
+                        {
+                            MoneyFromTypes[contract.SubType] += contract.AmountPaid;
+                            AmountCompleted[contract.SubType] += 1;
+                        }
+                        else
+                        {
+                            MoneyFromTypes.Add(contract.SubType, contract.AmountPaid);
+                            AmountCompleted.Add(contract.SubType, 1);
+                        }
+                        output += contract.AmountPaid;
+                    }
+                    break;
+
+            }
+
+            foreach (KeyValuePair<string, long> pair in MoneyFromTypes)
+            {
+                Context.Respond(pair.Key + " total money " + String.Format("{0:n0}", pair.Value) + " | amount completed : " + AmountCompleted[pair.Key]);
+
+            }
+            return output;
+        }
         [Command("reload", "stop the economy refreshing")]
         [Permission(MyPromoteLevel.Admin)]
         public void Reload()
