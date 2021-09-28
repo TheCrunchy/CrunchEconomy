@@ -23,5 +23,6 @@ namespace CrunchEconomy.Contracts
         public List<RewardItem> PlayerLoot = new List<RewardItem>();
         public string StationCargoName = "Change this";
         public List<RewardItem> PutInStation = new List<RewardItem>();
+        public int CooldownInSeconds = 1;
     }
 }

@@ -30,7 +30,7 @@ namespace CrunchEconomy.Contracts
         public List<RewardItem> PlayerLoot = new List<RewardItem>();
         public List<RewardItem> PutInStation = new List<RewardItem>();
         public int reputation = 1;
-
+        public int CooldownInSeconds = 1;
         public string SubType;
         public Boolean PutTheHaulInStation = false;
         public int minedAmount = 0;

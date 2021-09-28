@@ -32,6 +32,7 @@ namespace CrunchEconomy.Contracts
             contract.PutInStation = gen.PutInStation;
             contract.CargoName = gen.StationCargoName;
             contract.PutTheHaulInStation = gen.PutTheHaulInStation;
+            contract.CooldownInSeconds = gen.CooldownInSeconds;
             return contract;
         }
         public static List<SurveyMission> SurveyMissions = new List<SurveyMission>();

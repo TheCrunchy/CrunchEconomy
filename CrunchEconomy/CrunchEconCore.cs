@@ -490,7 +490,7 @@ namespace CrunchEconomy
                                 //contract.AmountPaid = contract.contractPrice;
                                 try
                                 {
-                                    object[] MethodInput = new object[] { player.Id.SteamId, contract.contractPrice, "Mining", player.GetPosition() };
+                                    object[] MethodInput = new object[] { player.Id.SteamId, contract.contractPrice, "Mining", controller.CubeGrid.PositionComp.GetPosition() };
                                     contract.contractPrice = (long)AllianceTaxes?.Invoke(null, MethodInput);
 
                                 }
@@ -754,7 +754,7 @@ namespace CrunchEconomy
                                         //contract.AmountPaid = contract.contractPrice;
                                         try
                                         {
-                                            object[] MethodInput = new object[] { player.Id.SteamId, money, "Survey", player.GetPosition() };
+                                            object[] MethodInput = new object[] { player.Id.SteamId, money, "Survey", player.Character.PositionComp.GetPosition() };
                                             money = (long)AllianceTaxes?.Invoke(null, MethodInput);
 
                                         }
@@ -1833,7 +1833,7 @@ namespace CrunchEconomy
                     Type alli = All.GetType().Assembly.GetType("AlliancesPlugin.AlliancePlugin");
                     try
                     {
-                        AllianceTaxes = All.GetType().GetMethod("AddToTaxes", BindingFlags.Public | BindingFlags.Static, null, new Type[4] { typeof(ulong), typeof(long), typeof(string), typeof(Vector3) }, null);
+                        AllianceTaxes = All.GetType().GetMethod("AddToTaxes", BindingFlags.Public | BindingFlags.Static, null, new Type[4] { typeof(ulong), typeof(long), typeof(string), typeof(Vector3D) }, null);
                         //    BackupGrid = GridBackupPlugin.GetType().GetMethod("BackupGridsManuallyWithBuilders", BindingFlags.Public | BindingFlags.Instance, null, new Type[2] { typeof(List<MyObjectBuilder_CubeGrid>), typeof(long) }, null);
                     }
                     catch (Exception ex)

@@ -306,7 +306,8 @@ namespace CrunchEconomy
             return null;
         }
 
-
+        public static Dictionary<ulong, Dictionary<string, DateTime>> MiningCooldowns = new Dictionary<ulong, Dictionary<string, DateTime>>();
+        public static Dictionary<ulong, Dictionary<string, DateTime>> HaulingCooldowns = new Dictionary<ulong, Dictionary<string, DateTime>>();
         public static Boolean StorePatchMethod(long id,
       int amount,
       long targetEntityId,
@@ -488,8 +489,7 @@ namespace CrunchEconomy
                                                             if (ContractUtils.newContracts.TryGetValue(offer.ContractName, out GeneratedContract contract))
                                                             {
 
-
-
+                                                             
                                                                 Contract temp = ContractUtils.GeneratedToPlayer(contract);
 
                                                                 MyGps gps = new MyGps();
@@ -499,7 +499,35 @@ namespace CrunchEconomy
                                                                 data.addMining(temp);
                                                                 temp.PlayerSteamId = player.Id.SteamId;
 
+                                                                if (MiningCooldowns.TryGetValue(player.Id.SteamId, out Dictionary<String, DateTime> cd))
+                                                                {
+                                                                    if (cd.TryGetValue(temp.SubType, out DateTime time))
+                                                                    {
+                                                                        if (DateTime.Now <= time)
+                                                                        {
+                                                                            StringBuilder sb = new StringBuilder();
+                                                                            var diff = time.Subtract(DateTime.Now);
+                                                                            string time2 = String.Format("{0} Hours {1} Minutes {2} Seconds", diff.Hours, diff.Minutes, diff.Seconds);
+                                                                            sb.AppendLine("Cannot purchase another contract of this type for " + time2);
+                                                                         
+                                                                            DialogMessage m = new DialogMessage("Shop Error", "", sb.ToString());
+                                                                            ModCommunication.SendMessageTo(m, player.Id.SteamId);
+                                                                            return false;
+                                                                      
+                                                                        }
+                                                                    }
+                                                               
+                                                                    MiningCooldowns[player.Id.SteamId].Remove(temp.SubType);
+                                                                    MiningCooldowns[player.Id.SteamId].Add(temp.SubType, DateTime.Now.AddSeconds(temp.CooldownInSeconds));
+                                                                }
+                                                                else
+                                                                {
+                                                                    Dictionary<string, DateTime> temporary  = new Dictionary<string, DateTime>();
+                                                                    temporary.Add(temp.SubType, DateTime.Now.AddSeconds(temp.CooldownInSeconds));
+                                                                    MiningCooldowns.Add(player.Id.SteamId, temporary);
+                                                                }
 
+                                                                
                                                                 //do this the lazy way instead of checking then setting by the key
                                                                 CrunchEconCore.playerData.Remove(player.Id.SteamId);
                                                                 CrunchEconCore.playerData.Add(player.Id.SteamId, data);
@@ -582,9 +610,36 @@ namespace CrunchEconomy
                                                             if (ContractUtils.newContracts.TryGetValue(offer.ContractName, out GeneratedContract contract))
                                                             {
 
-
+                                                           
 
                                                                 Contract temp = ContractUtils.GeneratedToPlayer(contract);
+                                                                if (HaulingCooldowns.TryGetValue(player.Id.SteamId, out Dictionary<String, DateTime> cd))
+                                                                {
+                                                                    if (cd.TryGetValue(temp.SubType, out DateTime time))
+                                                                    {
+                                                                        if (DateTime.Now <= time)
+                                                                        {
+                                                                            StringBuilder sb = new StringBuilder();
+                                                                            var diff = time.Subtract(DateTime.Now);
+                                                                            string time2 = String.Format("{0} Hours {1} Minutes {2} Seconds", diff.Hours, diff.Minutes, diff.Seconds);
+                                                                            sb.AppendLine("Cannot purchase another contract of this type for " + time2);
+
+                                                                            DialogMessage m = new DialogMessage("Shop Error", "", sb.ToString());
+                                                                            ModCommunication.SendMessageTo(m, player.Id.SteamId);
+                                                                            return false;
+
+                                                                        }
+                                                                    }
+
+                                                                    HaulingCooldowns[player.Id.SteamId].Remove(temp.SubType);
+                                                                    HaulingCooldowns[player.Id.SteamId].Add(temp.SubType, DateTime.Now.AddSeconds(temp.CooldownInSeconds));
+                                                                }
+                                                                else
+                                                                {
+                                                                    Dictionary<string, DateTime> temporary = new Dictionary<string, DateTime>();
+                                                                    temporary.Add(temp.SubType, DateTime.Now.AddSeconds(temp.CooldownInSeconds));
+                                                                    HaulingCooldowns.Add(player.Id.SteamId, temporary);
+                                                                }
                                                                 Stations station = ContractUtils.GetDeliveryLocation(temp);
                                                                 MyGps delivery = station.getGPS();
                                                                 temp.StationEntityId = station.StationEntityId;
@@ -594,7 +649,7 @@ namespace CrunchEconomy
                                                                 temp.DistanceBonus = deliveryBonus;
                                                                 data.addHauling(temp);
                                                                 temp.PlayerSteamId = player.Id.SteamId;
-
+                                                  
                                                                 if (contract.SpawnItemsInPlayerInvent)
                                                                 {
                                                                     if (MyDefinitionId.TryParse("MyObjectBuilder_" + contract.type + "/" + contract.SubType, out MyDefinitionId itemId))
