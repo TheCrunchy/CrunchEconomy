@@ -181,6 +181,43 @@ namespace CrunchEconomy
 
                 StringBuilder contractDetails = new StringBuilder();
                 contractDetails.AppendLine("Current Mining Reputation " + data.MiningReputation);
+                float bonus = 0f;
+                int NextBonus = 100;
+                if (data.MiningReputation >= 100)
+                {
+                   bonus += 0.025f;
+                    NextBonus = 250;
+                }
+                if (data.MiningReputation >= 250)
+                {
+                    bonus += 0.025f;
+                    NextBonus = 500;
+                }
+                if (data.MiningReputation >= 500)
+                {
+                    bonus += 0.025f;
+                    NextBonus = 750;
+                }
+                if (data.MiningReputation >= 750)
+                {
+                    bonus += 0.025f;
+                    NextBonus = 1000;
+                }
+                if (data.MiningReputation >= 1000)
+                {
+                    bonus += 0.025f;
+                    NextBonus = 2000;
+                }
+                if (data.MiningReputation >= 2000)
+                {
+                    bonus += 0.025f;
+                    NextBonus = 3000;
+                }
+                if (data.MiningReputation >= 3000)
+                {
+                    bonus += 0.05f;
+                }
+                contractDetails.AppendLine("Mining Bonus Pay " + bonus * 100 + "%. Next Bonus at " + NextBonus + " Reputation.");
                 contractDetails.AppendLine("");
                 contractDetails.AppendLine("Current Hauling Reputation " + data.HaulingReputation);
                 contractDetails.AppendLine("");

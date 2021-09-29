@@ -35,7 +35,7 @@ namespace CrunchEconomy.Contracts
         public Boolean PutTheHaulInStation = false;
         public int minedAmount = 0;
         public Boolean SpawnItemsInPlayerInventory;
-        
+        public DateTime TimeCompleted;
         public int amountToMineOrDeliver = 0;
         public long AmountPaid = 0;
         public void DoPlayerGps(long identityId)

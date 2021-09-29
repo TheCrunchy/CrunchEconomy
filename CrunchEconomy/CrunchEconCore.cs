@@ -462,21 +462,29 @@ namespace CrunchEconomy
                             }
                             if (data.MiningReputation >= 100)
                             {
-                                contract.contractPrice += Convert.ToInt64(contract.contractPrice * 0.05f);
+                                contract.contractPrice += Convert.ToInt64(contract.contractPrice * 0.025f);
                             }
-                            if (data.MiningReputation >= 200)
+                            if (data.MiningReputation >= 250)
                             {
-                                contract.contractPrice += Convert.ToInt64(contract.contractPrice * 0.05f);
-                            }
-                            if (data.MiningReputation >= 300)
-                            {
-                                contract.contractPrice += Convert.ToInt64(contract.contractPrice * 0.05f);
-                            }
-                            if (data.MiningReputation >= 400)
-                            {
-                                contract.contractPrice += Convert.ToInt64(contract.contractPrice * 0.05f);
+                                contract.contractPrice += Convert.ToInt64(contract.contractPrice * 0.025f);
                             }
                             if (data.MiningReputation >= 500)
+                            {
+                                contract.contractPrice += Convert.ToInt64(contract.contractPrice * 0.025f);
+                            }
+                            if (data.MiningReputation >= 750)
+                            {
+                                contract.contractPrice += Convert.ToInt64(contract.contractPrice * 0.025f);
+                            }
+                            if (data.MiningReputation >= 1000)
+                            {
+                                contract.contractPrice += Convert.ToInt64(contract.contractPrice * 0.025f);
+                            }
+                            if (data.MiningReputation >= 2000)
+                            {
+                                contract.contractPrice += Convert.ToInt64(contract.contractPrice * 0.025f);
+                            }
+                            if (data.MiningReputation >= 3000)
                             {
                                 contract.contractPrice += Convert.ToInt64(contract.contractPrice * 0.05f);
                             }
@@ -562,7 +570,7 @@ namespace CrunchEconomy
                                 Log.Error("Couldnt find station to put items in! Did it get cut and pasted? at " + coords.ToString());
                             }
                             contract.AmountPaid = contract.contractPrice;
-
+                            contract.TimeCompleted = DateTime.Now;
                             EconUtils.addMoney(player.Identity.IdentityId, contract.contractPrice);
 
 

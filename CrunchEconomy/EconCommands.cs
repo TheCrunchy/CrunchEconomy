@@ -31,8 +31,8 @@ namespace CrunchEconomy
 
             foreach (MyStoreBlock store in MyAPIGateway.Entities.GetEntitiesInSphere(ref sphere).OfType<MyStoreBlock>())
             {
-         
-                foreach (MyStoreItem item  in store.PlayerItems)
+
+                foreach (MyStoreItem item in store.PlayerItems)
                 {
                     Context.Respond(item.Item.Value.ToString());
                 }
@@ -50,14 +50,81 @@ namespace CrunchEconomy
             {
                 long output = await Task.Run(() => CountMoney(contract));
                 Context.Respond(String.Format("{0:n0}", output) + " SC Added to economy through " + type + " contracts.");
+                Context.Respond("Check the CrunchEcon logs folder for detailed output.");
             }
 
+
+        }
+
+        public class LogObject
+        {
+            public Dictionary<string, Dictionary<string, long>> MoneyFromTypes = new Dictionary<string, Dictionary<string, long>>();
+            public Dictionary<string, Dictionary<string, int>> AmountFromTypes = new Dictionary<string, Dictionary<string, int>>();
+        }
+        public Dictionary<long, LogObject> contractLogs = new Dictionary<long, LogObject>();
+
+        public LogObject AddToLog(LogObject log, Contract contract)
+        {
+            string timeKey;
+            if (contract.TimeCompleted != null) {
+                timeKey = contract.TimeCompleted.ToString("MM-dd-yyyy");
+            }
+            else
+            {
+                timeKey = DateTime.MinValue.ToString("MM-dd-yyyy");
+            }
+            if (log.AmountFromTypes.ContainsKey(timeKey)){
+                if (log.AmountFromTypes[timeKey].ContainsKey(contract.SubType))
+                {
+                    log.AmountFromTypes[timeKey][contract.SubType] += 1;
+
+                }
+                else
+                {
+                    log.AmountFromTypes[timeKey].Add(contract.SubType,1);
+                }
+            }
+            else
+            {
+                Dictionary<string, int> temp = new Dictionary<string, int>();
+                temp.Add(contract.SubType, 1);
+                log.AmountFromTypes.Add(timeKey, temp);
+            }
+            if (log.MoneyFromTypes.ContainsKey(timeKey))
+            {
+                if (log.MoneyFromTypes[timeKey].ContainsKey(contract.SubType))
+                {
+                    log.MoneyFromTypes[timeKey][contract.SubType] += contract.AmountPaid;
+                }
+                else
+                {
+                    log.MoneyFromTypes[timeKey].Add(contract.SubType, contract.AmountPaid);
+                }
+            }
+            else
+            {
+                Dictionary<string, long> temp = new Dictionary<string, long>();
+                temp.Add(contract.SubType, contract.AmountPaid);
+                log.MoneyFromTypes.Add(timeKey, temp);
+            }
+
+            return log;
         }
         public long CountMoney(ContractType type)
         {
             Dictionary<string, long> MoneyFromTypes = new Dictionary<string, long>();
             Dictionary<string, int> AmountCompleted = new Dictionary<string, int>();
+
+            // String timeformat = "MM-dd-yyyy";
+            //ToString(timeformat);
+
+
+            //store by station id 
+            //store by subtype
+            //store by date - amount completed, total money
+            StringBuilder MEGALOG = new StringBuilder();
             long output = 0;
+            MEGALOG.AppendLine("StationId,TimeCompleted,SubType,AmountPaid,AmountDelivered,PlayerSteamId,ContractType");
             switch (type)
             {
 
@@ -67,16 +134,24 @@ namespace CrunchEconomy
                     {
 
                         Contract contract = CrunchEconCore.utils.ReadFromXmlFile<Contract>(s);
-                        if (MoneyFromTypes.ContainsKey(contract.SubType))
+                        if (contractLogs.TryGetValue(contract.StationEntityId, out LogObject log))
                         {
-                            MoneyFromTypes[contract.SubType] += contract.AmountPaid;
-                            AmountCompleted[contract.SubType] += 1;
+                            log = AddToLog(log, contract);
                         }
                         else
                         {
-                            MoneyFromTypes.Add(contract.SubType, contract.AmountPaid);
-                            AmountCompleted.Add(contract.SubType, 1);
+                            LogObject log2 = new LogObject();
+                            log2 = AddToLog(log2, contract);
+                            contractLogs.Add(contract.StationEntityId, log2);
                         }
+                        if (contract.TimeCompleted != null) {
+                            MEGALOG.AppendLine(contract.StationEntityId + "," + contract.TimeCompleted + ","  + contract.SubType + "," + contract.AmountPaid + "," + contract.amountToMineOrDeliver + "," + contract.PlayerSteamId + "," + contract.type);
+                        }
+                        else
+                        {
+                            MEGALOG.AppendLine(contract.StationEntityId + "," + DateTime.MinValue.ToString() + "," + contract.SubType + "," + contract.AmountPaid + "," + contract.amountToMineOrDeliver + "," + contract.PlayerSteamId + "," + contract.type);
+                        }
+       
 
                         output += contract.AmountPaid;
                     }
@@ -87,27 +162,49 @@ namespace CrunchEconomy
 
 
                         Contract contract = CrunchEconCore.utils.ReadFromXmlFile<Contract>(s);
-                        if (MoneyFromTypes.ContainsKey(contract.SubType))
+                        if (contractLogs.TryGetValue(contract.StationEntityId, out LogObject log))
                         {
-                            MoneyFromTypes[contract.SubType] += contract.AmountPaid;
-                            AmountCompleted[contract.SubType] += 1;
+                            log = AddToLog(log, contract);
+                            contractLogs[contract.StationEntityId] = log;
                         }
                         else
                         {
-                            MoneyFromTypes.Add(contract.SubType, contract.AmountPaid);
-                            AmountCompleted.Add(contract.SubType, 1);
+                            LogObject log2 = new LogObject();
+                            log2 = AddToLog(log2, contract);
+                            contractLogs.Add(contract.StationEntityId, log2);
+                        }
+                        if (contract.TimeCompleted != null)
+                        {
+                            MEGALOG.AppendLine(contract.StationEntityId + "," + contract.TimeCompleted + "," + contract.TypeIfHauling + "/" + contract.SubType + "," + contract.AmountPaid + "," + contract.amountToMineOrDeliver + "," + contract.PlayerSteamId + "," + contract.type);
+                        }
+                        else
+                        {
+                            MEGALOG.AppendLine(contract.StationEntityId + "," + DateTime.MinValue.ToString() + "," + contract.TypeIfHauling + "/" + contract.SubType + "," + contract.AmountPaid + "," + contract.amountToMineOrDeliver + "," + contract.PlayerSteamId + "," + contract.type);
                         }
                         output += contract.AmountPaid;
+                        
                     }
                     break;
 
             }
 
-            foreach (KeyValuePair<string, long> pair in MoneyFromTypes)
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("StationId,Date,SubType,Money,AmountCompleted");
+            foreach (KeyValuePair<long, LogObject> station in contractLogs)
             {
-                Context.Respond(pair.Key + " total money " + String.Format("{0:n0}", pair.Value) + " | amount completed : " + AmountCompleted[pair.Key]);
+          
+                foreach (KeyValuePair<string, Dictionary<string, long>> money in station.Value.MoneyFromTypes){
+                    foreach (KeyValuePair<string, long> s in money.Value)
+                    {
+                        sb.AppendLine(station.Key + "," + money.Key + "," + s.Key + "," + s.Value + "," + station.Value.AmountFromTypes[money.Key][s.Key]);
+                    }
+
+                }
 
             }
+            File.WriteAllText(CrunchEconCore.path + "//Logs//NotMegaLog.txt", sb.ToString());
+            File.WriteAllText(CrunchEconCore.path + "//Logs//MEGALOG.txt", MEGALOG.ToString());
+            Context.Respond(sb.ToString());
             return output;
         }
         [Command("reload", "stop the economy refreshing")]
