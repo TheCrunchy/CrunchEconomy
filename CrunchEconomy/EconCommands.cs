@@ -41,6 +41,8 @@ namespace CrunchEconomy
 
 
         }
+
+
         [Command("moneys", "view all money added through contracts")]
         [Permission(MyPromoteLevel.Admin)]
         public async void HowMuchMoneys(String type)

@@ -496,7 +496,7 @@ namespace CrunchEconomy
                                                                 gps.Coords = store.CubeGrid.PositionComp.GetPosition();
                                                                 temp.DeliveryLocation = gps.ToString();
                                                                 temp.StationEntityId = store.CubeGrid.EntityId;
-                                                                data.addMining(temp);
+                                                      
                                                                 temp.PlayerSteamId = player.Id.SteamId;
 
                                                                 if (MiningCooldowns.TryGetValue(player.Id.SteamId, out Dictionary<String, DateTime> cd))
@@ -527,7 +527,7 @@ namespace CrunchEconomy
                                                                     MiningCooldowns.Add(player.Id.SteamId, temporary);
                                                                 }
 
-                                                                
+                                                                data.addMining(temp);
                                                                 //do this the lazy way instead of checking then setting by the key
                                                                 CrunchEconCore.playerData.Remove(player.Id.SteamId);
                                                                 CrunchEconCore.playerData.Add(player.Id.SteamId, data);

@@ -67,7 +67,7 @@ namespace CrunchEconomy.Contracts
         }
         public Dictionary<Guid, Contract> getMiningContracts()
         {
-            if (loadedMining.Count > 0)
+            if (loadedMining != null && loadedMining.Count > 0)
             {
                 return loadedMining;
             }
@@ -90,7 +90,7 @@ namespace CrunchEconomy.Contracts
         }
         public Dictionary<Guid, Contract> getHaulingContracts()
         {
-            if (loadedHauling.Count > 0)
+            if (loadedHauling != null && loadedHauling.Count > 0)
             {
                 return loadedHauling;
             }

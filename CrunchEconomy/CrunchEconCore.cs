@@ -319,7 +319,20 @@ namespace CrunchEconomy
             if (File.Exists(path + "//PlayerData//Data//" + p.SteamId.ToString() + ".json"))
             {
                 PlayerData data = utils.ReadFromJsonFile<PlayerData>(path + "//PlayerData//Data//" + p.SteamId.ToString() + ".json");
+                if (data == null)
+                {
+               
+                    File.Delete(path + "//PlayerData//Data//" + p.SteamId.ToString() + ".json");
+                    if (playerData.TryGetValue(p.SteamId, out PlayerData reee))
+                    {
+                        utils.WriteToJsonFile<PlayerData>(path + "//PlayerData//Data//" + p.SteamId.ToString() + ".json", reee);
+                    }
+                    CrunchEconCore.Log.Error("Corrupt Player Data, if they had a previous save before login, that has been restored. " + p.SteamId);
+                    
+                    return;
+                }
                 playerData.Remove(p.SteamId);
+       
                 data.getMiningContracts();
                 data.getHaulingContracts();
                 playerData.Add(p.SteamId, data);
