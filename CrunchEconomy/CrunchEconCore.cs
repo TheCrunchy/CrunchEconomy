@@ -46,6 +46,7 @@ using NLog;
 using CrunchEconomy.Contracts;
 using CrunchEconomy.SurveyMissions;
 using ShipMarket;
+using static CrunchEconomy.Stations;
 
 namespace CrunchEconomy
 {
@@ -1296,6 +1297,16 @@ namespace CrunchEconomy
                                     ClearInventories(grid, station);
                                     SaveStation(station);
                                 }
+
+                             //   foreach (MyProgrammableBlock pb in grid.GetFatBlocks().OfType<MyProgrammableBlock>())
+                              //  {
+                                //    if (!pb.Enabled)
+                                //    {
+                                //        pb.Enabled = true;
+                                //        pb.SendRecompile();
+                               //     }
+                              //  }
+
                                 Boolean AddSellTime = false;
                                 Boolean AddBuyTime = false;
                                 foreach (MyStoreBlock store in grid.GetFatBlocks().OfType<MyStoreBlock>())
@@ -1314,7 +1325,7 @@ namespace CrunchEconomy
                                             if (sellOffers.TryGetValue(store.DisplayNameText, out List<SellOffer> offers))
                                             {
                                                 //     Log.Info("it found the store files");
-
+                                               
                                                 ClearStoreOfPlayersBuyingOffers(store);
                                                 List<VRage.Game.ModAPI.IMyInventory> inventories = new List<VRage.Game.ModAPI.IMyInventory>();
                                                 inventories.AddRange(GetInventories(grid, station));
@@ -1325,6 +1336,7 @@ namespace CrunchEconomy
                                                 {
                                                     try
                                                     {
+                                                        
                                                         //Log.Info("this is an offer");
                                                         double chance = rnd.NextDouble();
 
@@ -1394,7 +1406,7 @@ namespace CrunchEconomy
 
                                                           
                                                                 int price = rnd.Next((int)offer.minPrice, (int)offer.maxPrice);
-
+                                                                price = Convert.ToInt32(price * station.GetModifier(offer.StationModifierItemName));
                                                                 MyStoreItemData item = new MyStoreItemData(itemId, hasAmount, price, null, null);
                                                                 //       Log.Info("if it got here its creating the offer");
                                                                 MyStoreInsertResults result = store.InsertOffer(item, out long notUsingThis);
@@ -1460,7 +1472,7 @@ namespace CrunchEconomy
                                                                 
 
                                                                     int price = rnd.Next((int)offer.minPrice, (int)offer.maxPrice);
-
+                                                                    price = Convert.ToInt32(price * station.GetModifier(offer.StationModifierItemName));
                                                                     MyStoreItemData item = new MyStoreItemData(itemId, offer.SpawnIfCargoLessThan, price, null, null);
                                                                     //    Log.Info("if it got here its creating the offer");
                                                                     MyStoreInsertResults result = store.InsertOffer(item, out long notUsingThis);
@@ -1538,6 +1550,7 @@ namespace CrunchEconomy
                                                             if (chance <= order.chance)
                                                             {
                                                                 int price = rnd.Next((int)order.minPrice, (int)order.maxPrice);
+                                                                price = Convert.ToInt32(price * station.GetModifier(order.StationModifierItemName));
                                                                 int amount = rnd.Next((int)order.minAmount, (int)order.maxAmount);
                                                                 MyStoreItemData item = new MyStoreItemData(itemId, amount, price, null, null);
                                                                 MyStoreInsertResults result = store.InsertOrder(item, out long notUsingThis);
@@ -1654,6 +1667,7 @@ namespace CrunchEconomy
                     if (stat.Enabled)
                     {
                         stations.Add(stat);
+                        stat.SetupModifiers();
                     }
                 }
                 catch (Exception ex)
@@ -1939,6 +1953,8 @@ namespace CrunchEconomy
                 Directory.CreateDirectory(path + "//Stations//");
                 Stations station = new Stations();
                 station.Enabled = false;
+                PriceModifier modifier = new PriceModifier();
+                station.Modifiers.Add(modifier);
                 utils.WriteToXmlFile<Stations>(path + "//Stations//Example.xml", station);
             }
             if (!Directory.Exists(path + "//BuyOrders//Example//"))

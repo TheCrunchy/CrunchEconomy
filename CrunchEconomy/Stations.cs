@@ -30,5 +30,36 @@ namespace CrunchEconomy
         {
             return CrunchEconCore.ScanChat(stationGPS);
         }
+
+        public List<PriceModifier> Modifiers = new List<PriceModifier>();
+        private Dictionary<string, float> PriceModifiers = new Dictionary<string, float>();
+        public void SetupModifiers()
+        {
+            PriceModifiers.Clear();
+            foreach (PriceModifier mod in Modifiers)
+            {
+                if (!PriceModifiers.ContainsKey(mod.StationModifierInItemFile))
+                {
+                    PriceModifiers.Add(mod.StationModifierInItemFile, mod.Modifier);
+                }
+            }
+        }
+        public float GetModifier(String input)
+        {
+            if (PriceModifiers.TryGetValue(input, out float f))
+            {
+                return f;
+
+            }
+
+            return 0f;
+        }
+     //   public Boolean DoCraftingFromInventory = false;
+      //  public int SecondsBetweenCrafting = 60;
+      public class PriceModifier
+        {
+            public float Modifier = 1.0f;
+            public string StationModifierInItemFile = "Example 100%";
+        }
     }
 }

@@ -9,6 +9,7 @@ namespace CrunchEconomy
     public class SellOffer
     {
         public Boolean Enabled = false;
+        public string StationModifierItemName = "Example 100%";
         public string typeId = "Ore";
         public string subtypeId = "Iron";
         public long minPrice = 1;
