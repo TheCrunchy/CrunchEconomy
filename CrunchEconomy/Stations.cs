@@ -52,7 +52,7 @@ namespace CrunchEconomy
 
             }
 
-            return 0f;
+            return 1f;
         }
      //   public Boolean DoCraftingFromInventory = false;
       //  public int SecondsBetweenCrafting = 60;

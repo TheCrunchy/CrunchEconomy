@@ -1666,8 +1666,9 @@ namespace CrunchEconomy
                     Stations stat = utils.ReadFromXmlFile<Stations>(s);
                     if (stat.Enabled)
                     {
-                        stations.Add(stat);
                         stat.SetupModifiers();
+                        stations.Add(stat);
+                      
                     }
                 }
                 catch (Exception ex)
