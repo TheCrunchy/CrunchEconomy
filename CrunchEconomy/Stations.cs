@@ -26,6 +26,7 @@ namespace CrunchEconomy
         public Boolean DoPeriodGridClearing = false;
         public DateTime nextGridInventoryClear = DateTime.Now;
         public long StationEntityId = 0;
+        public string WorldName = "default";
         public MyGps getGPS()
         {
             return CrunchEconCore.ScanChat(stationGPS);
