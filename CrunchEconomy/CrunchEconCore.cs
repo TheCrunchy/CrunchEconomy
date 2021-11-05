@@ -322,18 +322,18 @@ namespace CrunchEconomy
                 PlayerData data = utils.ReadFromJsonFile<PlayerData>(path + "//PlayerData//Data//" + p.SteamId.ToString() + ".json");
                 if (data == null)
                 {
-               
+
                     File.Delete(path + "//PlayerData//Data//" + p.SteamId.ToString() + ".json");
                     if (playerData.TryGetValue(p.SteamId, out PlayerData reee))
                     {
                         utils.WriteToJsonFile<PlayerData>(path + "//PlayerData//Data//" + p.SteamId.ToString() + ".json", reee);
                     }
                     CrunchEconCore.Log.Error("Corrupt Player Data, if they had a previous save before login, that has been restored. " + p.SteamId);
-                    
+
                     return;
                 }
                 playerData.Remove(p.SteamId);
-       
+
                 data.getMiningContracts();
                 data.getHaulingContracts();
                 playerData.Add(p.SteamId, data);
@@ -367,6 +367,26 @@ namespace CrunchEconomy
 
                     c.DoPlayerGps(id);
 
+                }
+                MyIdentity iden = GetIdentityByNameOrId(p.SteamId.ToString());
+                if (iden != null)
+                {
+                    MyGpsCollection gpscol = (MyGpsCollection)MyAPIGateway.Session?.GPS;
+
+                    foreach (Stations stat in stations)
+                    {
+                        if (stat.GiveGPSOnLogin)
+                        {
+                            if (stat.getGPS() != null)
+                            {
+                                MyGps gps = stat.getGPS();
+                                gps.DiscardAt = new TimeSpan(6000);
+                                gpscol.SendAddGps(iden.IdentityId, ref gps);
+
+                            }
+
+                        }
+                    }
                 }
             }
         }
@@ -725,7 +745,15 @@ namespace CrunchEconomy
 
                                 }
                                 playerData[player.Id.SteamId] = data;
-                                utils.WriteToJsonFile<PlayerData>(path + "//PlayerData//Data//" + data.steamId + ".json", data);
+                                try
+                                {
+                                    utils.WriteToJsonFile<PlayerData>(path + "//PlayerData//Data//" + data.steamId + ".json", data);
+                                }
+                                catch (Exception ex)
+                                {
+                                    Log.Error("WHY YOU DO THIS?");
+
+                                }
                             }
                         }
                     }
@@ -1290,7 +1318,8 @@ namespace CrunchEconomy
                             Boolean AddSellTime = false;
                             Boolean AddBuyTime = false;
                             bool checkLocation = false;
-                            if (!station.WorldName.Equals("default")) {
+                            if (!station.WorldName.Equals("default"))
+                            {
                                 if (station.WorldName.Equals(MyMultiplayer.Static.HostName))
                                 {
                                     if (station.StationEntityId > 0)
@@ -1905,22 +1934,22 @@ namespace CrunchEconomy
                                 }
                             }
 
-                                bool save = false;
-                                if (AddSellTime)
-                                {
-                                    station.nextSellRefresh = now.AddSeconds(station.SecondsBetweenRefreshForSellOffers);
-                                    save = true;
-                                }
-                                if (AddBuyTime)
-                                {
-                                    station.nextBuyRefresh = now.AddSeconds(station.SecondsBetweenRefreshForBuyOrders);
-                                    save = true;
-                                }
-                                if (save)
-                                {
-                                    SaveStation(station);
-                                }
-                            
+                            bool save = false;
+                            if (AddSellTime)
+                            {
+                                station.nextSellRefresh = now.AddSeconds(station.SecondsBetweenRefreshForSellOffers);
+                                save = true;
+                            }
+                            if (AddBuyTime)
+                            {
+                                station.nextBuyRefresh = now.AddSeconds(station.SecondsBetweenRefreshForBuyOrders);
+                                save = true;
+                            }
+                            if (save)
+                            {
+                                SaveStation(station);
+                            }
+
 
                         }
                     }
@@ -1986,7 +2015,7 @@ namespace CrunchEconomy
             foreach (String s in Directory.GetFiles(path + "//Stations//"))
             {
 
-             
+
                 try
                 {
                     Stations stat = utils.ReadFromXmlFile<Stations>(s);
@@ -1994,7 +2023,7 @@ namespace CrunchEconomy
                     {
                         stat.SetupModifiers();
                         stations.Add(stat);
-                      
+
                     }
                 }
                 catch (Exception ex)
@@ -2189,6 +2218,7 @@ namespace CrunchEconomy
             if (state == TorchSessionState.Loaded)
             {
                 session.Managers.GetManager<IMultiplayerManagerBase>().PlayerJoined += Login;
+
                 if (session.Managers.GetManager<PluginManager>().Plugins.TryGetValue(Guid.Parse("74796707-646f-4ebd-8700-d077a5f47af3"), out ITorchPlugin All))
                 {
                     Type alli = All.GetType().Assembly.GetType("AlliancesPlugin.AlliancePlugin");
