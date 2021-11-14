@@ -11,17 +11,37 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using VRage.Game;
 using VRageMath;
+using static CrunchEconomy.Contracts.GeneratedContract;
 
 namespace CrunchEconomy.Contracts
 {
     public class ContractUtils
     {
+        static Random rand = new Random();
         public static Contract GeneratedToPlayer(GeneratedContract gen)
         {
             Contract contract = new Contract();
             contract.type = gen.type;
-            contract.TypeIfHauling = gen.TypeIfHauling;
-            contract.SubType = gen.SubType;
+            List<ContractInfo> temporary = new List<ContractInfo>();
+            foreach (ContractInfo info in gen.ItemsToPickFrom)
+            {
+                double chance = rand.NextDouble();
+                if (chance <= info.chance)
+                {
+                    temporary.Add(info);
+                }
+            }
+            if (temporary.Count == 1)
+            {
+                contract.TypeIfHauling = temporary[0].TypeId;
+                contract.SubType = temporary[0].SubTypeId;
+            }
+            else
+            {
+                contract.TypeIfHauling = temporary[rand.Next(temporary.Count)].TypeId;
+                contract.SubType = temporary[rand.Next(temporary.Count)].SubTypeId;
+            }
+ 
             contract.GenerateAmountToMine(gen.minimum, gen.maximum);
             contract.contractPrice = contract.amountToMineOrDeliver * gen.PricePerOre;
             contract.minedAmount = 0;

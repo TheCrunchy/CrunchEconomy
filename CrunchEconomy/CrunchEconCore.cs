@@ -47,6 +47,7 @@ using CrunchEconomy.Contracts;
 using CrunchEconomy.SurveyMissions;
 using ShipMarket;
 using static CrunchEconomy.Stations;
+using static CrunchEconomy.Contracts.GeneratedContract;
 
 namespace CrunchEconomy
 {
@@ -546,7 +547,7 @@ namespace CrunchEconomy
                             {
                                 foreach (RewardItem item in contract.PlayerLoot)
                                 {
-                                    if (MyDefinitionId.TryParse("MyObjectBuilder_" + item.TypeId + "/" + item.SubTypeId, out MyDefinitionId reward) && item.Enabled)
+                                    if (MyDefinitionId.TryParse("MyObjectBuilder_" + item.TypeId + "/" + item.SubTypeId, out MyDefinitionId reward) && item.Enabled && rep >= item.ReputationRequired)
                                     {
                                         //  Log.Info("Tried to do ");
                                         Random rand = new Random();
@@ -571,7 +572,7 @@ namespace CrunchEconomy
 
                                 foreach (RewardItem item in contract.PutInStation)
                                 {
-                                    if (item.Enabled)
+                                    if (item.Enabled && rep >= item.ReputationRequired)
                                     {
                                         Random random = new Random();
                                         if (random.NextDouble() <= item.chance)
@@ -2356,6 +2357,9 @@ namespace CrunchEconomy
                 Directory.CreateDirectory(path + "//ContractConfigs//Mining//");
                 contract.PlayerLoot.Add(new RewardItem());
                 contract.PutInStation.Add(new RewardItem());
+                contract.ItemsToPickFrom.Add(new ContractInfo());
+                contract.ItemsToPickFrom.Add(new ContractInfo());
+                contract.StationsToDeliverTo.Add(new StationDelivery());
                 utils.WriteToXmlFile<GeneratedContract>(path + "//ContractConfigs//Mining//Example.xml", contract);
             }
             if (!Directory.Exists(path + "//ContractConfigs//Hauling//"))
@@ -2365,6 +2369,9 @@ namespace CrunchEconomy
                 contract.type = ContractType.Hauling;
                 contract.PlayerLoot.Add(new RewardItem());
                 contract.PutInStation.Add(new RewardItem());
+                contract.ItemsToPickFrom.Add(new ContractInfo());
+                contract.ItemsToPickFrom.Add(new ContractInfo());
+                contract.StationsToDeliverTo.Add(new StationDelivery());
                 utils.WriteToXmlFile<GeneratedContract>(path + "//ContractConfigs//Hauling//Example.xml", contract);
             }
             if (!Directory.Exists(path + "//PlayerData//Data//"))

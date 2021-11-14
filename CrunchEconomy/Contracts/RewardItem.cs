@@ -14,6 +14,7 @@ namespace CrunchEconomy.Contracts
         public int ItemMaxAmount = 2;
         public string TypeId = "Ingot";
         public string SubTypeId = "Uranium";
+        public int ReputationRequired = 100;
 
     }
 }

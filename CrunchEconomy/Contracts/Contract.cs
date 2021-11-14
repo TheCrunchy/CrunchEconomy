@@ -26,6 +26,7 @@ namespace CrunchEconomy.Contracts
         public long DistanceBonus = 0;
         public long contractPrice = 0;
         public string CargoName = "default";
+        
         public long StationEntityId = 0;
         public List<RewardItem> PlayerLoot = new List<RewardItem>();
         public List<RewardItem> PutInStation = new List<RewardItem>();
@@ -38,6 +39,8 @@ namespace CrunchEconomy.Contracts
         public DateTime TimeCompleted;
         public int amountToMineOrDeliver = 0;
         public long AmountPaid = 0;
+
+
         public void DoPlayerGps(long identityId)
         {
             MyGpsCollection gpscol = (MyGpsCollection)MyAPIGateway.Session?.GPS;

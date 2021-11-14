@@ -13,8 +13,6 @@ namespace CrunchEconomy.Contracts
         public Boolean Enabled = false;
         public int ReputationGain = 1;
         public double chance = 100;
-        public string TypeIfHauling = "Ingot";
-        public string SubType = "Iron";
         public int minimum = 450000;
         public int maximum = 500000;
         public int PricePerOre = 450;
@@ -24,5 +22,21 @@ namespace CrunchEconomy.Contracts
         public string StationCargoName = "Change this";
         public List<RewardItem> PutInStation = new List<RewardItem>();
         public int CooldownInSeconds = 1;
+        public List<ContractInfo> ItemsToPickFrom = new List<ContractInfo>();
+        public class ContractInfo
+        {
+            public string TypeId = "Ore";
+            public string SubTypeId = "Stone";
+            public float chance = 100;
+       
+        }
+        public List<StationDelivery> StationsToDeliverTo = new List<StationDelivery>();
+
+        public class StationDelivery
+        {
+            public string Name = "TAKEN";
+            public double chance = 100;
+           
+        }
     }
 }

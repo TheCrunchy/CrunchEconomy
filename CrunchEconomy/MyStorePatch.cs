@@ -28,6 +28,7 @@ using VRage.Game.ModAPI.Ingame;
 using VRage.Game.ObjectBuilders.Definitions;
 using VRage.ObjectBuilders;
 using VRageMath;
+using static CrunchEconomy.Contracts.GeneratedContract;
 
 namespace CrunchEconomy
 {
@@ -432,10 +433,10 @@ namespace CrunchEconomy
                                     {
                                         //     CrunchEconCore.Log.Info("1");
                                         //improve this, store the offers by their object builder in a dictionary
-                                 
+
                                         foreach (SellOffer offer in offers)
                                         {//
-                                       
+
                                             if (offer.BuyingGivesHaulingContract || offer.BuyingGivesMiningContract)
                                             {
                                                 //   CrunchEconCore.Log.Info("has a contract");
@@ -489,14 +490,73 @@ namespace CrunchEconomy
                                                             if (ContractUtils.newContracts.TryGetValue(offer.ContractName, out GeneratedContract contract))
                                                             {
 
-                                                             
-                                                                Contract temp = ContractUtils.GeneratedToPlayer(contract);
 
-                                                                MyGps gps = new MyGps();
-                                                                gps.Coords = store.CubeGrid.PositionComp.GetPosition();
-                                                                temp.DeliveryLocation = gps.ToString();
-                                                                temp.StationEntityId = store.CubeGrid.EntityId;
-                                                      
+                                                                Contract temp = ContractUtils.GeneratedToPlayer(contract);
+                                                                Random random = new Random();
+                                                                List<StationDelivery> locations = new List<StationDelivery>();
+                                                                Dictionary<string, Stations> temporaryStations = new Dictionary<string, Stations>();
+                                                                bool picked = false;
+                                                                foreach (StationDelivery del in contract.StationsToDeliverTo)
+                                                                {
+
+                                                                    if (del.Name.Equals("TAKEN"))
+                                                                    {
+                                                                        MyGps gps = new MyGps();
+                                                                        gps.Coords = store.CubeGrid.PositionComp.GetPosition();
+                                                                        temp.DeliveryLocation = gps.ToString();
+                                                                        temp.StationEntityId = store.CubeGrid.EntityId;
+
+                                                                        temp.PlayerSteamId = player.Id.SteamId;
+                                                                        picked = true;
+                                                                        break;
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        if (random.Next(0, 100) <= del.chance)
+                                                                        {
+                                                                            foreach (Stations stat in CrunchEconCore.stations)
+                                                                            {
+                                                                                if (stat.Name.Equals(del.Name))
+                                                                                {
+                                                                                    if (!temporaryStations.ContainsKey(del.Name))
+                                                                                    {
+                                                                                        temporaryStations.Add(del.Name, stat);
+                                                                                    }
+                                                                                    locations.Add(del);
+                                                                                }
+                                                                            }
+
+                                                                        }
+                                                                    }
+                                                                }
+                                                                if (!picked)
+                                                                {
+                                                                    if (locations.Count == 1)
+                                                                    {
+                                                                        MyGps gps = temporaryStations[locations[0].Name].getGPS();
+                                                                        temp.DeliveryLocation = gps.ToString();
+                                                                        temp.StationEntityId = temporaryStations[locations[0].Name].StationEntityId;
+                                                                        temp.PlayerSteamId = player.Id.SteamId;
+                                                                        float distance = Vector3.Distance(player.GetPosition(), gps.Coords);
+                                                                        long deliveryBonus = Convert.ToInt64(distance / 100000) * 50000;
+
+                                                                        temp.DistanceBonus = deliveryBonus;
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        int r = random.Next(locations.Count);
+                                                                        MyGps gps = temporaryStations[locations[r].Name].getGPS();
+                                                                        temp.DeliveryLocation = gps.ToString();
+                                                                        temp.StationEntityId = temporaryStations[locations[r].Name].StationEntityId;
+                                                                        temp.PlayerSteamId = player.Id.SteamId;
+
+                                                                        float distance = Vector3.Distance(player.GetPosition(), gps.Coords);
+                                                                        long deliveryBonus = Convert.ToInt64(distance / 100000) * 50000;
+
+                                                                        temp.DistanceBonus = deliveryBonus;
+                                                                    }
+                                                                }
+
                                                                 temp.PlayerSteamId = player.Id.SteamId;
 
                                                                 if (MiningCooldowns.TryGetValue(player.Id.SteamId, out Dictionary<String, DateTime> cd))
@@ -509,20 +569,20 @@ namespace CrunchEconomy
                                                                             var diff = time.Subtract(DateTime.Now);
                                                                             string time2 = String.Format("{0} Hours {1} Minutes {2} Seconds", diff.Hours, diff.Minutes, diff.Seconds);
                                                                             sb.AppendLine("Cannot purchase another contract of this type for " + time2);
-                                                                         
+
                                                                             DialogMessage m = new DialogMessage("Shop Error", "", sb.ToString());
                                                                             ModCommunication.SendMessageTo(m, player.Id.SteamId);
                                                                             return false;
-                                                                      
+
                                                                         }
                                                                     }
-                                                               
+
                                                                     MiningCooldowns[player.Id.SteamId].Remove(temp.SubType);
                                                                     MiningCooldowns[player.Id.SteamId].Add(temp.SubType, DateTime.Now.AddSeconds(temp.CooldownInSeconds));
                                                                 }
                                                                 else
                                                                 {
-                                                                    Dictionary<string, DateTime> temporary  = new Dictionary<string, DateTime>();
+                                                                    Dictionary<string, DateTime> temporary = new Dictionary<string, DateTime>();
                                                                     temporary.Add(temp.SubType, DateTime.Now.AddSeconds(temp.CooldownInSeconds));
                                                                     MiningCooldowns.Add(player.Id.SteamId, temporary);
                                                                 }
@@ -610,7 +670,7 @@ namespace CrunchEconomy
                                                             if (ContractUtils.newContracts.TryGetValue(offer.ContractName, out GeneratedContract contract))
                                                             {
 
-                                                           
+
 
                                                                 Contract temp = ContractUtils.GeneratedToPlayer(contract);
                                                                 if (HaulingCooldowns.TryGetValue(player.Id.SteamId, out Dictionary<String, DateTime> cd))
@@ -640,19 +700,79 @@ namespace CrunchEconomy
                                                                     temporary.Add(temp.SubType, DateTime.Now.AddSeconds(temp.CooldownInSeconds));
                                                                     HaulingCooldowns.Add(player.Id.SteamId, temporary);
                                                                 }
-                                                                Stations station = ContractUtils.GetDeliveryLocation(temp);
-                                                                MyGps delivery = station.getGPS();
-                                                                temp.StationEntityId = station.StationEntityId;
-                                                                float distance = Vector3.Distance(player.GetPosition(), delivery.Coords);
-                                                                long deliveryBonus = Convert.ToInt64(distance / 100000) * 50000;
-                                                                temp.DeliveryLocation = delivery.ToString();
-                                                                temp.DistanceBonus = deliveryBonus;
+                                                                Random random = new Random();
+                                                                List<StationDelivery> locations = new List<StationDelivery>();
+                                                                Dictionary<string, Stations> temporaryStations = new Dictionary<string, Stations>();
+                                                                bool picked = false;
+                                                                foreach (StationDelivery del in contract.StationsToDeliverTo)
+                                                                {
+
+                                                                    if (del.Name.Equals("TAKEN"))
+                                                                    {
+                                                                        MyGps gps = new MyGps();
+                                                                        gps.Coords = store.CubeGrid.PositionComp.GetPosition();
+                                                                        temp.DeliveryLocation = gps.ToString();
+                                                                        temp.StationEntityId = store.CubeGrid.EntityId;
+                                                                        picked = true;
+                                                                        temp.PlayerSteamId = player.Id.SteamId;
+                                                                        break;
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        if (random.Next(0, 100) <= del.chance)
+                                                                        {
+                                                                            foreach (Stations stat in CrunchEconCore.stations)
+                                                                            {
+                                                                                if (stat.Name.Equals(del.Name))
+                                                                                {
+                                                                                    if (!temporaryStations.ContainsKey(del.Name))
+                                                                                    {
+                                                                                        temporaryStations.Add(del.Name, stat);
+                                                                                    }
+                                                                                    locations.Add(del);
+                                                                                }
+                                                                            }
+
+                                                                        }
+                                                                    }
+                                                                }
+                                                                if (!picked)
+                                                                {
+                                                                    if (locations.Count == 1)
+                                                                    {
+                                                                        MyGps gps = temporaryStations[locations[0].Name].getGPS();
+                                                                        temp.DeliveryLocation = gps.ToString();
+                                                                        temp.StationEntityId = temporaryStations[locations[0].Name].StationEntityId;
+                                                                        temp.PlayerSteamId = player.Id.SteamId;
+                                                                        float distance = Vector3.Distance(player.GetPosition(), gps.Coords);
+                                                                        long deliveryBonus = Convert.ToInt64(distance / 100000) * 50000;
+
+                                                                        temp.DistanceBonus = deliveryBonus;
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        int r = random.Next(locations.Count);
+                                                                        MyGps gps = temporaryStations[locations[r].Name].getGPS();
+                                                                        temp.DeliveryLocation = gps.ToString();
+                                                                        temp.StationEntityId = temporaryStations[locations[r].Name].StationEntityId;
+                                                                        temp.PlayerSteamId = player.Id.SteamId;
+
+                                                                        float distance = Vector3.Distance(player.GetPosition(), gps.Coords);
+                                                                        long deliveryBonus = Convert.ToInt64(distance / 100000) * 50000;
+
+                                                                        temp.DistanceBonus = deliveryBonus;
+                                                                    }
+                                                                }
+                                                                //  return locations[r];
+
+
+
                                                                 data.addHauling(temp);
                                                                 temp.PlayerSteamId = player.Id.SteamId;
-                                                  
+
                                                                 if (contract.SpawnItemsInPlayerInvent)
                                                                 {
-                                                                    if (MyDefinitionId.TryParse("MyObjectBuilder_" + contract.type + "/" + contract.SubType, out MyDefinitionId itemId))
+                                                                    if (MyDefinitionId.TryParse("MyObjectBuilder_" + temp.TypeIfHauling + "/" + temp.SubType, out MyDefinitionId itemId))
                                                                     {
                                                                         MyItemType itemType = new MyInventoryItemFilter(itemId.TypeId + "/" + itemId.SubtypeName).ItemType;
                                                                         if (!player.Character.GetInventory().CanItemsBeAdded(temp.amountToMineOrDeliver, itemType))
