@@ -161,10 +161,7 @@ namespace CrunchEconomy
                     return false;
                 }
 
-                if (!PossibleLogs.ContainsKey(id))
-                {
-                    PossibleLogs.Add(id, "SteamId:" + player.Id.SteamId + ",action:sold,Amount:" + amount + ",TypeId:" + myStoreItem.Item.Value.TypeIdString + ",SubTypeId:" + myStoreItem.Item.Value.SubtypeName + ",TotalMoney:" + myStoreItem.PricePerUnit * (long)amount + ",GridId:" + store.CubeGrid.EntityId + ",FacTag:" + store.GetOwnerFactionTag());
-                }
+          
 
                 if (CrunchEconCore.playerData.TryGetValue(player.Id.SteamId, out PlayerData data))
                 {
@@ -174,10 +171,17 @@ namespace CrunchEconomy
 
                         foreach (BuyOrder order in orders)
                         {
+                            if (order.typeId.Equals(myStoreItem.Item.Value.TypeIdString) && order.subtypeId.Equals(myStoreItem.Item.Value.SubtypeName))
+                            {
+                                if (!PossibleLogs.ContainsKey(id))
+                                {
+                                    PossibleLogs.Add(id, "SteamId:" + player.Id.SteamId + ",action:sold,Amount:" + amount + ",TypeId:" + myStoreItem.Item.Value.TypeIdString + ",SubTypeId:" + myStoreItem.Item.Value.SubtypeName + ",TotalMoney:" + myStoreItem.PricePerUnit * (long)amount + ",GridId:" + store.CubeGrid.EntityId + ",FacTag:" + store.GetOwnerFactionTag() + ",ModifierName:" + order.StationModifierItemName);
+                                }
+                            }
                             if (order.SellingThisCancelsContract && store.GetOwnerFactionTag().Equals(order.FactionTagOwnerForCancelling) && order.typeId.Equals(myStoreItem.Item.Value.TypeIdString.Replace("MyObjectBuilder_", "")) && order.subtypeId.Equals(myStoreItem.Item.Value.SubtypeName))
                             {
                                 //this should cancel
-
+                            
                                 if (ContractUtils.newContracts.TryGetValue(order.ContractToCancel, out GeneratedContract gen))
                                 {
                                     if (amount > 1)
@@ -359,7 +363,7 @@ namespace CrunchEconomy
                         }
                         if (!PossibleLogs.ContainsKey(id))
                         {
-                            PossibleLogs.Add(id, "SteamId:" + player.Id.SteamId + ",action:bought,Amount:" + amount + ",TypeId:" + storeItem.Item.Value.TypeIdString + ",SubTypeId:" + storeItem.Item.Value.SubtypeName + ",TotalMoney:" + storeItem.PricePerUnit * (long)amount + ",GridId:" + store.CubeGrid.EntityId + ",FacTag:" + store.GetOwnerFactionTag());
+                         
                         }
                         if (!CrunchEconCore.gridsForSale.ContainsKey(storeItem.Item.Value.SubtypeName) && !CrunchEconCore.sellOffers.ContainsKey(store.DisplayNameText))
                         {
@@ -436,7 +440,14 @@ namespace CrunchEconomy
 
                                         foreach (SellOffer offer in offers)
                                         {//
-
+                                             if (offer.typeId.Equals(storeItem.Item.Value.TypeIdString) && offer.subtypeId.Equals(storeItem.Item.Value.SubtypeName))
+                                            {
+                                                if (!PossibleLogs.ContainsKey(id))
+                                                {
+                                                    PossibleLogs.Add(id, "SteamId:" + player.Id.SteamId + ",action:bought,Amount:" + amount + ",TypeId:" + storeItem.Item.Value.TypeIdString + ",SubTypeId:" + storeItem.Item.Value.SubtypeName + ",TotalMoney:" + storeItem.PricePerUnit * (long)amount + ",GridId:" + store.CubeGrid.EntityId + ",FacTag:" + store.GetOwnerFactionTag() + ",ModifierName:" + offer.StationModifierItemName);
+                               
+                                                }
+                                            }
                                             if (offer.BuyingGivesHaulingContract || offer.BuyingGivesMiningContract)
                                             {
                                                 //   CrunchEconCore.Log.Info("has a contract");
