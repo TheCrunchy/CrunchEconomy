@@ -48,6 +48,8 @@ using CrunchEconomy.SurveyMissions;
 using ShipMarket;
 using static CrunchEconomy.Stations;
 using static CrunchEconomy.Contracts.GeneratedContract;
+using static CrunchEconomy.RepConfig;
+using System.Threading.Tasks;
 
 namespace CrunchEconomy
 {
@@ -310,6 +312,39 @@ namespace CrunchEconomy
             return targetAmount;
         }
 
+        //got bored, this being async probably doesnt matter at all 
+        public static async void DoFactionShit(IPlayer p)
+        {
+
+            MyIdentity iden = GetIdentityByNameOrId(p.SteamId.ToString());
+            if (iden != null)
+            {
+                MyFaction player = MySession.Static.Factions.TryGetPlayerFaction(iden.IdentityId) as MyFaction;
+                await Task.Run(() =>
+                {
+                    foreach (RepItem item in repConfig.RepConfigs)
+                    {
+                        if (item.Enabled)
+                        {
+                            MyFaction target = MySession.Static.Factions.TryGetFactionByTag(item.FactionTag);
+                            if (target != null)
+                            {
+
+                                MySession.Static.Factions.SetReputationBetweenPlayerAndFaction(iden.IdentityId, target.FactionId, item.PlayerToFactionRep);
+                                if (player != null)
+                                {
+                                    MySession.Static.Factions.SetReputationBetweenFactions(player.FactionId, target.FactionId, item.FactionToFactionRep);
+                                }
+                            }
+                        }
+                    }
+                });
+
+            }
+
+            return;
+
+        }
 
         public static void Login(IPlayer p)
         {
@@ -317,7 +352,9 @@ namespace CrunchEconomy
             {
                 return;
             }
-
+        
+               DoFactionShit(p);
+            
             if (File.Exists(path + "//PlayerData//Data//" + p.SteamId.ToString() + ".json"))
             {
                 PlayerData data = utils.ReadFromJsonFile<PlayerData>(path + "//PlayerData//Data//" + p.SteamId.ToString() + ".json");
@@ -1157,6 +1194,7 @@ namespace CrunchEconomy
                 Log.Info("Loading stuff for CrunchEcon");
                 try
                 {
+                    repConfig = utils.ReadFromXmlFile<RepConfig>(StoragePath + "\\ReputationConfig.xml");
                     //MarketCommands.list.RefreshList();
                 }
                 catch (Exception ex)
@@ -2287,6 +2325,7 @@ namespace CrunchEconomy
                 }
             }
         }
+        public static RepConfig repConfig;
         public override void Init(ITorchBase torch)
         {
 
@@ -2304,7 +2343,19 @@ namespace CrunchEconomy
             {
                 Directory.CreateDirectory(path + "//Logs//");
             }
+            if (File.Exists(path + "\\ReputationConfig.xml"))
+            {
+                repConfig = utils.ReadFromXmlFile<RepConfig>(StoragePath + "\\ReputationConfig.xml");
+                utils.WriteToXmlFile<RepConfig>(StoragePath + "\\ReputationConfig.xml", repConfig, false);
+            }
+            else
+            {
+                repConfig = new RepConfig();
+                RepItem item = new RepItem();
 
+                repConfig.RepConfigs.Add(item);
+                utils.WriteToXmlFile<RepConfig>(StoragePath + "\\ReputationConfig.xml", repConfig, false);
+            }
             if (!Directory.Exists(path + "//Stations//"))
             {
                 Directory.CreateDirectory(path + "//Stations//");
@@ -2425,6 +2476,7 @@ namespace CrunchEconomy
         {
 
             path = StoragePath;
+
             if (File.Exists(StoragePath + "\\CrunchEconomy.xml"))
             {
                 config = utils.ReadFromXmlFile<Config>(StoragePath + "\\CrunchEconomy.xml");
