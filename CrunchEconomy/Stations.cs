@@ -28,7 +28,8 @@ namespace CrunchEconomy
         public long StationEntityId = 0;
         public string WorldName = "default";
         public Boolean GiveGPSOnLogin = false;
-
+        public Boolean WhitelistedSafezones = false;
+        public List<String> Whitelist = new List<string>();
         public MyGps getGPS()
         {
             return CrunchEconCore.ScanChat(stationGPS);

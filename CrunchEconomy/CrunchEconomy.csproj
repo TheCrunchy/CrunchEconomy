@@ -117,6 +117,7 @@
     <Compile Include="Stations.cs" />
     <Compile Include="SurveyMissions\SurveyMission.cs" />
     <Compile Include="SurveyMissions\SurveyStage.cs" />
+    <Compile Include="WhitelistFile.cs" />
   </ItemGroup>
   <ItemGroup>
     <WCFMetadata Include="Connected Services\" />

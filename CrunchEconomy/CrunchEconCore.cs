@@ -50,6 +50,7 @@ using static CrunchEconomy.Stations;
 using static CrunchEconomy.Contracts.GeneratedContract;
 using static CrunchEconomy.RepConfig;
 using System.Threading.Tasks;
+using static CrunchEconomy.WhitelistFile;
 
 namespace CrunchEconomy
 {
@@ -352,9 +353,9 @@ namespace CrunchEconomy
             {
                 return;
             }
-        
-               DoFactionShit(p);
-            
+
+            DoFactionShit(p);
+
             if (File.Exists(path + "//PlayerData//Data//" + p.SteamId.ToString() + ".json"))
             {
                 PlayerData data = utils.ReadFromJsonFile<PlayerData>(path + "//PlayerData//Data//" + p.SteamId.ToString() + ".json");
@@ -1177,9 +1178,75 @@ namespace CrunchEconomy
             }
             return null;
         }
+        public static async void DoStationShit()
+        {
+            Log.Info("Redoing station whitelists");
+            await Task.Run(() =>
+            {
+                foreach (Stations station in stations)
+                {
 
+                    if (station.WhitelistedSafezones)
+                    {
+                        if (!station.WorldName.Equals("default"))
+                        {
+                            if (station.WorldName.Equals(MyMultiplayer.Static.HostName))
+                            {
+                                BoundingSphereD sphere = new BoundingSphereD(station.getGPS().Coords, 200);
+
+                                foreach (MySafeZone zone in MyAPIGateway.Entities.GetEntitiesInSphere(ref sphere).OfType<MySafeZone>())
+                                {
+                                    zone.Factions.Clear();
+                                    zone.AccessTypeFactions = MySafeZoneAccess.Whitelist;
+                                    foreach (String s in station.Whitelist)
+                                    {
+                                        if (s.Contains("LIST:"))
+                                        {
+                                            //split the list
+                                       //     Log.Info("Is list");
+                                            String temp = s.Split(':')[1];
+                                        //    Log.Info(temp);
+                                            foreach (Whitelist list in whitelist.whitelist)
+                                            {
+                                        //        Log.Info("Checking the lists");
+                                         //       Log.Info(list.ListName);
+                                                if (list.ListName == temp)
+                                                {
+                                             //       Log.Info("its the right name");
+                                                    foreach (String tag in list.FactionTags)
+                                                    {
+                                                   //     Log.Info("looping through the tags " + tag);
+                                                        if (MySession.Static.Factions.TryGetFactionByTag(tag) != null)
+                                                        {
+                                                    //        Log.Info("fac isnt null");
+                                                            zone.Factions.Add(MySession.Static.Factions.TryGetFactionByTag(tag));
+                                                        }
+                                                    }
+                                                }
+
+                                            }
+                                        }
+                                        else if (s.Contains("FAC:"))
+                                        {
+                                            String temp = s.Split(':')[1];
+                                            if (MySession.Static.Factions.TryGetFactionByTag(temp) != null)
+                                            {
+                                                zone.Factions.Add(MySession.Static.Factions.TryGetFactionByTag(temp));
+                                            }
+
+                                        }
+                                    }
+                                    MySessionComponentSafeZones.RequestUpdateSafeZone((MyObjectBuilder_SafeZone)zone.GetObjectBuilder());
+                                }
+                            }
+
+                        }
+                    }
+                }
+            });
+        }
         public static Random rnd = new Random();
-        public override void Update()
+        public override  void Update()
         {
             ticks++;
             if (paused)
@@ -1194,7 +1261,8 @@ namespace CrunchEconomy
                 Log.Info("Loading stuff for CrunchEcon");
                 try
                 {
-                    repConfig = utils.ReadFromXmlFile<RepConfig>(StoragePath + "\\ReputationConfig.xml");
+                    repConfig = utils.ReadFromXmlFile<RepConfig>(path + "\\ReputationConfig.xml");
+                    whitelist = utils.ReadFromXmlFile<WhitelistFile>(path + "\\Whitelist.xml");
                     //MarketCommands.list.RefreshList();
                 }
                 catch (Exception ex)
@@ -1232,6 +1300,7 @@ namespace CrunchEconomy
                 try
                 {
                     LoadAllStations();
+                    DoStationShit();
                 }
                 catch (Exception ex)
                 {
@@ -2326,6 +2395,7 @@ namespace CrunchEconomy
             }
         }
         public static RepConfig repConfig;
+        public static WhitelistFile whitelist;
         public override void Init(ITorchBase torch)
         {
 
@@ -2343,10 +2413,30 @@ namespace CrunchEconomy
             {
                 Directory.CreateDirectory(path + "//Logs//");
             }
+            if (File.Exists(path + "\\Whitelist.xml"))
+            {
+                whitelist = utils.ReadFromXmlFile<WhitelistFile>(path + "\\Whitelist.xml");
+                utils.WriteToXmlFile<WhitelistFile>(path + "\\Whitelist.xml", whitelist, false);
+            }
+            else
+            {
+                whitelist = new WhitelistFile();
+                Whitelist temp = new Whitelist();
+                temp.FactionTags.Add("BOB");
+                temp.ListName = "LIST1";
+
+                whitelist.whitelist.Add(temp);
+                Whitelist temp2 = new Whitelist();
+                temp2.FactionTags.Add("CAR");
+                temp2.FactionTags.Add("BOB");
+                temp2.ListName = "LIST2";
+                whitelist.whitelist.Add(temp2);
+                utils.WriteToXmlFile<WhitelistFile>(path + "\\Whitelist.xml", whitelist, false);
+            }
             if (File.Exists(path + "\\ReputationConfig.xml"))
             {
-                repConfig = utils.ReadFromXmlFile<RepConfig>(StoragePath + "\\ReputationConfig.xml");
-                utils.WriteToXmlFile<RepConfig>(StoragePath + "\\ReputationConfig.xml", repConfig, false);
+                repConfig = utils.ReadFromXmlFile<RepConfig>(path + "\\ReputationConfig.xml");
+                utils.WriteToXmlFile<RepConfig>(path + "\\ReputationConfig.xml", repConfig, false);
             }
             else
             {
@@ -2354,7 +2444,7 @@ namespace CrunchEconomy
                 RepItem item = new RepItem();
 
                 repConfig.RepConfigs.Add(item);
-                utils.WriteToXmlFile<RepConfig>(StoragePath + "\\ReputationConfig.xml", repConfig, false);
+                utils.WriteToXmlFile<RepConfig>(path + "\\ReputationConfig.xml", repConfig, false);
             }
             if (!Directory.Exists(path + "//Stations//"))
             {
@@ -2363,6 +2453,8 @@ namespace CrunchEconomy
                 station.Enabled = false;
                 PriceModifier modifier = new PriceModifier();
                 station.Modifiers.Add(modifier);
+                station.Whitelist.Add("FAC:BOB");
+                station.Whitelist.Add("LIST:LIST1");
                 utils.WriteToXmlFile<Stations>(path + "//Stations//Example.xml", station);
             }
             if (!Directory.Exists(path + "//BuyOrders//Example//"))
