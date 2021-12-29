@@ -1197,7 +1197,15 @@ namespace CrunchEconomy
                                 foreach (MySafeZone zone in MyAPIGateway.Entities.GetEntitiesInSphere(ref sphere).OfType<MySafeZone>())
                                 {
                                     zone.Factions.Clear();
-                                    zone.AccessTypeFactions = MySafeZoneAccess.Whitelist;
+                                    if (station.DoBlacklist)
+                                    {
+                                        zone.AccessTypeFactions = MySafeZoneAccess.Blacklist;
+                                    }
+                                    else
+                                    {
+                                        zone.AccessTypeFactions = MySafeZoneAccess.Whitelist;
+                                    }
+                                    
                                     foreach (String s in station.Whitelist)
                                     {
                                         if (s.Contains("LIST:"))

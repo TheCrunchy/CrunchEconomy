@@ -29,6 +29,7 @@ namespace CrunchEconomy
         public string WorldName = "default";
         public Boolean GiveGPSOnLogin = false;
         public Boolean WhitelistedSafezones = false;
+        public Boolean DoBlacklist = false;
         public List<String> Whitelist = new List<string>();
         public MyGps getGPS()
         {
