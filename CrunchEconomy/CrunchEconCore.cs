@@ -1188,10 +1188,7 @@ namespace CrunchEconomy
 
                     if (station.WhitelistedSafezones)
                     {
-                        if (!station.WorldName.Equals("default"))
-                        {
-                            if (station.WorldName.Equals(MyMultiplayer.Static.HostName))
-                            {
+               
                                 BoundingSphereD sphere = new BoundingSphereD(station.getGPS().Coords, 200);
 
                                 foreach (MySafeZone zone in MyAPIGateway.Entities.GetEntitiesInSphere(ref sphere).OfType<MySafeZone>())
@@ -1246,9 +1243,7 @@ namespace CrunchEconomy
                                     }
                                     MySessionComponentSafeZones.RequestUpdateSafeZone((MyObjectBuilder_SafeZone)zone.GetObjectBuilder());
                                 }
-                            }
-
-                        }
+                     
                     }
                 }
             });
@@ -1436,8 +1431,6 @@ namespace CrunchEconomy
                             bool checkLocation = false;
                             if (!station.WorldName.Equals("default"))
                             {
-                                if (station.WorldName.Equals(MyMultiplayer.Static.HostName))
-                                {
                                     if (station.StationEntityId > 0)
                                     {
                                         if (MyAPIGateway.Entities.GetEntityById(station.StationEntityId) != null)
@@ -1746,7 +1739,6 @@ namespace CrunchEconomy
                                     {
                                         checkLocation = true;
                                     }
-                                }
                             }
                             else
                             {
@@ -2138,7 +2130,18 @@ namespace CrunchEconomy
                     if (stat.Enabled)
                     {
                         stat.SetupModifiers();
-                        stations.Add(stat);
+                        if (!stat.WorldName.Equals("default"))
+                        {
+                            if (stat.WorldName.Equals(MyMultiplayer.Static.HostName))
+                            {
+                                stations.Add(stat);
+                            }
+                        }
+                        else
+                        {
+                            stations.Add(stat);
+                        }
+                        
 
                     }
                 }

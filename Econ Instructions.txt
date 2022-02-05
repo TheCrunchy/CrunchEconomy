@@ -1,0 +1,31 @@
+Creating the buy and sell configs
+So the first step is to go into the buy orders and sell offers folders, and create a folder with a name you want, for example "Planet station", within this folder you can then copy the example file out of the example folder and configure the offer or order how you want. 
+
+While doing any editing of the station files, run !crunchecon pause, and when done run !crunchecon reload then !crunchecon start
+
+
+Buy orders are things the stations will buy, sell offers are what the station will sell. 
+
+
+Now to create the physical stations you want to have the configurable stores for. 
+
+Once you have created these grids, make a copy of the example station file and rename it to what you want, then take a gps within 200m of the grid, and use that for the location.
+The grid must be owned by the faction that is configured in the station file. 
+If using the whitelist and blacklist feature for safezones, create an admin safezone at the station location using the alt f10 menu. 
+
+Finally, place a storeblock on the station grid and give it the name of a folder from the buy or sell created earlier. Ensure the store blocks are also owned by the correct NPC.
+
+If using the optional configs to spawn items in the stations, ensure there is a named cargo container that matches the name in the station config. 
+
+
+
+
+
+Commands
+!crunchecon moneys Mining/Hauling - simple command that outputs data about how much money hauling and mining has added to the economy
+!crunchecon pause
+!crunchecon start
+!crunchecon reload
+
+!contract info
+!contract quit #
