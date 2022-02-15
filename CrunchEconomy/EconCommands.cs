@@ -5,6 +5,7 @@ using Sandbox.Game.World;
 using Sandbox.ModAPI;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -41,19 +42,43 @@ namespace CrunchEconomy
 
 
         }
-
+        static object syncRoot = new object();
 
         [Command("moneys", "view all money added through contracts")]
         [Permission(MyPromoteLevel.Admin)]
         public async void HowMuchMoneys(String type)
         {
-            Context.Respond("Doing this async, may take a while");
+            Stopwatch watch = new Stopwatch();
+
+            long sc = 0;
             if (Enum.TryParse(type, out ContractType contract))
             {
-                long output = await Task.Run(() => CountMoney(contract));
-                Context.Respond(String.Format("{0:n0}", output) + " SC Added to economy through " + type + " contracts.");
-                Context.Respond("Check the CrunchEcon logs folder for detailed output.");
+
+                Context.Respond("Doing this async, may take a while");
+                //  long output = await Task.Run(() => CountMoney(contract));
+                watch.Start();
+                await Task.Run(() =>
+                {
+                    var files = Directory.GetFiles(CrunchEconCore.path + "//PlayerData//Mining//Completed//");
+                    Parallel.ForEach(files, file =>
+                    {
+                        Contract contract1 = CrunchEconCore.utils.ReadFromXmlFile<Contract>(file);
+                        lock (syncRoot)
+                        {
+                            sc += contract1.AmountPaid;
+                        }
+                    });
+                  
+                });
+                Context.Respond(watch.ElapsedMilliseconds.ToString());
+                Context.Respond(String.Format("{0:n0}", sc) + " SC Added to economy through " + type + " contracts.");
+                Context.Respond("Check the CrunchEcon logs folder for detailed output. Completed in " + watch.ElapsedMilliseconds + "ms");
             }
+            else
+            {
+                Context.Respond("Not a valid contract type");
+            }
+
 
 
         }
@@ -68,14 +93,16 @@ namespace CrunchEconomy
         public LogObject AddToLog(LogObject log, Contract contract)
         {
             string timeKey;
-            if (contract.TimeCompleted != null) {
+            if (contract.TimeCompleted != null)
+            {
                 timeKey = contract.TimeCompleted.ToString("MM-dd-yyyy");
             }
             else
             {
                 timeKey = DateTime.MinValue.ToString("MM-dd-yyyy");
             }
-            if (log.AmountFromTypes.ContainsKey(timeKey)){
+            if (log.AmountFromTypes.ContainsKey(timeKey))
+            {
                 if (log.AmountFromTypes[timeKey].ContainsKey(contract.SubType))
                 {
                     log.AmountFromTypes[timeKey][contract.SubType] += 1;
@@ -83,7 +110,7 @@ namespace CrunchEconomy
                 }
                 else
                 {
-                    log.AmountFromTypes[timeKey].Add(contract.SubType,1);
+                    log.AmountFromTypes[timeKey].Add(contract.SubType, 1);
                 }
             }
             else
@@ -146,14 +173,15 @@ namespace CrunchEconomy
                             log2 = AddToLog(log2, contract);
                             contractLogs.Add(contract.StationEntityId, log2);
                         }
-                        if (contract.TimeCompleted != null) {
-                            MEGALOG.AppendLine(contract.StationEntityId + "," + contract.TimeCompleted + ","  + contract.SubType + "," + contract.AmountPaid + "," + contract.amountToMineOrDeliver + "," + contract.PlayerSteamId + "," + contract.type);
+                        if (contract.TimeCompleted != null)
+                        {
+                            MEGALOG.AppendLine(contract.StationEntityId + "," + contract.TimeCompleted + "," + contract.SubType + "," + contract.AmountPaid + "," + contract.amountToMineOrDeliver + "," + contract.PlayerSteamId + "," + contract.type);
                         }
                         else
                         {
                             MEGALOG.AppendLine(contract.StationEntityId + "," + DateTime.MinValue.ToString() + "," + contract.SubType + "," + contract.AmountPaid + "," + contract.amountToMineOrDeliver + "," + contract.PlayerSteamId + "," + contract.type);
                         }
-       
+
 
                         output += contract.AmountPaid;
                     }
@@ -184,7 +212,7 @@ namespace CrunchEconomy
                             MEGALOG.AppendLine(contract.StationEntityId + "," + DateTime.MinValue.ToString() + "," + contract.TypeIfHauling + "/" + contract.SubType + "," + contract.AmountPaid + "," + contract.amountToMineOrDeliver + "," + contract.PlayerSteamId + "," + contract.type);
                         }
                         output += contract.AmountPaid;
-                        
+
                     }
                     break;
 
@@ -194,8 +222,9 @@ namespace CrunchEconomy
             sb.AppendLine("StationId,Date,SubType,Money,AmountCompleted");
             foreach (KeyValuePair<long, LogObject> station in contractLogs)
             {
-          
-                foreach (KeyValuePair<string, Dictionary<string, long>> money in station.Value.MoneyFromTypes){
+
+                foreach (KeyValuePair<string, Dictionary<string, long>> money in station.Value.MoneyFromTypes)
+                {
                     foreach (KeyValuePair<string, long> s in money.Value)
                     {
                         sb.AppendLine(station.Key + "," + money.Key + "," + s.Key + "," + s.Value + "," + station.Value.AmountFromTypes[money.Key][s.Key]);

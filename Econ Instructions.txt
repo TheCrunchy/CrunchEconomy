@@ -7,7 +7,7 @@ While doing any editing of the station files, run !crunchecon pause, and when do
 Buy orders are things the stations will buy, sell offers are what the station will sell. 
 
 
-Now to create the physical stations you want to have the configurable stores for. 
+Now to create the physical stations you want to have the configurable stores for. Always leave the <WorldName>default</WorldName> until the plugin finds the station and sets it. 
 
 Once you have created these grids, make a copy of the example station file and rename it to what you want, then take a gps within 200m of the grid, and use that for the location.
 The grid must be owned by the faction that is configured in the station file. 

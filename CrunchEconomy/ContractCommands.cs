@@ -4,6 +4,7 @@ using Sandbox.Game.World;
 using Sandbox.ModAPI;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -13,6 +14,7 @@ using Torch.Commands.Permissions;
 using Torch.Mod;
 using Torch.Mod.Messages;
 using VRage.Game.ModAPI;
+using static CrunchEconomy.Contracts.GeneratedContract;
 
 namespace CrunchEconomy
 {
@@ -21,6 +23,70 @@ namespace CrunchEconomy
     {
         public static Dictionary<ulong, Dictionary<int, Guid>> ids = new Dictionary<ulong, Dictionary<int, Guid>>();
         public static Dictionary<ulong, int> playerMax = new Dictionary<ulong, int>();
+
+        [Command("fake", "make a ton of fake mining contracts")]
+        [Permission(MyPromoteLevel.Admin)]
+        public async Task GenerateFile(int amount, bool para = false)
+        {
+            Stopwatch watch = new Stopwatch();
+            if (para) {
+            watch.Start();
+           await Task.Run(() => { 
+            Parallel.For(0, amount, i =>
+            {
+              GenerateAndSaveContract(Context.Player.SteamUserId, "Example1");
+            });
+            });
+            }
+            else
+            {
+                watch.Start();
+                for (int i = 0; i < amount; i++)
+                {
+                    GenerateAndSaveContract(Context.Player.SteamUserId, "Example1");
+                }
+            }
+
+            Context.Respond("Generated in " + watch.ElapsedMilliseconds);
+        }
+
+        public void GenerateAndSaveContract(ulong steamid, string contractName)
+        {
+            if (ContractUtils.newContracts.TryGetValue(contractName, out GeneratedContract contract))
+            {
+
+
+                Contract temp = ContractUtils.GeneratedToPlayer(contract);
+                Random random = new Random();
+                List<StationDelivery> locations = new List<StationDelivery>();
+                Dictionary<string, Stations> temporaryStations = new Dictionary<string, Stations>();
+                bool picked = false;
+                foreach (StationDelivery del in contract.StationsToDeliverTo)
+                {
+
+
+                        if (random.Next(0, 100) <= del.chance)
+                        {
+                            foreach (Stations stat in CrunchEconCore.stations)
+                            {
+                                if (stat.Name.Equals(del.Name))
+                                {
+                                    if (!temporaryStations.ContainsKey(del.Name))
+                                    {
+                                        temporaryStations.Add(del.Name, stat);
+                                    }
+                                    locations.Add(del);
+                                }
+                            }
+
+                        }
+                }
+
+                temp.AmountPaid = temp.contractPrice;
+                temp.PlayerSteamId = steamid;
+                CrunchEconCore.utils.WriteToXmlFile<Contract>(CrunchEconCore.path + "//PlayerData//" + contract.type + "//Completed//" + temp.ContractId + ".xml", temp);
+            }
+        }
 
         [Command("admintest", "quit current contracts")]
         [Permission(MyPromoteLevel.Admin)]
