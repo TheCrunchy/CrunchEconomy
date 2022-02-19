@@ -2152,7 +2152,7 @@ namespace CrunchEconomy
 
             }
         }
-        public void LoadAllBuyOrders()
+        public static void LoadAllBuyOrders()
         {
             buyOrders.Clear();
             foreach (String s in Directory.GetDirectories(path + "//BuyOrders//"))
@@ -2185,7 +2185,7 @@ namespace CrunchEconomy
 
         }
 
-        public void LoadAllGridSales()
+        public static void LoadAllGridSales()
         {
             gridsForSale.Clear();
 
@@ -2207,7 +2207,7 @@ namespace CrunchEconomy
             }
         }
 
-        public void LoadAllSellOffers()
+        public static void LoadAllSellOffers()
         {
             sellOffers.Clear();
             foreach (String s in Directory.GetDirectories(path + "//SellOffers//"))

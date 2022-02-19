@@ -1,6 +1,8 @@
 ﻿using CrunchEconomy.Contracts;
+using Sandbox.Engine.Multiplayer;
 using Sandbox.Game.Entities;
 using Sandbox.Game.Entities.Blocks;
+using Sandbox.Game.Screens.Helpers;
 using Sandbox.Game.World;
 using Sandbox.ModAPI;
 using System;
@@ -15,6 +17,7 @@ using Torch.Commands.Permissions;
 using Torch.Mod;
 using Torch.Mod.Messages;
 using VRage.Game.ModAPI;
+using VRage.Game.ObjectBuilders.Definitions;
 using VRage.Groups;
 using VRageMath;
 
@@ -42,6 +45,99 @@ namespace CrunchEconomy
 
 
         }
+
+
+        [Command("generatefromgrid", "generate a station and configs from a grid")]
+        [Permission(MyPromoteLevel.Admin)]
+        public void GenerateFromGrid(string NewStationName, string CargoName, bool RemakeStoreFiles = false)
+        {
+
+            BoundingSphereD sphere = new BoundingSphereD(Context.Player.GetPosition(), 400);
+            Stations newStation = new Stations();
+            newStation.Enabled = true;
+            newStation.Name = NewStationName;
+            newStation.CargoName = CargoName;
+            newStation.ViewOnlyNamedCargo = true;
+            newStation.WorldName = "default";
+            var StoreName = "";
+            bool done = false;
+            foreach (MyStoreBlock store in MyAPIGateway.Entities.GetEntitiesInSphere(ref sphere).OfType<MyStoreBlock>())
+            {
+                if (!done)
+                {
+                    MyGps gps = new MyGps();
+                    gps.Name = "EconStationGPS";
+                    gps.Coords = store.PositionComp.GetPosition();
+                    newStation.stationGPS = gps.ToString();
+                    newStation.OwnerFactionTag = store.GetOwnerFactionTag();
+                    done = true;
+                }
+                if (RemakeStoreFiles)
+                {
+                    foreach (MyStoreItem item in store.PlayerItems)
+                    {
+
+                        StoreName = store.DisplayNameText;
+                        if (item.StoreItemType == StoreItemTypes.Order)
+                        {
+                            if (!Directory.Exists(CrunchEconCore.path + "//BuyOrders//" + StoreName + "//"))
+                            {
+                                Directory.CreateDirectory(CrunchEconCore.path + "//BuyOrders//" + StoreName + "//");
+                            }
+
+                            BuyOrder order = new BuyOrder();
+                            order.minAmount = item.Amount;
+                            order.maxAmount = item.Amount + 1;
+                            order.minPrice = item.PricePerUnit;
+                            order.maxPrice = item.PricePerUnit + 1;
+                            order.subtypeId = item.Item.Value.SubtypeName;
+                            order.typeId = item.Item.Value.TypeIdString;
+                            order.chance = 100;
+                            order.Enabled = true;
+                            CrunchEconCore.utils.WriteToXmlFile<BuyOrder>(CrunchEconCore.path + "//BuyOrders//" + StoreName + "//" + order.typeId + "-" + order.subtypeId + ".xml", order);
+                            //generate a folder for this store name
+                            //this is what the store is buying
+
+                        }
+
+                        if (item.StoreItemType == StoreItemTypes.Offer)
+                        {
+                            //this is what the store is selling
+                            if (!Directory.Exists(CrunchEconCore.path + "//SellOffers//" + StoreName + "//"))
+                            {
+                                Directory.CreateDirectory(CrunchEconCore.path + "//SellOffers//" + StoreName + "//");
+                                SellOffer offer = new SellOffer();
+                                offer.minAmountToSpawn = item.Amount;
+                                offer.maxAmountToSpawn = item.Amount + 1;
+                                offer.minPrice = item.PricePerUnit;
+                                offer.SpawnItemsIfNeeded = true;
+                                offer.SpawnIfCargoLessThan = item.Amount;
+                                offer.maxPrice = item.PricePerUnit + 1;
+                                offer.subtypeId = item.Item.Value.SubtypeName;
+                                offer.typeId = item.Item.Value.TypeIdString;
+                                offer.chance = 100;
+                                offer.Enabled = true;
+                                CrunchEconCore.utils.WriteToXmlFile<SellOffer>(CrunchEconCore.path + "//SellOffers//" + StoreName + "//" + offer.typeId + "-" + offer.subtypeId + ".xml", offer);
+                            }
+                        }
+                    }
+                }
+            }
+            if (done)
+            {
+                CrunchEconCore.utils.WriteToXmlFile<Stations>(CrunchEconCore.path + "//Stations//" + newStation.Name + ".xml", newStation);
+                Context.Respond("Files generated, they have not been added to live data, !crunchecon reload or wait for auto loading.");
+            }
+            else
+            {
+                Context.Respond("Could not generate files");
+            }
+
+
+        }
+
+
+
         static object syncRoot = new object();
 
         [Command("moneys", "view all money added through contracts")]
@@ -244,6 +340,10 @@ namespace CrunchEconomy
         {
             Context.Respond("reloading");
             CrunchEconCore.LoadConfig();
+            CrunchEconCore.LoadAllStations();
+            CrunchEconCore.LoadAllBuyOrders();
+            CrunchEconCore.LoadAllSellOffers();
+            CrunchEconCore.LoadAllGridSales();
         }
         [Command("pause", "stop the economy refreshing")]
         [Permission(MyPromoteLevel.Admin)]
