@@ -15,7 +15,7 @@ namespace CrunchEconomy.Contracts
         public double chance = 100;
         public int minimum = 450000;
         public int maximum = 500000;
-        public int PricePerOre = 450;
+        public double PricePerOre = 450;
         public Boolean PutTheHaulInStation = false;
         public Boolean SpawnItemsInPlayerInvent = false;
         public List<RewardItem> PlayerLoot = new List<RewardItem>();

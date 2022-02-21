@@ -43,7 +43,7 @@ namespace CrunchEconomy.Contracts
             }
  
             contract.GenerateAmountToMine(gen.minimum, gen.maximum);
-            contract.contractPrice = contract.amountToMineOrDeliver * gen.PricePerOre;
+            contract.contractPrice = Convert.ToInt64(contract.amountToMineOrDeliver * gen.PricePerOre);
             contract.minedAmount = 0;
             contract.ContractName = gen.Name;
             contract.SpawnItemsInPlayerInventory = gen.SpawnItemsInPlayerInvent;
