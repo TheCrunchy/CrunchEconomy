@@ -339,6 +339,7 @@ namespace CrunchEconomy
         public void Reload()
         {
             Context.Respond("reloading");
+            CrunchEconCore.individualTimers.Clear();
             CrunchEconCore.LoadConfig();
             CrunchEconCore.LoadAllStations();
             CrunchEconCore.LoadAllBuyOrders();
