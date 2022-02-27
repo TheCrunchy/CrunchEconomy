@@ -103,6 +103,7 @@ namespace CrunchEconomy
 
         public static void Patch(PatchContext ctx)
         {
+         
             ApplyLogging();
             ctx.GetPattern(logupdate).Suffixes.Add(storePatchLog);
             ctx.GetPattern(logupdate2).Suffixes.Add(storePatchLog2);
@@ -117,7 +118,10 @@ namespace CrunchEconomy
 
         public static void StorePatchMethodSell(long id, string name, long price, int amount, MyStoreSellItemResults result)
         {
-
+            if (CrunchEconCore.config != null && !CrunchEconCore.config.PatchesEnabled)
+            {
+                return;
+            }
             //  AlliancePlugin.Log.Info("sold to store");
             if (result == MyStoreSellItemResults.Success && PossibleLogs.ContainsKey(id))
             {
@@ -131,7 +135,10 @@ namespace CrunchEconomy
 
         public static void StorePatchMethodBuy(long id, string name, long price, int amount, MyStoreBuyItemResults result)
         {
-
+            if (CrunchEconCore.config != null && !CrunchEconCore.config.PatchesEnabled)
+            {
+                return;
+            }
             //  AlliancePlugin.Log.Info("sold to store");
             if (result == MyStoreBuyItemResults.Success && PossibleLogs.ContainsKey(id))
             {
@@ -144,6 +151,10 @@ namespace CrunchEconomy
         }
         public static Boolean StorePatchMethodTwo(long id, int amount, long sourceEntityId, MyPlayer player, MyStoreBlock __instance)
         {
+            if (CrunchEconCore.config != null && !CrunchEconCore.config.PatchesEnabled)
+            {
+                return true;
+            }
             if (__instance is MyStoreBlock store)
             {
                 MyStoreItem myStoreItem = (MyStoreItem)null;
@@ -319,6 +330,10 @@ namespace CrunchEconomy
       MyPlayer player,
       MyAccountInfo playerAccountInfo, MyStoreBlock __instance)
         {
+            if (CrunchEconCore.config != null && !CrunchEconCore.config.PatchesEnabled)
+            {
+                return true;
+            }
             //  CrunchEconCore.Log.Info("bruh");
             if (__instance is MyStoreBlock store)
             {

@@ -92,7 +92,12 @@ namespace CrunchEconomy.Contracts
       int removedAmount,
       bool onlyCheck)
         {
+        
             if (CrunchEconCore.config == null)
+            {
+                return;
+            }
+            if (!CrunchEconCore.config.PatchesEnabled)
             {
                 return;
             }

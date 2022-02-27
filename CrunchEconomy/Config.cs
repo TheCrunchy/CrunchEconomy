@@ -14,5 +14,8 @@ namespace CrunchEconomy
         public Boolean SurveyContractsEnabled = false;
         public int SecondsBetweenMiningContracts = 600;
         public int SecondsBetweenSurveyMissions = 7200;
+        public Boolean PluginEnabled = true;
+        public Boolean PatchesEnabled = true;
+        
     }
 }

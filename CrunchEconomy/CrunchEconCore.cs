@@ -349,6 +349,10 @@ namespace CrunchEconomy
 
         public static void Login(IPlayer p)
         {
+            if (CrunchEconCore.config != null && !CrunchEconCore.config.PluginEnabled)
+            {
+                return;
+            }
             if (p == null)
             {
                 return;
@@ -431,6 +435,10 @@ namespace CrunchEconomy
         }
         public static void Logout(IPlayer p)
         {
+            if (CrunchEconCore.config != null && !CrunchEconCore.config.PluginEnabled)
+            {
+                return;
+            }
             if (p == null)
             {
                 return;
@@ -1256,7 +1264,14 @@ namespace CrunchEconomy
             {
                 return;
             }
-
+            if (CrunchEconCore.config == null)
+            {
+                return;
+            }
+            if (!CrunchEconCore.config.PluginEnabled)
+            {
+                return;
+            }
 
             if (DateTime.Now >= NextFileRefresh)
             {
@@ -2286,6 +2301,10 @@ namespace CrunchEconomy
             TorchState = state;
             if (state == TorchSessionState.Unloading)
             {
+                if (!CrunchEconCore.config.PluginEnabled)
+                {
+                    return;
+                }
                 string type = "//Mining";
                 foreach (KeyValuePair<Guid, Contract> keys in ContractSave)
                 {
@@ -2409,7 +2428,7 @@ namespace CrunchEconomy
         public static WhitelistFile whitelist;
         public override void Init(ITorchBase torch)
         {
-
+           
             base.Init(torch);
             sessionManager = Torch.Managers.GetManager<TorchSessionManager>();
 
@@ -2420,6 +2439,10 @@ namespace CrunchEconomy
             basePath = StoragePath;
             SetupConfig();
             path = CreatePath();
+            if (!CrunchEconCore.config.PluginEnabled)
+            {
+                return;
+            }
             if (!Directory.Exists(path + "//Logs//"))
             {
                 Directory.CreateDirectory(path + "//Logs//");
