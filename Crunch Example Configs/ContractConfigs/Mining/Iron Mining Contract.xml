@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<GeneratedContract xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <type>Mining</type>
+  <Name>Iron Mining Contract</Name>
+  <Enabled>true</Enabled>
+  <ReputationGain>1</ReputationGain>
+  <chance>100</chance>
+  <minimum>800000</minimum>
+  <maximum>1100000</maximum>
+  <PricePerOre>.002</PricePerOre>
+  <PutTheHaulInStation>false</PutTheHaulInStation>
+  <SpawnItemsInPlayerInvent>false</SpawnItemsInPlayerInvent>
+  <PlayerLoot>
+    <RewardItem>
+      <Enabled>false</Enabled>
+      <chance>1</chance>
+      <ItemMinAmount>1</ItemMinAmount>
+      <ItemMaxAmount>2</ItemMaxAmount>
+      <TypeId>Ingot</TypeId>
+      <SubTypeId>Uranium</SubTypeId>
+      <ReputationRequired>100</ReputationRequired>
+    </RewardItem>
+  </PlayerLoot>
+  <StationCargoName>Change this</StationCargoName>
+  <PutInStation>
+    <RewardItem>
+      <Enabled>false</Enabled>
+      <chance>1</chance>
+      <ItemMinAmount>1</ItemMinAmount>
+      <ItemMaxAmount>2</ItemMaxAmount>
+      <TypeId>Ingot</TypeId>
+      <SubTypeId>Uranium</SubTypeId>
+      <ReputationRequired>100</ReputationRequired>
+    </RewardItem>
+	 <RewardItem>
+      <Enabled>false</Enabled>
+      <chance>1</chance>
+      <ItemMinAmount>1</ItemMinAmount>
+      <ItemMaxAmount>2</ItemMaxAmount>
+      <TypeId>Ingot</TypeId>
+      <SubTypeId>Uranium</SubTypeId>
+      <ReputationRequired>100</ReputationRequired>
+    </RewardItem>
+  </PutInStation>
+  <CooldownInSeconds>1</CooldownInSeconds>
+  <ItemsToPickFrom>
+    <ContractInfo>
+      <TypeId>Ore</TypeId>
+      <SubTypeId>Iron</SubTypeId>
+      <chance>100</chance>
+    </ContractInfo>
+  </ItemsToPickFrom>
+  <StationsToDeliverTo>
+    <StationDelivery>
+      <Name>TAKEN</Name>
+      <chance>100</chance>
+    </StationDelivery>
+  </StationsToDeliverTo>
+</GeneratedContract>

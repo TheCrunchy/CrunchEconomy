@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SellOffer xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Enabled>true</Enabled>
+  <StationModifierItemName>Iron Mining Contract 100%</StationModifierItemName>
+  <typeId>Component</typeId>
+  <subtypeId>MiningIron</subtypeId>
+  <minPrice>160</minPrice>
+  <maxPrice>220</maxPrice>
+  <chance>100</chance>
+  <SpawnItemsIfNeeded>true</SpawnItemsIfNeeded>
+  <SpawnIfCargoLessThan>5</SpawnIfCargoLessThan>
+  <minAmountToSpawn>5</minAmountToSpawn>
+  <maxAmountToSpawn>15</maxAmountToSpawn>
+  <BuyingGivesMiningContract>true</BuyingGivesMiningContract>
+  <ContractName>Iron Mining Contract</ContractName>
+  <BuyingGivesHaulingContract>false</BuyingGivesHaulingContract>
+  <IfGivesContractNPCTag>AAA</IfGivesContractNPCTag>
+  <IndividualRefreshTimer>true</IndividualRefreshTimer>
+  <nextRefresh>2022-02-19T14:08:27.9689441+00:00</nextRefresh>
+  <SecondsBetweenRefresh>30</SecondsBetweenRefresh>
+  <path>ignore me</path>
+</SellOffer>
