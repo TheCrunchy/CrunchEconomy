@@ -106,9 +106,11 @@
     <Compile Include="GridManager.cs" />
     <Compile Include="GridSale.cs" />
     <Compile Include="Contracts\Contract.cs" />
+    <Compile Include="ModifierFluctuations\FluctuationCommands.cs" />
     <Compile Include="MyStorePatch.cs" />
     <Compile Include="PendingSale.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ModifierFluctuations\RandomFluc.cs" />
     <Compile Include="RepConfig.cs" />
     <Compile Include="SellOffer.cs" />
     <Compile Include="ShipMarket\ItemStatus.cs" />

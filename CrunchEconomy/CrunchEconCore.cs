@@ -76,11 +76,37 @@ namespace CrunchEconomy
             MyFixedPoint targetAmount = 0;
             foreach (VRage.Game.ModAPI.IMyInventory inv in inventories)
             {
+                
                 VRage.Game.ModAPI.IMyInventoryItem invItem = inv.FindItem(id);
+                
                 if (invItem != null)
                 {
                     targetAmount += invItem.Amount;
                 }
+                //physical objects are not fun to count
+                //else
+                //{
+                 
+                //    if (id.TypeId.ToString().Equals("MyObjectBuilder_PhysicalObject"))
+                //    {
+                        
+                //      //  CrunchEconCore.Log.Info("LOOKING FOR " + id.SubtypeName);
+                //        foreach (VRage.Game.ModAPI.IMyInventoryItem item in inv.GetItems())
+                //        {
+                //            if (!item.Content.TypeId.ToString().Equals("MyObjectBuilder_PhysicalObject"))
+                //            {
+                //                continue;
+                //            }
+                //            CrunchEconCore.Log.Info(item.Content.SubtypeName.ToString() + " " + item.Content.TypeId.ToString());
+                            
+                //            if (item.Content.SubtypeName.Equals(id.SubtypeName))
+                //            {
+                //                CrunchEconCore.Log.Info("found it");
+                //                targetAmount += item.Amount;
+                //            }
+                //        }
+                //    }
+                //}
             }
             return targetAmount;
         }
