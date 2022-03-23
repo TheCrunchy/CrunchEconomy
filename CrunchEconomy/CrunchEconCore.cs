@@ -51,6 +51,7 @@ using static CrunchEconomy.Contracts.GeneratedContract;
 using static CrunchEconomy.RepConfig;
 using System.Threading.Tasks;
 using static CrunchEconomy.WhitelistFile;
+using Sandbox.Definitions;
 
 namespace CrunchEconomy
 {
@@ -2325,12 +2326,13 @@ namespace CrunchEconomy
         private void SessionChanged(ITorchSession session, TorchSessionState state)
         {
             TorchState = state;
+            if (!CrunchEconCore.config.PluginEnabled && config != null)
+            {
+                return;
+            }
             if (state == TorchSessionState.Unloading)
             {
-                if (!CrunchEconCore.config.PluginEnabled)
-                {
-                    return;
-                }
+               
                 string type = "//Mining";
                 foreach (KeyValuePair<Guid, Contract> keys in ContractSave)
                 {
@@ -2381,8 +2383,23 @@ namespace CrunchEconomy
             }
             if (state == TorchSessionState.Loaded)
             {
-                session.Managers.GetManager<IMultiplayerManagerBase>().PlayerJoined += Login;
+                if (config.SetMinPricesTo1)
+                {
+                    foreach (MyDefinitionBase def in MyDefinitionManager.Static.GetAllDefinitions())
+                    {
 
+                        if ((def as MyComponentDefinition) != null)
+                        {
+                            (def as MyComponentDefinition).MinimalPricePerUnit = 1;
+                        }
+                        if ((def as MyPhysicalItemDefinition) != null)
+                        {
+                            (def as MyPhysicalItemDefinition).MinimalPricePerUnit = 1;
+                        }
+                    }
+                }
+                session.Managers.GetManager<IMultiplayerManagerBase>().PlayerJoined += Login;
+       
                 if (session.Managers.GetManager<PluginManager>().Plugins.TryGetValue(Guid.Parse("74796707-646f-4ebd-8700-d077a5f47af3"), out ITorchPlugin All))
                 {
                     Type alli = All.GetType().Assembly.GetType("AlliancesPlugin.AlliancePlugin");
@@ -2454,7 +2471,7 @@ namespace CrunchEconomy
         public static WhitelistFile whitelist;
         public override void Init(ITorchBase torch)
         {
-           
+
             base.Init(torch);
             sessionManager = Torch.Managers.GetManager<TorchSessionManager>();
 
@@ -2617,6 +2634,7 @@ namespace CrunchEconomy
             {
                 Directory.CreateDirectory(path + "//PlayerData//Survey//InProgress//");
             }
+      
             TorchBase = Torch;
         }
 

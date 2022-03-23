@@ -16,6 +16,6 @@ namespace CrunchEconomy
         public int SecondsBetweenSurveyMissions = 7200;
         public Boolean PluginEnabled = true;
         public Boolean PatchesEnabled = true;
-        
+        public Boolean SetMinPricesTo1 = false;
     }
 }
