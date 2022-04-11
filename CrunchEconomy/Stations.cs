@@ -59,12 +59,33 @@ namespace CrunchEconomy
 
             return 1f;
         }
-     //   public Boolean DoCraftingFromInventory = false;
-      //  public int SecondsBetweenCrafting = 60;
-      public class PriceModifier
+        //   public Boolean DoCraftingFromInventory = false;
+        //  public int SecondsBetweenCrafting = 60;
+        public class PriceModifier
         {
             public float Modifier = 1.0f;
             public string StationModifierInItemFile = "Example 100%";
+        }
+
+        public List<CraftedItem> CraftableItems = new List<CraftedItem>();
+        public Boolean EnableStationCrafting = false;
+        public int SecondsBetweenCrafting = 60;
+        public DateTime nextCraftRefresh = DateTime.Now;
+        
+        public class RecipeItem
+        {
+            public string typeid;
+            public string subtypeid;
+            public int amount;
+        }
+
+        public class CraftedItem
+        {
+            public string typeid;
+            public string subtypeid;
+            public double chanceToCraft = 0.5;
+            public int amountPerCraft;
+            public List<RecipeItem> RequriedItems = new List<RecipeItem>();
         }
     }
 }

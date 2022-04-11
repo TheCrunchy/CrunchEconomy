@@ -127,44 +127,6 @@ namespace CrunchEconomy.Contracts
 
         }
 
-        public static GeneratedContract GetRandomPlayerContract(ContractType type)
-        {
-            GeneratedContract output = null;
-            Random random = new Random();
-            List<GeneratedContract> temp = new List<GeneratedContract>();
-            int count = 0;
-            foreach (GeneratedContract contract in newContracts.Values)
-            {
-                if (contract.type != type)
-                {
-                    continue;
-                }
-                count++;
-                double chance = random.Next(0, 101);
-                if (chance <= contract.chance)
-                {
-                    temp.Add(contract);
-                }
-            }
-            if (temp.Count == 0)
-            {
-                return null;
-            }
-            if (temp.Count == 1)
-            {
-                output = temp.ElementAt(0);
-            }
-            else
-            {
-
-                int index = random.Next(temp.Count - 1);
-
-                output = temp.ElementAt(index);
-            }
-
-            return output;
-        }
-
         public static Dictionary<string, GeneratedContract> newContracts = new Dictionary<string, GeneratedContract>();
         public static void LoadAllContracts()
         {

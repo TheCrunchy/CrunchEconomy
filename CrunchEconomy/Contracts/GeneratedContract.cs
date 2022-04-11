@@ -12,7 +12,6 @@ namespace CrunchEconomy.Contracts
         public string Name = "Example1";
         public Boolean Enabled = false;
         public int ReputationGain = 1;
-        public double chance = 100;
         public int minimum = 450000;
         public int maximum = 500000;
         public double PricePerOre = 450;
