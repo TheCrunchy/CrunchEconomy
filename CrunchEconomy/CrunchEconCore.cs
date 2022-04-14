@@ -235,34 +235,39 @@ namespace CrunchEconomy
 
         public bool SpawnItems(MyCubeGrid grid, MyDefinitionId id, MyFixedPoint amount, Stations station)
         {
+          //  CrunchEconCore.Log.Info("SPAWNING 1 " + amount);
             if (grid != null)
             {
 
-
+             //   CrunchEconCore.Log.Info("GRID NO NULL?");
                 foreach (var block in grid.GetFatBlocks())
                 {
 
                     if (!block.GetOwnerFactionTag().Equals(station.OwnerFactionTag))
                     {
+                    
                         continue;
                     }
-                    if (block.DisplayNameText != null && !block.DisplayNameText.Equals(station.CargoName))
+                    if (block.DisplayNameText != null && block.DisplayNameText != station.CargoName)
                     {
+                   //     CrunchEconCore.Log.Info("NOT SPAWNING " + block.DisplayNameText);
                         continue;
                     }
                     for (int i = 0; i < block.InventoryCount; i++)
                     {
-
+                    //    CrunchEconCore.Log.Info("SPAWNING 2 " + amount);
                         VRage.Game.ModAPI.IMyInventory inv = ((VRage.Game.ModAPI.IMyCubeBlock)block).GetInventory(i);
 
                         MyItemType itemType = new MyInventoryItemFilter(id.TypeId + "/" + id.SubtypeName).ItemType;
                         if (inv.CanItemsBeAdded(amount, itemType))
                         {
                             inv.AddItems(amount, (MyObjectBuilder_PhysicalObject)MyObjectBuilderSerializer.CreateNewObject(id));
+                      //      CrunchEconCore.Log.Info("SPAWNING 3 " + amount);
                             return true;
                         }
                         else
                         {
+                       //     CrunchEconCore.Log.Info("SPAWNING 4 " + amount);
                             continue;
                         }
                     }
@@ -656,6 +661,7 @@ namespace CrunchEconomy
                                                 int amount = random.Next(item.ItemMinAmount, item.ItemMaxAmount);
                                                 Stations station = new Stations();
                                                 station.CargoName = contract.CargoName;
+                                                station.OwnerFactionTag = FacUtils.GetFactionTag(FacUtils.GetOwner(grid));
                                                 station.ViewOnlyNamedCargo = true;
                                                 SpawnItems(grid, newid, amount, station);
                                             }
@@ -668,6 +674,7 @@ namespace CrunchEconomy
                                     {
                                         Stations station = new Stations();
                                         station.CargoName = contract.CargoName;
+                                        station.OwnerFactionTag = FacUtils.GetFactionTag(FacUtils.GetOwner(grid));
                                         station.ViewOnlyNamedCargo = true;
                                         SpawnItems(grid, pair.Key, pair.Value, station);
                                     }
@@ -1606,6 +1613,7 @@ namespace CrunchEconomy
                                                                                         {
                                                                                             SpawnItems(grid, id, (MyFixedPoint)amountSpawned, station);
                                                                                             hasAmount += amountSpawned;
+                                                                                        
                                                                                         }
                                                                                     }
 
