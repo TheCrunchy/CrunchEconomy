@@ -532,6 +532,7 @@ namespace CrunchEconomy
                 {
                     Dictionary<MyDefinitionId, int> itemsToRemove = new Dictionary<MyDefinitionId, int>();
                     string parseThis;
+                  
                     if (contract.type == ContractType.Mining)
                     {
                         parseThis = "MyObjectBuilder_Ore/" + contract.SubType;
@@ -539,7 +540,7 @@ namespace CrunchEconomy
                     }
                     else
                     {
-                        parseThis = "MyObjectBuilder_" + contract.type + "/" + contract.SubType;
+                        parseThis = "MyObjectBuilder_" + contract.TypeIfHauling + "/" + contract.SubType;
                         rep = data.HaulingReputation;
                     }
                     if (MyDefinitionId.TryParse(parseThis, out MyDefinitionId id))

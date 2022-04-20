@@ -337,7 +337,7 @@ namespace CrunchEconomy
             //  CrunchEconCore.Log.Info("bruh");
             if (__instance is MyStoreBlock store)
             {
-
+                //this code is awful
                 MyEntity entity = (MyEntity)null;
                 if (!Sandbox.Game.Entities.MyEntities.TryGetEntityById(targetEntityId, out entity, false))
                 {
