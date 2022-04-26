@@ -9,6 +9,8 @@ namespace CrunchEconomy
     public class SellOffer
     {
         public Boolean Enabled = false;
+        public bool BuyingGivesGPS = false;
+        public List<string> gpsToPickFrom = new List<string>();
         public string StationModifierItemName = "Example 100%";
         public string typeId = "Ore";
         public string subtypeId = "Iron";

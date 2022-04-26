@@ -39,7 +39,7 @@ namespace CrunchEconomy.Contracts
         public DateTime TimeCompleted;
         public int amountToMineOrDeliver = 0;
         public long AmountPaid = 0;
-
+    
 
         public void DoPlayerGps(long identityId)
         {

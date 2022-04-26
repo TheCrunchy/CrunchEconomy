@@ -38,11 +38,10 @@ namespace CrunchEconomy.Contracts
             }
             else
             {
-                var temp = rand.Next(temporary.Count) - 1;
+                var temp = rand.Next(temporary.Count);
                 contract.TypeIfHauling = temporary[temp].TypeId;
                 contract.SubType = temporary[temp].SubTypeId;
             }
- 
             contract.GenerateAmountToMine(gen.minimum, gen.maximum);
             contract.contractPrice = Convert.ToInt64(contract.amountToMineOrDeliver * gen.PricePerOre);
             contract.minedAmount = 0;

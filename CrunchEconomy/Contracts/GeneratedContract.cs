@@ -22,6 +22,8 @@ namespace CrunchEconomy.Contracts
         public List<RewardItem> PutInStation = new List<RewardItem>();
         public int CooldownInSeconds = 1;
         public List<ContractInfo> ItemsToPickFrom = new List<ContractInfo>();
+        public bool BuyingGivesGPS = false;
+        public List<string> gpsToPickFrom = new List<string>();
         public class ContractInfo
         {
             public string TypeId = "Ore";
