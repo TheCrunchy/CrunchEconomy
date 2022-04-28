@@ -47,7 +47,7 @@ namespace CrunchEconomy.Contracts
                 gpsRef.DisplayName = "Grid Delivery Location. ";
                 gpsRef.Name = "Grid Delivery Location. ";
                 gpsRef.DiscardAt = new TimeSpan(600);
-                gpscol.SendAddGps(identityId, ref gpsRef);
+                gpscol.SendAddGpsRequest(identityId, ref gpsRef);
             }
         }
         public Vector3 getCoords()

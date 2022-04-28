@@ -457,7 +457,7 @@ namespace CrunchEconomy
                             {
                                 MyGps gps = stat.getGPS();
                                 gps.DiscardAt = new TimeSpan(6000);
-                                gpscol.SendAddGps(iden.IdentityId, ref gps);
+                                gpscol.SendAddGpsRequest(iden.IdentityId, ref gps);
 
                             }
 
@@ -965,7 +965,7 @@ namespace CrunchEconomy
                                                 gps.DiscardAt = new TimeSpan(6000);
 
                                                 MyGpsCollection gpscol = (MyGpsCollection)MyAPIGateway.Session?.GPS;
-                                                gpscol.SendAddGps(player.Identity.IdentityId, ref gps);
+                                                gpscol.SendAddGpsRequest(player.Identity.IdentityId, ref gps);
                                             }
                                             else
                                             {
@@ -986,7 +986,7 @@ namespace CrunchEconomy
                                                 gps.DiscardAt = new TimeSpan(6000);
 
                                                 MyGpsCollection gpscol = (MyGpsCollection)MyAPIGateway.Session?.GPS;
-                                                gpscol.SendAddGps(player.Identity.IdentityId, ref gps);
+                                                gpscol.SendAddGpsRequest(player.Identity.IdentityId, ref gps);
                                             }
                                         }
                                         else
@@ -1143,7 +1143,7 @@ namespace CrunchEconomy
                             gps.DiscardAt = new TimeSpan(6000);
 
                             MyGpsCollection gpscol = (MyGpsCollection)MyAPIGateway.Session?.GPS;
-                            gpscol.SendAddGps(player.Identity.IdentityId, ref gps);
+                            gpscol.SendAddGpsRequest(player.Identity.IdentityId, ref gps);
                         }
                         else
                         {
@@ -1164,7 +1164,7 @@ namespace CrunchEconomy
                             gps.DiscardAt = new TimeSpan(6000);
 
                             MyGpsCollection gpscol = (MyGpsCollection)MyAPIGateway.Session?.GPS;
-                            gpscol.SendAddGps(player.Identity.IdentityId, ref gps);
+                            gpscol.SendAddGpsRequest(player.Identity.IdentityId, ref gps);
                         }
                         data.SetLoadedSurvey(newSurvey);
                         data.NextSurveyMission = DateTime.Now.AddSeconds(config.SecondsBetweenSurveyMissions);
