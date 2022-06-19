@@ -33,7 +33,7 @@ namespace CrunchEconomy
         public List<String> Whitelist = new List<string>();
         public MyGps getGPS()
         {
-            return CrunchEconCore.ScanChat(stationGPS);
+            return CrunchEconCore.ParseGPS(stationGPS);
         }
 
         public List<PriceModifier> Modifiers = new List<PriceModifier>();

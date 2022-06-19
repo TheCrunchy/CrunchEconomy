@@ -2313,7 +2313,7 @@ namespace CrunchEconomy
 
         }
 
-        public static MyGps ScanChat(string input, string desc = null)
+        public static MyGps ParseGPS(string input, string desc = null)
         {
 
             int num = 0;
@@ -2345,7 +2345,7 @@ namespace CrunchEconomy
                     Description = desc,
                     Coords = new Vector3D(x, y, z),
                     GPSColor = color,
-                    ShowOnHud = false
+                    ShowOnHud = true
                 };
                 gps.UpdateHash();
 
@@ -2362,7 +2362,7 @@ namespace CrunchEconomy
             {
                 return;
             }
-            if (state == TorchSessionState.Unloading)
+            if (state == TorchSessionState.Loaded)
             {
 
                 string type = "//Mining";
@@ -2590,6 +2590,8 @@ namespace CrunchEconomy
             {
                 Directory.CreateDirectory(path + "//SellOffers//Example//");
                 SellOffer example = new SellOffer();
+                var gps = "put a gps string here";
+                example.gpsToPickFrom.Add(gps);
                 utils.WriteToXmlFile<SellOffer>(path + "//SellOffers//Example//Example.xml", example);
             }
             if (!Directory.Exists(path + "//GridSelling//"))

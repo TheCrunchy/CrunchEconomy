@@ -24,6 +24,7 @@ using Torch.Mod.Messages;
 using VRage;
 using VRage.Game;
 using VRage.Game.Entity;
+using VRage.Game.ModAPI;
 using VRage.Game.ModAPI.Ingame;
 using VRage.Game.ObjectBuilders.Definitions;
 using VRage.ObjectBuilders;
@@ -466,11 +467,26 @@ namespace CrunchEconomy
                                             if (offer.BuyingGivesGPS)
                                             {
                                                 var pickFrom = new List<MyGps>();
+                                                var gpscol = MySession.Static.Gpss;
+                                                List<IMyGps> playerList = new List<IMyGps>();
+                                                gpscol.GetGpsList(player.Identity.IdentityId, playerList);
                                                 foreach (var s in offer.gpsToPickFrom)
                                                 {
-
+                                                    var gps = CrunchEconCore.ParseGPS(s);
+                                                    if (gps != null)
+                                                    {
+                                                        foreach (var gp in playerList)
+                                                        {
+                                                            if (gp.Coords != gps.Coords)
+                                                            {
+                                                                gps.AlwaysVisible = true;
+                                                                gps.ShowOnHud = true;
+                                                                gpscol.SendAddGpsRequest(player.Identity.IdentityId, ref gps);
+                                                                return true;
+                                                            }
+                                                        }
+                                                    }
                                                 }
-                                                return true;
                                             }
                                             if (offer.BuyingGivesHaulingContract || offer.BuyingGivesMiningContract)
                                             {
@@ -763,8 +779,9 @@ namespace CrunchEconomy
                                                                                     if (!temporaryStations.ContainsKey(del.Name))
                                                                                     {
                                                                                         temporaryStations.Add(del.Name, stat);
+                                                                                        locations.Add(del);
                                                                                     }
-                                                                                    locations.Add(del);
+                                                                                  
                                                                                 }
                                                                             }
 
@@ -786,7 +803,7 @@ namespace CrunchEconomy
                                                                     }
                                                                     else
                                                                     {
-                                                                        int r = random.Next(locations.Count);
+                                                                        int r = random.Next(0, locations.Count);
                                                                         MyGps gps = temporaryStations[locations[r].Name].getGPS();
                                                                         temp.DeliveryLocation = gps.ToString();
                                                                         temp.StationEntityId = temporaryStations[locations[r].Name].StationEntityId;
