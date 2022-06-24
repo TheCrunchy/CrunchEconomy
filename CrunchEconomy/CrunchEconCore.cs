@@ -2413,10 +2413,13 @@ namespace CrunchEconomy
 
                 }
             }
+
+       
             if (state == TorchSessionState.Loaded)
             {
                 if (config.SetMinPricesTo1)
                 {
+                    sessionManager.AddOverrideMod(2825413709);
                     foreach (MyDefinitionBase def in MyDefinitionManager.Static.GetAllDefinitions())
                     {
 
