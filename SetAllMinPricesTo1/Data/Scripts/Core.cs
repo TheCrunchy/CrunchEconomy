@@ -8,9 +8,6 @@ namespace EconStuff
     [MySessionComponentDescriptor(MyUpdateOrder.BeforeSimulation)]
     public class Core : MySessionComponentBase
     {
-        public const float Deformation_Ratio = 0.005f;
-        public const float General_Damage_Multiplier = 0.9f;
-
         private bool isInit = false;
 
         private void DoWork()
