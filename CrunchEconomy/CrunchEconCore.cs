@@ -150,7 +150,9 @@ namespace CrunchEconomy
                 {
                     if (!(block is MyStoreBlock store))
                     {
-                        if (block.DisplayNameText != null && !block.DisplayNameText.Equals(station.CargoName))
+                        var temp = station.CargoName.Split(',').ToList();
+                        var cargos = temp.Select(outer => outer.Trim()).ToList();
+                        if (block.DisplayNameText != null && !cargos.Contains(block.DisplayNameText))
                         {
                             continue;
                         }
@@ -179,7 +181,9 @@ namespace CrunchEconomy
                 }
                 if (station.ViewOnlyNamedCargo)
                 {
-                    if (block.DisplayNameText != null && !block.DisplayNameText.Equals(station.CargoName) && !(block is MyStoreBlock store))
+                    var temp = station.CargoName.Split(',').ToList();
+                    var cargos = temp.Select(outer => outer.Trim()).ToList();
+                    if (block.DisplayNameText != null && !cargos.Contains(block.DisplayNameText) && !(block is MyStoreBlock store))
                     {
                         continue;
                     }
@@ -235,39 +239,39 @@ namespace CrunchEconomy
 
         public bool SpawnItems(MyCubeGrid grid, MyDefinitionId id, MyFixedPoint amount, Stations station)
         {
-          //  CrunchEconCore.Log.Info("SPAWNING 1 " + amount);
+            //  CrunchEconCore.Log.Info("SPAWNING 1 " + amount);
             if (grid != null)
             {
 
-             //   CrunchEconCore.Log.Info("GRID NO NULL?");
+                //   CrunchEconCore.Log.Info("GRID NO NULL?");
                 foreach (var block in grid.GetFatBlocks())
                 {
 
                     if (!block.GetOwnerFactionTag().Equals(station.OwnerFactionTag))
                     {
-                    
+
                         continue;
                     }
                     if (block.DisplayNameText != null && block.DisplayNameText != station.CargoName)
                     {
-                   //     CrunchEconCore.Log.Info("NOT SPAWNING " + block.DisplayNameText);
+                        //     CrunchEconCore.Log.Info("NOT SPAWNING " + block.DisplayNameText);
                         continue;
                     }
                     for (int i = 0; i < block.InventoryCount; i++)
                     {
-                    //    CrunchEconCore.Log.Info("SPAWNING 2 " + amount);
+                        //    CrunchEconCore.Log.Info("SPAWNING 2 " + amount);
                         VRage.Game.ModAPI.IMyInventory inv = ((VRage.Game.ModAPI.IMyCubeBlock)block).GetInventory(i);
 
                         MyItemType itemType = new MyInventoryItemFilter(id.TypeId + "/" + id.SubtypeName).ItemType;
                         if (inv.CanItemsBeAdded(amount, itemType))
                         {
                             inv.AddItems(amount, (MyObjectBuilder_PhysicalObject)MyObjectBuilderSerializer.CreateNewObject(id));
-                      //      CrunchEconCore.Log.Info("SPAWNING 3 " + amount);
+                            //      CrunchEconCore.Log.Info("SPAWNING 3 " + amount);
                             return true;
                         }
                         else
                         {
-                       //     CrunchEconCore.Log.Info("SPAWNING 4 " + amount);
+                            //     CrunchEconCore.Log.Info("SPAWNING 4 " + amount);
                             continue;
                         }
                     }
@@ -308,7 +312,8 @@ namespace CrunchEconomy
                 MyFixedPoint needed = CountComponentsTwo(inventories, c.Key, c.Value, toRemove);
                 if (needed > 0)
                 {
-                    if (steamid != 0l) {
+                    if (steamid != 0l)
+                    {
                         SendMessage("[Shipyard]", "Missing " + needed + " " + c.Key.SubtypeName + " All components must be inside one grid.", Color.Red, (long)steamid);
                     }
                     return false;
@@ -532,7 +537,7 @@ namespace CrunchEconomy
                 {
                     Dictionary<MyDefinitionId, int> itemsToRemove = new Dictionary<MyDefinitionId, int>();
                     string parseThis;
-                  
+
                     if (contract.type == ContractType.Mining)
                     {
                         parseThis = "MyObjectBuilder_Ore/" + contract.SubType;
@@ -1483,8 +1488,9 @@ namespace CrunchEconomy
                                     foreach (CraftedItem item in station.CraftableItems)
                                     {
                                         double yeet = rnd.NextDouble();
-                                        if (yeet <= item.chanceToCraft) {
-                                            
+                                        if (yeet <= item.chanceToCraft)
+                                        {
+
                                             var comps = new Dictionary<MyDefinitionId, int>();
                                             inventories.AddRange(GetInventories(grid, station));
                                             if (MyDefinitionId.TryParse("MyObjectBuilder_" + item.typeid, item.subtypeid, out MyDefinitionId id))
@@ -1509,93 +1515,76 @@ namespace CrunchEconomy
                             }
                             station.nextCraftRefresh = DateTime.Now.AddSeconds(station.SecondsBetweenCrafting);
                         }
-                            if (now >= station.nextBuyRefresh || now >= station.nextSellRefresh)
+                        if (now >= station.nextBuyRefresh || now >= station.nextSellRefresh)
+                        {
+                            MyGps gps = station.getGPS();
+                            Boolean AddSellTime = false;
+                            Boolean AddBuyTime = false;
+                            bool checkLocation = false;
+                            if (!station.WorldName.Equals("default"))
                             {
-                                MyGps gps = station.getGPS();
-                                Boolean AddSellTime = false;
-                                Boolean AddBuyTime = false;
-                                bool checkLocation = false;
-                                if (!station.WorldName.Equals("default"))
+                                if (station.StationEntityId > 0)
                                 {
-                                    if (station.StationEntityId > 0)
+                                    if (MyAPIGateway.Entities.GetEntityById(station.StationEntityId) != null)
                                     {
-                                        if (MyAPIGateway.Entities.GetEntityById(station.StationEntityId) != null)
+                                        if (MyAPIGateway.Entities.GetEntityById(station.StationEntityId) is MyCubeGrid grid)
                                         {
-                                            if (MyAPIGateway.Entities.GetEntityById(station.StationEntityId) is MyCubeGrid grid)
+                                            if (station.DoPeriodGridClearing && now >= station.nextGridInventoryClear)
                                             {
-                                                if (station.DoPeriodGridClearing && now >= station.nextGridInventoryClear)
-                                                {
-                                                    station.nextGridInventoryClear = now.AddSeconds(station.SecondsBetweenClearEntireInventory);
-                                                    ClearInventories(grid, station);
-                                                    SaveStation(station);
-                                                }
+                                                station.nextGridInventoryClear = now.AddSeconds(station.SecondsBetweenClearEntireInventory);
+                                                ClearInventories(grid, station);
+                                                SaveStation(station);
+                                            }
 
-                                                foreach (MyStoreBlock store in grid.GetFatBlocks().OfType<MyStoreBlock>())
+                                            foreach (MyStoreBlock store in grid.GetFatBlocks().OfType<MyStoreBlock>())
+                                            {
+                                                //  Log.Info(store.DisplayNameText);
+                                                if (store.GetOwnerFactionTag().Equals(station.OwnerFactionTag))
                                                 {
-                                                    //  Log.Info(store.DisplayNameText);
-                                                    if (store.GetOwnerFactionTag().Equals(station.OwnerFactionTag))
+                                                    //   Log.Info("1");
+                                                    station.StationEntityId = store.CubeGrid.EntityId;
+                                                    if (now >= station.nextSellRefresh && station.DoSellOffers)
                                                     {
-                                                        //   Log.Info("1");
-                                                        station.StationEntityId = store.CubeGrid.EntityId;
-                                                        if (now >= station.nextSellRefresh && station.DoSellOffers)
+                                                        //    Log.Info(store.DisplayNameText);
+                                                        //    Log.Info("its past the timer");
+                                                        AddSellTime = true;
+
+                                                        if (sellOffers.TryGetValue(store.DisplayNameText, out List<SellOffer> offers))
                                                         {
-                                                            //    Log.Info(store.DisplayNameText);
-                                                            //    Log.Info("its past the timer");
-                                                            AddSellTime = true;
+                                                            //     Log.Info("it found the store files");
 
-                                                            if (sellOffers.TryGetValue(store.DisplayNameText, out List<SellOffer> offers))
+                                                            ClearStoreOfPlayersBuyingOffers(store);
+                                                            List<VRage.Game.ModAPI.IMyInventory> inventories = new List<VRage.Game.ModAPI.IMyInventory>();
+                                                            inventories.AddRange(GetInventories(grid, station));
+
+                                                            //  Log.Info("now its checking offers");
+                                                            foreach (SellOffer offer in offers)
                                                             {
-                                                                //     Log.Info("it found the store files");
-
-                                                                ClearStoreOfPlayersBuyingOffers(store);
-                                                                List<VRage.Game.ModAPI.IMyInventory> inventories = new List<VRage.Game.ModAPI.IMyInventory>();
-                                                                inventories.AddRange(GetInventories(grid, station));
-
-                                                                //  Log.Info("now its checking offers");
-                                                                foreach (SellOffer offer in offers)
+                                                                try
                                                                 {
-                                                                    try
+                                                                    double chance = rnd.NextDouble();
+
+                                                                    //   Log.Info("Should be adding something to sell?");
+
+                                                                    if (MyDefinitionId.TryParse("MyObjectBuilder_" + offer.typeId, offer.subtypeId, out MyDefinitionId id))
                                                                     {
-                                                                        double chance = rnd.NextDouble();
 
-                                                                        //   Log.Info("Should be adding something to sell?");
-
-                                                                        if (MyDefinitionId.TryParse("MyObjectBuilder_" + offer.typeId, offer.subtypeId, out MyDefinitionId id))
+                                                                        int hasAmount = CountComponents(inventories, id).ToIntSafe();
+                                                                        //  Log.Info("AMOUNT " + hasAmount + " " + id.ToString() + " " + station.Name);
+                                                                        if (hasAmount > 0)
                                                                         {
-
-                                                                            int hasAmount = CountComponents(inventories, id).ToIntSafe();
-                                                                            //  Log.Info("AMOUNT " + hasAmount + " " + id.ToString() + " " + station.Name);
-                                                                            if (hasAmount > 0)
+                                                                            if (hasAmount < offer.SpawnIfCargoLessThan && offer.SpawnItemsIfNeeded)
                                                                             {
-                                                                                if (hasAmount < offer.SpawnIfCargoLessThan && offer.SpawnItemsIfNeeded)
+                                                                                int amountSpawned = 0;
+
+                                                                                amountSpawned = rnd.Next(offer.minAmountToSpawn, offer.maxAmountToSpawn);
+                                                                                if (offer.IndividualRefreshTimer)
                                                                                 {
-                                                                                    int amountSpawned = 0;
-
-                                                                                    amountSpawned = rnd.Next(offer.minAmountToSpawn, offer.maxAmountToSpawn);
-                                                                                    if (offer.IndividualRefreshTimer)
+                                                                                    if (individualTimers.TryGetValue(store.EntityId, out DateTime refresh))
                                                                                     {
-                                                                                        if (individualTimers.TryGetValue(store.EntityId, out DateTime refresh))
+                                                                                        if (now >= refresh)
                                                                                         {
-                                                                                            if (now >= refresh)
-                                                                                            {
-                                                                                                individualTimers[store.EntityId] = DateTime.Now.AddSeconds(offer.SecondsBetweenRefresh);
-
-
-                                                                                                if (chance <= offer.chance)
-                                                                                                {
-                                                                                                    SpawnItems(grid, id, (MyFixedPoint)amountSpawned, station);
-                                                                                                    hasAmount += amountSpawned;
-                                                                                                }
-                                                                                            }
-                                                                                            else
-                                                                                            {
-                                                                                                continue;
-                                                                                            }
-                                                                                        }
-                                                                                        else
-                                                                                        {
-                                                                                            individualTimers.Add(store.EntityId, DateTime.Now.AddSeconds(offer.SecondsBetweenRefresh));
-
+                                                                                            individualTimers[store.EntityId] = DateTime.Now.AddSeconds(offer.SecondsBetweenRefresh);
 
 
                                                                                             if (chance <= offer.chance)
@@ -1604,204 +1593,216 @@ namespace CrunchEconomy
                                                                                                 hasAmount += amountSpawned;
                                                                                             }
                                                                                         }
-
-
+                                                                                        else
+                                                                                        {
+                                                                                            continue;
+                                                                                        }
                                                                                     }
                                                                                     else
                                                                                     {
-                                                                                        //spawn items
+                                                                                        individualTimers.Add(store.EntityId, DateTime.Now.AddSeconds(offer.SecondsBetweenRefresh));
+
+
+
                                                                                         if (chance <= offer.chance)
                                                                                         {
                                                                                             SpawnItems(grid, id, (MyFixedPoint)amountSpawned, station);
                                                                                             hasAmount += amountSpawned;
-                                                                                        
+                                                                                        }
+                                                                                    }
+
+
+                                                                                }
+                                                                                else
+                                                                                {
+                                                                                    //spawn items
+                                                                                    if (chance <= offer.chance)
+                                                                                    {
+                                                                                        SpawnItems(grid, id, (MyFixedPoint)amountSpawned, station);
+                                                                                        hasAmount += amountSpawned;
+
+                                                                                    }
+                                                                                }
+
+                                                                            }
+
+                                                                            SerializableDefinitionId itemId = new SerializableDefinitionId(id.TypeId, offer.subtypeId);
+
+
+
+                                                                            int price = rnd.Next((int)offer.minPrice, (int)offer.maxPrice);
+                                                                            price = Convert.ToInt32(price * station.GetModifier(offer.StationModifierItemName));
+                                                                            MyStoreItemData item = new MyStoreItemData(itemId, hasAmount, price, null, null);
+                                                                            //       Log.Info("if it got here its creating the offer");
+                                                                            MyStoreInsertResults result = store.InsertOffer(item, out long notUsingThis);
+
+                                                                            if (result == MyStoreInsertResults.Fail_PricePerUnitIsLessThanMinimum || result == MyStoreInsertResults.Fail_StoreLimitReached || result == MyStoreInsertResults.Error)
+                                                                            {
+                                                                                Log.Error("Unable to insert this offer into store " + offer.typeId + " " + offer.subtypeId + " at station " + station.Name + " " + result.ToString());
+                                                                            }
+                                                                        }
+                                                                        else
+                                                                        {
+                                                                            if (offer.SpawnItemsIfNeeded)
+                                                                            {
+                                                                                int amountSpawned = 0;
+
+                                                                                amountSpawned = rnd.Next(offer.minAmountToSpawn, offer.maxAmountToSpawn);
+                                                                                if (offer.IndividualRefreshTimer)
+                                                                                {
+                                                                                    if (individualTimers.TryGetValue(store.EntityId, out DateTime refresh))
+                                                                                    {
+                                                                                        if (now >= refresh)
+                                                                                        {
+                                                                                            individualTimers[store.EntityId] = DateTime.Now.AddSeconds(offer.SecondsBetweenRefresh);
+
+
+                                                                                            if (chance <= offer.chance)
+                                                                                            {
+                                                                                                SpawnItems(grid, id, (MyFixedPoint)amountSpawned, station);
+                                                                                                hasAmount += amountSpawned;
+                                                                                            }
+                                                                                        }
+                                                                                        else
+                                                                                        {
+                                                                                            continue;
+                                                                                        }
+                                                                                    }
+                                                                                    else
+                                                                                    {
+                                                                                        individualTimers.Add(store.EntityId, DateTime.Now.AddSeconds(offer.SecondsBetweenRefresh));
+
+
+
+                                                                                        if (chance <= offer.chance)
+                                                                                        {
+                                                                                            SpawnItems(grid, id, (MyFixedPoint)amountSpawned, station);
+                                                                                            hasAmount += amountSpawned;
                                                                                         }
                                                                                     }
 
                                                                                 }
+                                                                                else
+                                                                                {
+
+
+                                                                                    //spawn items
+                                                                                    SpawnItems(grid, id, (MyFixedPoint)offer.SpawnIfCargoLessThan, station);
+                                                                                }
+
 
                                                                                 SerializableDefinitionId itemId = new SerializableDefinitionId(id.TypeId, offer.subtypeId);
 
 
 
+
                                                                                 int price = rnd.Next((int)offer.minPrice, (int)offer.maxPrice);
                                                                                 price = Convert.ToInt32(price * station.GetModifier(offer.StationModifierItemName));
-                                                                                MyStoreItemData item = new MyStoreItemData(itemId, hasAmount, price, null, null);
-                                                                                //       Log.Info("if it got here its creating the offer");
+                                                                                MyStoreItemData item = new MyStoreItemData(itemId, offer.SpawnIfCargoLessThan, price, null, null);
+                                                                                //    Log.Info("if it got here its creating the offer");
                                                                                 MyStoreInsertResults result = store.InsertOffer(item, out long notUsingThis);
-
                                                                                 if (result == MyStoreInsertResults.Fail_PricePerUnitIsLessThanMinimum || result == MyStoreInsertResults.Fail_StoreLimitReached || result == MyStoreInsertResults.Error)
                                                                                 {
                                                                                     Log.Error("Unable to insert this offer into store " + offer.typeId + " " + offer.subtypeId + " at station " + station.Name + " " + result.ToString());
                                                                                 }
                                                                             }
-                                                                            else
-                                                                            {
-                                                                                if (offer.SpawnItemsIfNeeded)
-                                                                                {
-                                                                                    int amountSpawned = 0;
-
-                                                                                    amountSpawned = rnd.Next(offer.minAmountToSpawn, offer.maxAmountToSpawn);
-                                                                                    if (offer.IndividualRefreshTimer)
-                                                                                    {
-                                                                                        if (individualTimers.TryGetValue(store.EntityId, out DateTime refresh))
-                                                                                        {
-                                                                                            if (now >= refresh)
-                                                                                            {
-                                                                                                individualTimers[store.EntityId] = DateTime.Now.AddSeconds(offer.SecondsBetweenRefresh);
-
-
-                                                                                                if (chance <= offer.chance)
-                                                                                                {
-                                                                                                    SpawnItems(grid, id, (MyFixedPoint)amountSpawned, station);
-                                                                                                    hasAmount += amountSpawned;
-                                                                                                }
-                                                                                            }
-                                                                                            else
-                                                                                            {
-                                                                                                continue;
-                                                                                            }
-                                                                                        }
-                                                                                        else
-                                                                                        {
-                                                                                            individualTimers.Add(store.EntityId, DateTime.Now.AddSeconds(offer.SecondsBetweenRefresh));
-
-
-
-                                                                                            if (chance <= offer.chance)
-                                                                                            {
-                                                                                                SpawnItems(grid, id, (MyFixedPoint)amountSpawned, station);
-                                                                                                hasAmount += amountSpawned;
-                                                                                            }
-                                                                                        }
-
-                                                                                    }
-                                                                                    else
-                                                                                    {
-
-
-                                                                                        //spawn items
-                                                                                        SpawnItems(grid, id, (MyFixedPoint)offer.SpawnIfCargoLessThan, station);
-                                                                                    }
-
-
-                                                                                    SerializableDefinitionId itemId = new SerializableDefinitionId(id.TypeId, offer.subtypeId);
-
-
-
-
-                                                                                    int price = rnd.Next((int)offer.minPrice, (int)offer.maxPrice);
-                                                                                    price = Convert.ToInt32(price * station.GetModifier(offer.StationModifierItemName));
-                                                                                    MyStoreItemData item = new MyStoreItemData(itemId, offer.SpawnIfCargoLessThan, price, null, null);
-                                                                                    //    Log.Info("if it got here its creating the offer");
-                                                                                    MyStoreInsertResults result = store.InsertOffer(item, out long notUsingThis);
-                                                                                    if (result == MyStoreInsertResults.Fail_PricePerUnitIsLessThanMinimum || result == MyStoreInsertResults.Fail_StoreLimitReached || result == MyStoreInsertResults.Error)
-                                                                                    {
-                                                                                        Log.Error("Unable to insert this offer into store " + offer.typeId + " " + offer.subtypeId + " at station " + station.Name + " " + result.ToString());
-                                                                                    }
-                                                                                }
-                                                                            }
-
                                                                         }
-                                                                    }
 
-
-
-                                                                    catch (Exception ex)
-                                                                    {
-                                                                        Log.Error("Error on this sell offer " + offer.typeId + " " + offer.subtypeId);
-                                                                        Log.Error("for this station " + station.Name);
-                                                                        station.nextSellRefresh = now.AddSeconds(station.SecondsBetweenRefreshForSellOffers);
-                                                                        Log.Error(ex.ToString());
-                                                                        SaveStation(station);
                                                                     }
                                                                 }
+
+
+
+                                                                catch (Exception ex)
+                                                                {
+                                                                    Log.Error("Error on this sell offer " + offer.typeId + " " + offer.subtypeId);
+                                                                    Log.Error("for this station " + station.Name);
+                                                                    station.nextSellRefresh = now.AddSeconds(station.SecondsBetweenRefreshForSellOffers);
+                                                                    Log.Error(ex.ToString());
+                                                                    SaveStation(station);
+                                                                }
                                                             }
-
-
                                                         }
-                                                        else
-                                                        {
-                                                            //Log.Info("Not past the time for sell offers.");
-                                                        }
-                                                        if (now >= station.nextBuyRefresh && station.DoBuyOrders)
-                                                        {
-                                                            AddBuyTime = true;
 
 
-                                                            if (buyOrders.TryGetValue(store.DisplayNameText, out List<BuyOrder> orders))
+                                                    }
+                                                    else
+                                                    {
+                                                        //Log.Info("Not past the time for sell offers.");
+                                                    }
+                                                    if (now >= station.nextBuyRefresh && station.DoBuyOrders)
+                                                    {
+                                                        AddBuyTime = true;
+
+
+                                                        if (buyOrders.TryGetValue(store.DisplayNameText, out List<BuyOrder> orders))
+                                                        {
+
+                                                            ClearStoreOfPlayersSellingOrders(store);
+                                                            List<VRage.Game.ModAPI.IMyInventory> inventories = new List<VRage.Game.ModAPI.IMyInventory>();
+                                                            inventories.AddRange(GetInventories(grid, station));
+
+                                                            foreach (BuyOrder order in orders)
                                                             {
 
-                                                                ClearStoreOfPlayersSellingOrders(store);
-                                                                List<VRage.Game.ModAPI.IMyInventory> inventories = new List<VRage.Game.ModAPI.IMyInventory>();
-                                                                inventories.AddRange(GetInventories(grid, station));
-
-                                                                foreach (BuyOrder order in orders)
+                                                                try
                                                                 {
-
-                                                                    try
+                                                                    if (order.IndividualRefreshTimer)
                                                                     {
-                                                                        if (order.IndividualRefreshTimer)
+                                                                        if (individualTimers.TryGetValue(store.EntityId, out DateTime refresh))
                                                                         {
-                                                                            if (individualTimers.TryGetValue(store.EntityId, out DateTime refresh))
+                                                                            if (now < refresh)
                                                                             {
-                                                                                if (now < refresh)
-                                                                                {
-                                                                                    continue;
-                                                                                }
-                                                                                else
-                                                                                {
-                                                                                    individualTimers[store.EntityId] = DateTime.Now.AddSeconds(order.SecondsBetweenRefresh);
-                                                                                }
+                                                                                continue;
                                                                             }
                                                                             else
                                                                             {
-                                                                                individualTimers.Add(store.EntityId, DateTime.Now.AddSeconds(order.SecondsBetweenRefresh));
+                                                                                individualTimers[store.EntityId] = DateTime.Now.AddSeconds(order.SecondsBetweenRefresh);
                                                                             }
                                                                         }
-                                                                        if (MyDefinitionId.TryParse("MyObjectBuilder_" + order.typeId, order.subtypeId, out MyDefinitionId id))
+                                                                        else
                                                                         {
-
-                                                                            SerializableDefinitionId itemId = new SerializableDefinitionId(id.TypeId, order.subtypeId);
-
-
-                                                                            double chance = rnd.NextDouble();
-                                                                            if (chance <= order.chance)
-                                                                            {
-                                                                                int price = rnd.Next((int)order.minPrice, (int)order.maxPrice);
-                                                                                price = Convert.ToInt32(price * station.GetModifier(order.StationModifierItemName));
-                                                                                int amount = rnd.Next((int)order.minAmount, (int)order.maxAmount);
-                                                                                MyStoreItemData item = new MyStoreItemData(itemId, amount, price, null, null);
-                                                                                MyStoreInsertResults result = store.InsertOrder(item, out long notUsingThis);
-                                                                                if (result == MyStoreInsertResults.Fail_PricePerUnitIsLessThanMinimum || result == MyStoreInsertResults.Fail_StoreLimitReached || result == MyStoreInsertResults.Error)
-                                                                                {
-                                                                                    Log.Error("Unable to insert this order into store " + order.typeId + " " + order.subtypeId + " at station " + station.Name + " " + result.ToString());
-                                                                                }
-                                                                            }
+                                                                            individualTimers.Add(store.EntityId, DateTime.Now.AddSeconds(order.SecondsBetweenRefresh));
                                                                         }
                                                                     }
-
-
-                                                                    catch (Exception ex)
+                                                                    if (MyDefinitionId.TryParse("MyObjectBuilder_" + order.typeId, order.subtypeId, out MyDefinitionId id))
                                                                     {
 
-                                                                        Log.Error("Error on this buy order " + order.typeId + " " + order.subtypeId);
-                                                                        Log.Error("for this station " + station.Name);
-                                                                        station.nextBuyRefresh = now.AddSeconds(station.SecondsBetweenRefreshForBuyOrders);
-                                                                        Log.Error(ex.ToString());
-                                                                        SaveStation(station);
+                                                                        SerializableDefinitionId itemId = new SerializableDefinitionId(id.TypeId, order.subtypeId);
+
+
+                                                                        double chance = rnd.NextDouble();
+                                                                        if (chance <= order.chance)
+                                                                        {
+                                                                            int price = rnd.Next((int)order.minPrice, (int)order.maxPrice);
+                                                                            price = Convert.ToInt32(price * station.GetModifier(order.StationModifierItemName));
+                                                                            int amount = rnd.Next((int)order.minAmount, (int)order.maxAmount);
+                                                                            MyStoreItemData item = new MyStoreItemData(itemId, amount, price, null, null);
+                                                                            MyStoreInsertResults result = store.InsertOrder(item, out long notUsingThis);
+                                                                            if (result == MyStoreInsertResults.Fail_PricePerUnitIsLessThanMinimum || result == MyStoreInsertResults.Fail_StoreLimitReached || result == MyStoreInsertResults.Error)
+                                                                            {
+                                                                                Log.Error("Unable to insert this order into store " + order.typeId + " " + order.subtypeId + " at station " + station.Name + " " + result.ToString());
+                                                                            }
+                                                                        }
                                                                     }
-
                                                                 }
-                                                            }
 
+
+                                                                catch (Exception ex)
+                                                                {
+
+                                                                    Log.Error("Error on this buy order " + order.typeId + " " + order.subtypeId);
+                                                                    Log.Error("for this station " + station.Name);
+                                                                    station.nextBuyRefresh = now.AddSeconds(station.SecondsBetweenRefreshForBuyOrders);
+                                                                    Log.Error(ex.ToString());
+                                                                    SaveStation(station);
+                                                                }
+
+                                                            }
                                                         }
+
                                                     }
                                                 }
-                                            }
-                                            else
-                                            {
-                                                checkLocation = true;
                                             }
                                         }
                                         else
@@ -1818,100 +1819,88 @@ namespace CrunchEconomy
                                 {
                                     checkLocation = true;
                                 }
+                            }
+                            else
+                            {
+                                checkLocation = true;
+                            }
 
-                                if (checkLocation)
+                            if (checkLocation)
+                            {
+                                BoundingSphereD sphere = new BoundingSphereD(gps.Coords, 200);
+
+                                foreach (MyCubeGrid grid in MyAPIGateway.Entities.GetEntitiesInSphere(ref sphere).OfType<MyCubeGrid>())
                                 {
-                                    BoundingSphereD sphere = new BoundingSphereD(gps.Coords, 200);
-
-                                    foreach (MyCubeGrid grid in MyAPIGateway.Entities.GetEntitiesInSphere(ref sphere).OfType<MyCubeGrid>())
+                                    if (station.DoPeriodGridClearing && now >= station.nextGridInventoryClear)
                                     {
-                                        if (station.DoPeriodGridClearing && now >= station.nextGridInventoryClear)
+                                        station.nextGridInventoryClear = now.AddSeconds(station.SecondsBetweenClearEntireInventory);
+                                        ClearInventories(grid, station);
+                                        SaveStation(station);
+                                    }
+
+                                    //   foreach (MyProgrammableBlock pb in grid.GetFatBlocks().OfType<MyProgrammableBlock>())
+                                    //  {
+                                    //    if (!pb.Enabled)
+                                    //    {
+                                    //        pb.Enabled = true;
+                                    //        pb.SendRecompile();
+                                    //     }
+                                    //  }
+
+
+                                    foreach (MyStoreBlock store in grid.GetFatBlocks().OfType<MyStoreBlock>())
+                                    {
+                                        //  Log.Info(store.DisplayNameText);
+                                        if (store.GetOwnerFactionTag().Equals(station.OwnerFactionTag))
                                         {
-                                            station.nextGridInventoryClear = now.AddSeconds(station.SecondsBetweenClearEntireInventory);
-                                            ClearInventories(grid, station);
-                                            SaveStation(station);
-                                        }
-
-                                        //   foreach (MyProgrammableBlock pb in grid.GetFatBlocks().OfType<MyProgrammableBlock>())
-                                        //  {
-                                        //    if (!pb.Enabled)
-                                        //    {
-                                        //        pb.Enabled = true;
-                                        //        pb.SendRecompile();
-                                        //     }
-                                        //  }
-
-
-                                        foreach (MyStoreBlock store in grid.GetFatBlocks().OfType<MyStoreBlock>())
-                                        {
-                                            //  Log.Info(store.DisplayNameText);
-                                            if (store.GetOwnerFactionTag().Equals(station.OwnerFactionTag))
+                                            //   Log.Info("1");
+                                            station.StationEntityId = store.CubeGrid.EntityId;
+                                            station.WorldName = MyMultiplayer.Static.HostName;
+                                            if (now >= station.nextSellRefresh && station.DoSellOffers)
                                             {
-                                                //   Log.Info("1");
-                                                station.StationEntityId = store.CubeGrid.EntityId;
-                                                station.WorldName = MyMultiplayer.Static.HostName;
-                                                if (now >= station.nextSellRefresh && station.DoSellOffers)
+                                                //    Log.Info(store.DisplayNameText);
+                                                //    Log.Info("its past the timer");
+                                                AddSellTime = true;
+
+                                                if (sellOffers.TryGetValue(store.DisplayNameText, out List<SellOffer> offers))
                                                 {
-                                                    //    Log.Info(store.DisplayNameText);
-                                                    //    Log.Info("its past the timer");
-                                                    AddSellTime = true;
+                                                    //     Log.Info("it found the store files");
 
-                                                    if (sellOffers.TryGetValue(store.DisplayNameText, out List<SellOffer> offers))
+                                                    ClearStoreOfPlayersBuyingOffers(store);
+                                                    List<VRage.Game.ModAPI.IMyInventory> inventories = new List<VRage.Game.ModAPI.IMyInventory>();
+                                                    inventories.AddRange(GetInventories(grid, station));
+
+                                                    //  Log.Info("now its checking offers");
+
+                                                    foreach (SellOffer offer in offers)
                                                     {
-                                                        //     Log.Info("it found the store files");
-
-                                                        ClearStoreOfPlayersBuyingOffers(store);
-                                                        List<VRage.Game.ModAPI.IMyInventory> inventories = new List<VRage.Game.ModAPI.IMyInventory>();
-                                                        inventories.AddRange(GetInventories(grid, station));
-
-                                                        //  Log.Info("now its checking offers");
-
-                                                        foreach (SellOffer offer in offers)
+                                                        try
                                                         {
-                                                            try
+
+                                                            //Log.Info("this is an offer");
+                                                            double chance = rnd.NextDouble();
+
+                                                            //   Log.Info("Should be adding something to sell?");
+
+                                                            if (MyDefinitionId.TryParse("MyObjectBuilder_" + offer.typeId, offer.subtypeId, out MyDefinitionId id))
                                                             {
 
-                                                                //Log.Info("this is an offer");
-                                                                double chance = rnd.NextDouble();
-
-                                                                //   Log.Info("Should be adding something to sell?");
-
-                                                                if (MyDefinitionId.TryParse("MyObjectBuilder_" + offer.typeId, offer.subtypeId, out MyDefinitionId id))
+                                                                int hasAmount = CountComponents(inventories, id).ToIntSafe();
+                                                                //  Log.Info("AMOUNT " + hasAmount + " " + id.ToString() + " " + station.Name);
+                                                                if (hasAmount > 0)
                                                                 {
-
-                                                                    int hasAmount = CountComponents(inventories, id).ToIntSafe();
-                                                                    //  Log.Info("AMOUNT " + hasAmount + " " + id.ToString() + " " + station.Name);
-                                                                    if (hasAmount > 0)
+                                                                    if (hasAmount < offer.SpawnIfCargoLessThan && offer.SpawnItemsIfNeeded)
                                                                     {
-                                                                        if (hasAmount < offer.SpawnIfCargoLessThan && offer.SpawnItemsIfNeeded)
+                                                                        int amountSpawned = 0;
+
+                                                                        amountSpawned = rnd.Next(offer.minAmountToSpawn, offer.maxAmountToSpawn);
+                                                                        if (offer.IndividualRefreshTimer)
                                                                         {
-                                                                            int amountSpawned = 0;
-
-                                                                            amountSpawned = rnd.Next(offer.minAmountToSpawn, offer.maxAmountToSpawn);
-                                                                            if (offer.IndividualRefreshTimer)
+                                                                            if (individualTimers.TryGetValue(store.EntityId, out DateTime refresh))
                                                                             {
-                                                                                if (individualTimers.TryGetValue(store.EntityId, out DateTime refresh))
+                                                                                if (now >= refresh)
                                                                                 {
-                                                                                    if (now >= refresh)
-                                                                                    {
-                                                                                        individualTimers[store.EntityId] = DateTime.Now.AddSeconds(offer.SecondsBetweenRefresh);
-
-
-                                                                                        if (chance <= offer.chance)
-                                                                                        {
-                                                                                            SpawnItems(grid, id, (MyFixedPoint)amountSpawned, station);
-                                                                                            hasAmount += amountSpawned;
-                                                                                        }
-                                                                                    }
-                                                                                    else
-                                                                                    {
-                                                                                        continue;
-                                                                                    }
-                                                                                }
-                                                                                else
-                                                                                {
-                                                                                    individualTimers.Add(store.EntityId, DateTime.Now.AddSeconds(offer.SecondsBetweenRefresh));
-
+                                                                                    individualTimers[store.EntityId] = DateTime.Now.AddSeconds(offer.SecondsBetweenRefresh);
 
 
                                                                                     if (chance <= offer.chance)
@@ -1920,12 +1909,86 @@ namespace CrunchEconomy
                                                                                         hasAmount += amountSpawned;
                                                                                     }
                                                                                 }
-
-
+                                                                                else
+                                                                                {
+                                                                                    continue;
+                                                                                }
                                                                             }
                                                                             else
                                                                             {
-                                                                                //spawn items
+                                                                                individualTimers.Add(store.EntityId, DateTime.Now.AddSeconds(offer.SecondsBetweenRefresh));
+
+
+
+                                                                                if (chance <= offer.chance)
+                                                                                {
+                                                                                    SpawnItems(grid, id, (MyFixedPoint)amountSpawned, station);
+                                                                                    hasAmount += amountSpawned;
+                                                                                }
+                                                                            }
+
+
+                                                                        }
+                                                                        else
+                                                                        {
+                                                                            //spawn items
+                                                                            if (chance <= offer.chance)
+                                                                            {
+                                                                                SpawnItems(grid, id, (MyFixedPoint)amountSpawned, station);
+                                                                                hasAmount += amountSpawned;
+                                                                            }
+                                                                        }
+
+                                                                    }
+
+                                                                    SerializableDefinitionId itemId = new SerializableDefinitionId(id.TypeId, offer.subtypeId);
+
+
+
+                                                                    int price = rnd.Next((int)offer.minPrice, (int)offer.maxPrice);
+                                                                    price = Convert.ToInt32(price * station.GetModifier(offer.StationModifierItemName));
+                                                                    MyStoreItemData item = new MyStoreItemData(itemId, hasAmount, price, null, null);
+                                                                    //       Log.Info("if it got here its creating the offer");
+                                                                    MyStoreInsertResults result = store.InsertOffer(item, out long notUsingThis);
+
+                                                                    if (result == MyStoreInsertResults.Fail_PricePerUnitIsLessThanMinimum || result == MyStoreInsertResults.Fail_StoreLimitReached || result == MyStoreInsertResults.Error)
+                                                                    {
+                                                                        Log.Error("Unable to insert this offer into store " + offer.typeId + " " + offer.subtypeId + " at station " + station.Name + " " + result.ToString());
+                                                                    }
+                                                                }
+                                                                else
+                                                                {
+                                                                    if (offer.SpawnItemsIfNeeded)
+                                                                    {
+                                                                        int amountSpawned = 0;
+
+                                                                        amountSpawned = rnd.Next(offer.minAmountToSpawn, offer.maxAmountToSpawn);
+                                                                        if (offer.IndividualRefreshTimer)
+                                                                        {
+                                                                            if (individualTimers.TryGetValue(store.EntityId, out DateTime refresh))
+                                                                            {
+                                                                                if (now >= refresh)
+                                                                                {
+                                                                                    individualTimers[store.EntityId] = DateTime.Now.AddSeconds(offer.SecondsBetweenRefresh);
+
+
+                                                                                    if (chance <= offer.chance)
+                                                                                    {
+                                                                                        SpawnItems(grid, id, (MyFixedPoint)amountSpawned, station);
+                                                                                        hasAmount += amountSpawned;
+                                                                                    }
+                                                                                }
+                                                                                else
+                                                                                {
+                                                                                    continue;
+                                                                                }
+                                                                            }
+                                                                            else
+                                                                            {
+                                                                                individualTimers.Add(store.EntityId, DateTime.Now.AddSeconds(offer.SecondsBetweenRefresh));
+
+
+
                                                                                 if (chance <= offer.chance)
                                                                                 {
                                                                                     SpawnItems(grid, id, (MyFixedPoint)amountSpawned, station);
@@ -1934,207 +1997,150 @@ namespace CrunchEconomy
                                                                             }
 
                                                                         }
+                                                                        else
+                                                                        {
+
+
+                                                                            //spawn items
+                                                                            SpawnItems(grid, id, (MyFixedPoint)offer.SpawnIfCargoLessThan, station);
+                                                                        }
+
 
                                                                         SerializableDefinitionId itemId = new SerializableDefinitionId(id.TypeId, offer.subtypeId);
 
 
 
+
                                                                         int price = rnd.Next((int)offer.minPrice, (int)offer.maxPrice);
                                                                         price = Convert.ToInt32(price * station.GetModifier(offer.StationModifierItemName));
-                                                                        MyStoreItemData item = new MyStoreItemData(itemId, hasAmount, price, null, null);
-                                                                        //       Log.Info("if it got here its creating the offer");
+                                                                        MyStoreItemData item = new MyStoreItemData(itemId, offer.SpawnIfCargoLessThan, price, null, null);
+                                                                        //    Log.Info("if it got here its creating the offer");
                                                                         MyStoreInsertResults result = store.InsertOffer(item, out long notUsingThis);
-
                                                                         if (result == MyStoreInsertResults.Fail_PricePerUnitIsLessThanMinimum || result == MyStoreInsertResults.Fail_StoreLimitReached || result == MyStoreInsertResults.Error)
                                                                         {
                                                                             Log.Error("Unable to insert this offer into store " + offer.typeId + " " + offer.subtypeId + " at station " + station.Name + " " + result.ToString());
                                                                         }
                                                                     }
-                                                                    else
-                                                                    {
-                                                                        if (offer.SpawnItemsIfNeeded)
-                                                                        {
-                                                                            int amountSpawned = 0;
-
-                                                                            amountSpawned = rnd.Next(offer.minAmountToSpawn, offer.maxAmountToSpawn);
-                                                                            if (offer.IndividualRefreshTimer)
-                                                                            {
-                                                                                if (individualTimers.TryGetValue(store.EntityId, out DateTime refresh))
-                                                                                {
-                                                                                    if (now >= refresh)
-                                                                                    {
-                                                                                        individualTimers[store.EntityId] = DateTime.Now.AddSeconds(offer.SecondsBetweenRefresh);
-
-
-                                                                                        if (chance <= offer.chance)
-                                                                                        {
-                                                                                            SpawnItems(grid, id, (MyFixedPoint)amountSpawned, station);
-                                                                                            hasAmount += amountSpawned;
-                                                                                        }
-                                                                                    }
-                                                                                    else
-                                                                                    {
-                                                                                        continue;
-                                                                                    }
-                                                                                }
-                                                                                else
-                                                                                {
-                                                                                    individualTimers.Add(store.EntityId, DateTime.Now.AddSeconds(offer.SecondsBetweenRefresh));
-
-
-
-                                                                                    if (chance <= offer.chance)
-                                                                                    {
-                                                                                        SpawnItems(grid, id, (MyFixedPoint)amountSpawned, station);
-                                                                                        hasAmount += amountSpawned;
-                                                                                    }
-                                                                                }
-
-                                                                            }
-                                                                            else
-                                                                            {
-
-
-                                                                                //spawn items
-                                                                                SpawnItems(grid, id, (MyFixedPoint)offer.SpawnIfCargoLessThan, station);
-                                                                            }
-
-
-                                                                            SerializableDefinitionId itemId = new SerializableDefinitionId(id.TypeId, offer.subtypeId);
-
-
-
-
-                                                                            int price = rnd.Next((int)offer.minPrice, (int)offer.maxPrice);
-                                                                            price = Convert.ToInt32(price * station.GetModifier(offer.StationModifierItemName));
-                                                                            MyStoreItemData item = new MyStoreItemData(itemId, offer.SpawnIfCargoLessThan, price, null, null);
-                                                                            //    Log.Info("if it got here its creating the offer");
-                                                                            MyStoreInsertResults result = store.InsertOffer(item, out long notUsingThis);
-                                                                            if (result == MyStoreInsertResults.Fail_PricePerUnitIsLessThanMinimum || result == MyStoreInsertResults.Fail_StoreLimitReached || result == MyStoreInsertResults.Error)
-                                                                            {
-                                                                                Log.Error("Unable to insert this offer into store " + offer.typeId + " " + offer.subtypeId + " at station " + station.Name + " " + result.ToString());
-                                                                            }
-                                                                        }
-                                                                    }
-
                                                                 }
-                                                            }
 
-
-
-                                                            catch (Exception ex)
-                                                            {
-                                                                Log.Error("Error on this sell offer " + offer.typeId + " " + offer.subtypeId);
-                                                                Log.Error("for this station " + station.Name);
-                                                                station.nextSellRefresh = now.AddSeconds(station.SecondsBetweenRefreshForSellOffers);
-                                                                Log.Error(ex.ToString());
-                                                                SaveStation(station);
                                                             }
                                                         }
+
+
+
+                                                        catch (Exception ex)
+                                                        {
+                                                            Log.Error("Error on this sell offer " + offer.typeId + " " + offer.subtypeId);
+                                                            Log.Error("for this station " + station.Name);
+                                                            station.nextSellRefresh = now.AddSeconds(station.SecondsBetweenRefreshForSellOffers);
+                                                            Log.Error(ex.ToString());
+                                                            SaveStation(station);
+                                                        }
                                                     }
-
-
                                                 }
-                                                else
-                                                {
-                                                    //Log.Info("Not past the time for sell offers.");
-                                                }
-                                                if (now >= station.nextBuyRefresh && station.DoBuyOrders)
-                                                {
-                                                    AddBuyTime = true;
 
 
-                                                    if (buyOrders.TryGetValue(store.DisplayNameText, out List<BuyOrder> orders))
+                                            }
+                                            else
+                                            {
+                                                //Log.Info("Not past the time for sell offers.");
+                                            }
+                                            if (now >= station.nextBuyRefresh && station.DoBuyOrders)
+                                            {
+                                                AddBuyTime = true;
+
+
+                                                if (buyOrders.TryGetValue(store.DisplayNameText, out List<BuyOrder> orders))
+                                                {
+
+                                                    ClearStoreOfPlayersSellingOrders(store);
+                                                    List<VRage.Game.ModAPI.IMyInventory> inventories = new List<VRage.Game.ModAPI.IMyInventory>();
+                                                    inventories.AddRange(GetInventories(grid, station));
+
+                                                    foreach (BuyOrder order in orders)
                                                     {
 
-                                                        ClearStoreOfPlayersSellingOrders(store);
-                                                        List<VRage.Game.ModAPI.IMyInventory> inventories = new List<VRage.Game.ModAPI.IMyInventory>();
-                                                        inventories.AddRange(GetInventories(grid, station));
-
-                                                        foreach (BuyOrder order in orders)
+                                                        try
                                                         {
-
-                                                            try
+                                                            if (order.IndividualRefreshTimer)
                                                             {
-                                                                if (order.IndividualRefreshTimer)
+                                                                if (individualTimers.TryGetValue(store.EntityId, out DateTime refresh))
                                                                 {
-                                                                    if (individualTimers.TryGetValue(store.EntityId, out DateTime refresh))
+                                                                    if (now < refresh)
                                                                     {
-                                                                        if (now < refresh)
-                                                                        {
-                                                                            continue;
-                                                                        }
-                                                                        else
-                                                                        {
-                                                                            individualTimers[store.EntityId] = DateTime.Now.AddSeconds(order.SecondsBetweenRefresh);
-                                                                        }
+                                                                        continue;
                                                                     }
                                                                     else
                                                                     {
-                                                                        individualTimers.Add(store.EntityId, DateTime.Now.AddSeconds(order.SecondsBetweenRefresh));
+                                                                        individualTimers[store.EntityId] = DateTime.Now.AddSeconds(order.SecondsBetweenRefresh);
                                                                     }
                                                                 }
-                                                                if (MyDefinitionId.TryParse("MyObjectBuilder_" + order.typeId, order.subtypeId, out MyDefinitionId id))
+                                                                else
                                                                 {
-
-                                                                    SerializableDefinitionId itemId = new SerializableDefinitionId(id.TypeId, order.subtypeId);
-
-
-                                                                    double chance = rnd.NextDouble();
-                                                                    if (chance <= order.chance)
-                                                                    {
-                                                                        int price = rnd.Next((int)order.minPrice, (int)order.maxPrice);
-                                                                        price = Convert.ToInt32(price * station.GetModifier(order.StationModifierItemName));
-                                                                        int amount = rnd.Next((int)order.minAmount, (int)order.maxAmount);
-                                                                        MyStoreItemData item = new MyStoreItemData(itemId, amount, price, null, null);
-                                                                        MyStoreInsertResults result = store.InsertOrder(item, out long notUsingThis);
-                                                                        if (result == MyStoreInsertResults.Fail_PricePerUnitIsLessThanMinimum || result == MyStoreInsertResults.Fail_StoreLimitReached || result == MyStoreInsertResults.Error)
-                                                                        {
-                                                                            Log.Error("Unable to insert this order into store " + order.typeId + " " + order.subtypeId + " at station " + station.Name + " " + result.ToString());
-                                                                        }
-                                                                    }
+                                                                    individualTimers.Add(store.EntityId, DateTime.Now.AddSeconds(order.SecondsBetweenRefresh));
                                                                 }
                                                             }
-
-
-                                                            catch (Exception ex)
+                                                            if (MyDefinitionId.TryParse("MyObjectBuilder_" + order.typeId, order.subtypeId, out MyDefinitionId id))
                                                             {
 
-                                                                Log.Error("Error on this buy order " + order.typeId + " " + order.subtypeId);
-                                                                Log.Error("for this station " + station.Name);
-                                                                station.nextBuyRefresh = now.AddSeconds(station.SecondsBetweenRefreshForBuyOrders);
-                                                                Log.Error(ex.ToString());
-                                                                SaveStation(station);
+                                                                SerializableDefinitionId itemId = new SerializableDefinitionId(id.TypeId, order.subtypeId);
+
+
+                                                                double chance = rnd.NextDouble();
+                                                                if (chance <= order.chance)
+                                                                {
+                                                                    int price = rnd.Next((int)order.minPrice, (int)order.maxPrice);
+                                                                    price = Convert.ToInt32(price * station.GetModifier(order.StationModifierItemName));
+                                                                    int amount = rnd.Next((int)order.minAmount, (int)order.maxAmount);
+                                                                    MyStoreItemData item = new MyStoreItemData(itemId, amount, price, null, null);
+                                                                    MyStoreInsertResults result = store.InsertOrder(item, out long notUsingThis);
+                                                                    if (result == MyStoreInsertResults.Fail_PricePerUnitIsLessThanMinimum || result == MyStoreInsertResults.Fail_StoreLimitReached || result == MyStoreInsertResults.Error)
+                                                                    {
+                                                                        Log.Error("Unable to insert this order into store " + order.typeId + " " + order.subtypeId + " at station " + station.Name + " " + result.ToString());
+                                                                    }
+                                                                }
                                                             }
-
                                                         }
-                                                    }
 
+
+                                                        catch (Exception ex)
+                                                        {
+
+                                                            Log.Error("Error on this buy order " + order.typeId + " " + order.subtypeId);
+                                                            Log.Error("for this station " + station.Name);
+                                                            station.nextBuyRefresh = now.AddSeconds(station.SecondsBetweenRefreshForBuyOrders);
+                                                            Log.Error(ex.ToString());
+                                                            SaveStation(station);
+                                                        }
+
+                                                    }
                                                 }
+
                                             }
                                         }
                                     }
                                 }
-
-                                bool save = false;
-                                if (AddSellTime)
-                                {
-                                    station.nextSellRefresh = now.AddSeconds(station.SecondsBetweenRefreshForSellOffers);
-                                    save = true;
-                                }
-                                if (AddBuyTime)
-                                {
-                                    station.nextBuyRefresh = now.AddSeconds(station.SecondsBetweenRefreshForBuyOrders);
-                                    save = true;
-                                }
-                                if (save)
-                                {
-                                    SaveStation(station);
-                                }
-
-
                             }
+
+                            bool save = false;
+                            if (AddSellTime)
+                            {
+                                station.nextSellRefresh = now.AddSeconds(station.SecondsBetweenRefreshForSellOffers);
+                                save = true;
+                            }
+                            if (AddBuyTime)
+                            {
+                                station.nextBuyRefresh = now.AddSeconds(station.SecondsBetweenRefreshForBuyOrders);
+                                save = true;
+                            }
+                            if (save)
+                            {
+                                SaveStation(station);
+                            }
+
+
                         }
+                    }
                     catch (Exception ex)
                     {
                         SaveStation(station);
@@ -2414,7 +2420,7 @@ namespace CrunchEconomy
                 }
             }
 
-       
+
             if (state == TorchSessionState.Loaded)
             {
                 if (config.SetMinPricesTo1)

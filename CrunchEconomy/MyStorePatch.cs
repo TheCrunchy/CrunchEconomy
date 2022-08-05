@@ -106,8 +106,10 @@ namespace CrunchEconomy
         {
 
             ApplyLogging();
+
             ctx.GetPattern(logupdate).Suffixes.Add(storePatchLog);
             ctx.GetPattern(logupdate2).Suffixes.Add(storePatchLog2);
+
             ctx.GetPattern(update).Prefixes.Add(storePatch);
             ctx.GetPattern(updateTwo).Prefixes.Add(storePatchTwo);
 
@@ -173,7 +175,10 @@ namespace CrunchEconomy
                     return false;
                 }
 
-
+                if (!PossibleLogs.ContainsKey(id))
+                {
+                    PossibleLogs.Add(id, "SteamId:" + player.Id.SteamId + ",action:sold,Amount:" + amount + ",TypeId:" + myStoreItem.Item.Value.TypeIdString + ",SubTypeId:" + myStoreItem.Item.Value.SubtypeName + ",TotalMoney:" + myStoreItem.PricePerUnit * (long)amount + ",GridId:" + store.CubeGrid.EntityId + ",FacTag:" + store.GetOwnerFactionTag() + ",ModifierName:notimplemented" + ",GridName:" + store.CubeGrid.DisplayName);
+                }
 
                 if (CrunchEconCore.playerData.TryGetValue(player.Id.SteamId, out PlayerData data))
                 {
@@ -183,13 +188,6 @@ namespace CrunchEconomy
 
                         foreach (BuyOrder order in orders)
                         {
-                            if (order.typeId.Equals(myStoreItem.Item.Value.TypeIdString) && order.subtypeId.Equals(myStoreItem.Item.Value.SubtypeName))
-                            {
-                                if (!PossibleLogs.ContainsKey(id))
-                                {
-                                    PossibleLogs.Add(id, "SteamId:" + player.Id.SteamId + ",action:sold,Amount:" + amount + ",TypeId:" + myStoreItem.Item.Value.TypeIdString + ",SubTypeId:" + myStoreItem.Item.Value.SubtypeName + ",TotalMoney:" + myStoreItem.PricePerUnit * (long)amount + ",GridId:" + store.CubeGrid.EntityId + ",FacTag:" + store.GetOwnerFactionTag() + ",ModifierName:" + order.StationModifierItemName + ",GridName:" + store.CubeGrid.DisplayName);
-                                }
-                            }
                             if (order.SellingThisCancelsContract && store.GetOwnerFactionTag().Equals(order.FactionTagOwnerForCancelling) && order.typeId.Equals(myStoreItem.Item.Value.TypeIdString.Replace("MyObjectBuilder_", "")) && order.subtypeId.Equals(myStoreItem.Item.Value.SubtypeName))
                             {
                                 //this should cancel
@@ -338,6 +336,25 @@ namespace CrunchEconomy
             //  CrunchEconCore.Log.Info("bruh");
             if (__instance is MyStoreBlock store)
             {
+                MyStoreItem storeItem = (MyStoreItem)null;
+                foreach (MyStoreItem playerItem in store.PlayerItems)
+                {
+                    if (playerItem.Id == id)
+                    {
+                        storeItem = playerItem;
+                        break;
+                    }
+                }
+                if (storeItem == null)
+                {
+
+                    return true;
+                }
+
+                if (!PossibleLogs.ContainsKey(id))
+                {
+                    PossibleLogs.Add(id, "SteamId:" + player.Id.SteamId + ",action:bought,Amount:" + amount + ",TypeId:" + storeItem.Item.Value.TypeIdString + ",SubTypeId:" + storeItem.Item.Value.SubtypeName + ",TotalMoney:" + storeItem.PricePerUnit * (long)amount + ",GridId:" + store.CubeGrid.EntityId + ",FacTag:" + store.GetOwnerFactionTag() + ",ModifierName:notimplemented" + ",GridName:" + store.CubeGrid.DisplayName);
+                }
                 //this code is awful
                 MyEntity entity = (MyEntity)null;
                 if (!Sandbox.Game.Entities.MyEntities.TryGetEntityById(targetEntityId, out entity, false))
@@ -363,24 +380,6 @@ namespace CrunchEconomy
                     }
                     else
                     {
-                        MyStoreItem storeItem = (MyStoreItem)null;
-                        foreach (MyStoreItem playerItem in store.PlayerItems)
-                        {
-                            if (playerItem.Id == id)
-                            {
-                                storeItem = playerItem;
-                                break;
-                            }
-                        }
-                        if (storeItem == null)
-                        {
-
-                            return true;
-                        }
-                        if (!PossibleLogs.ContainsKey(id))
-                        {
-
-                        }
                         if (!CrunchEconCore.gridsForSale.ContainsKey(storeItem.Item.Value.SubtypeName) && !CrunchEconCore.sellOffers.ContainsKey(store.DisplayNameText))
                         {
                             //  CrunchEconCore.Log.Info("bruh");
@@ -448,6 +447,7 @@ namespace CrunchEconomy
                                 }
                                 else
                                 {
+
                                     //     CrunchEconCore.Log.Info("not a grid sale");
                                     if (CrunchEconCore.sellOffers.TryGetValue(store.DisplayNameText, out List<SellOffer> offers))
                                     {
@@ -456,14 +456,7 @@ namespace CrunchEconomy
 
                                         foreach (SellOffer offer in offers)
                                         {//
-                                            if (offer.typeId.Equals(storeItem.Item.Value.TypeIdString) && offer.subtypeId.Equals(storeItem.Item.Value.SubtypeName))
-                                            {
-                                                if (!PossibleLogs.ContainsKey(id))
-                                                {
-                                                    PossibleLogs.Add(id, "SteamId:" + player.Id.SteamId + ",action:bought,Amount:" + amount + ",TypeId:" + storeItem.Item.Value.TypeIdString + ",SubTypeId:" + storeItem.Item.Value.SubtypeName + ",TotalMoney:" + storeItem.PricePerUnit * (long)amount + ",GridId:" + store.CubeGrid.EntityId + ",FacTag:" + store.GetOwnerFactionTag() + ",ModifierName:" + offer.StationModifierItemName + ",GridName:" + store.CubeGrid.DisplayName);
 
-                                                }
-                                            }
                                             if (offer.BuyingGivesGPS)
                                             {
                                                 var pickFrom = new List<MyGps>();
@@ -781,7 +774,7 @@ namespace CrunchEconomy
                                                                                         temporaryStations.Add(del.Name, stat);
                                                                                         locations.Add(del);
                                                                                     }
-                                                                                  
+
                                                                                 }
                                                                             }
 
