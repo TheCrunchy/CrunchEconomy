@@ -148,19 +148,15 @@ namespace CrunchEconomy
                 }
                 if (station.ViewOnlyNamedCargo)
                 {
-                    if (!(block is MyStoreBlock store))
+                    var temp = station.CargoName.Split(',').ToList();
+                    var cargos = temp.Select(outer => outer.Trim()).ToList();
+                    if (block.DisplayNameText != null && !cargos.Contains(block.DisplayNameText))
                     {
-                        var temp = station.CargoName.Split(',').ToList();
-                        var cargos = temp.Select(outer => outer.Trim()).ToList();
-                        if (block.DisplayNameText != null && !cargos.Contains(block.DisplayNameText))
-                        {
-                            continue;
-                        }
+                        continue;
                     }
                 }
                 for (int i = 0; i < block.InventoryCount; i++)
                 {
-
                     VRage.Game.ModAPI.IMyInventory inv = ((VRage.Game.ModAPI.IMyCubeBlock)block).GetInventory(i);
                     inventories.Add(inv);
                 }
@@ -172,7 +168,8 @@ namespace CrunchEconomy
         public static List<VRage.Game.ModAPI.IMyInventory> ClearInventories(MyCubeGrid grid, Stations station)
         {
             List<VRage.Game.ModAPI.IMyInventory> inventories = new List<VRage.Game.ModAPI.IMyInventory>();
-
+            var temp = station.CargoName.Split(',').ToList();
+            var cargos = temp.Select(outer => outer.Trim()).ToList();
             foreach (var block in grid.GetFatBlocks())
             {
                 if (!block.GetOwnerFactionTag().Equals(station.OwnerFactionTag))
@@ -181,9 +178,7 @@ namespace CrunchEconomy
                 }
                 if (station.ViewOnlyNamedCargo)
                 {
-                    var temp = station.CargoName.Split(',').ToList();
-                    var cargos = temp.Select(outer => outer.Trim()).ToList();
-                    if (block.DisplayNameText != null && !cargos.Contains(block.DisplayNameText) && !(block is MyStoreBlock store))
+                    if (block.DisplayNameText != null && !cargos.Contains(block.DisplayNameText))
                     {
                         continue;
                     }
@@ -242,7 +237,9 @@ namespace CrunchEconomy
             //  CrunchEconCore.Log.Info("SPAWNING 1 " + amount);
             if (grid != null)
             {
-
+                bool found = false;
+                var temp = station.CargoName.Split(',').ToList();
+                var cargos = temp.Select(outer => outer.Trim()).ToList();
                 //   CrunchEconCore.Log.Info("GRID NO NULL?");
                 foreach (var block in grid.GetFatBlocks())
                 {
@@ -252,27 +249,37 @@ namespace CrunchEconomy
 
                         continue;
                     }
-                    if (block.DisplayNameText != null && block.DisplayNameText != station.CargoName)
-                    {
-                        //     CrunchEconCore.Log.Info("NOT SPAWNING " + block.DisplayNameText);
-                        continue;
-                    }
+
                     for (int i = 0; i < block.InventoryCount; i++)
                     {
-                        //    CrunchEconCore.Log.Info("SPAWNING 2 " + amount);
-                        VRage.Game.ModAPI.IMyInventory inv = ((VRage.Game.ModAPI.IMyCubeBlock)block).GetInventory(i);
+                        //    CrunchEconCfore.Log.Info("SPAWNING 2 " + amount);
 
-                        MyItemType itemType = new MyInventoryItemFilter(id.TypeId + "/" + id.SubtypeName).ItemType;
-                        if (inv.CanItemsBeAdded(amount, itemType))
+                        VRage.Game.ModAPI.IMyInventory inv = ((VRage.Game.ModAPI.IMyCubeBlock)block).GetInventory(i);
+                        if (station.ViewOnlyNamedCargo)
                         {
-                            inv.AddItems(amount, (MyObjectBuilder_PhysicalObject)MyObjectBuilderSerializer.CreateNewObject(id));
-                            //      CrunchEconCore.Log.Info("SPAWNING 3 " + amount);
-                            return true;
+                            //     CrunchEconCore.Log.Info("NOT SPAWNING " + block.DisplayNameText);
+                            if (block.DisplayNameText != null && !cargos.Contains(block.DisplayNameText) && !found)
+                            {
+                                continue;
+                            }
+                            else
+                            {
+                                found = true;
+                            }
                         }
                         else
                         {
-                            //     CrunchEconCore.Log.Info("SPAWNING 4 " + amount);
-                            continue;
+                            found = true;
+                        }
+                        if (found)
+                        {
+                            MyItemType itemType = new MyInventoryItemFilter(id.TypeId + "/" + id.SubtypeName).ItemType;
+                            if (inv.CanItemsBeAdded(amount, itemType))
+                            {
+                                inv.AddItems(amount, (MyObjectBuilder_PhysicalObject)MyObjectBuilderSerializer.CreateNewObject(id));
+                                //      CrunchEconCore.Log.Info("SPAWNING 3 " + amount);
+                                return true;
+                            }
                         }
                     }
                 }
@@ -314,7 +321,7 @@ namespace CrunchEconomy
                 {
                     if (steamid != 0l)
                     {
-                        SendMessage("[Shipyard]", "Missing " + needed + " " + c.Key.SubtypeName + " All components must be inside one grid.", Color.Red, (long)steamid);
+                        SendMessage("[Econ]", "Missing " + needed + " " + c.Key.SubtypeName + " All components must be inside one grid.", Color.Red, (long)steamid);
                     }
                     return false;
                 }

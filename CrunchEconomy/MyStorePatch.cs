@@ -129,8 +129,6 @@ namespace CrunchEconomy
             if (result == MyStoreSellItemResults.Success && PossibleLogs.ContainsKey(id))
             {
                 log.Info(PossibleLogs[id]);
-
-
             }
             PossibleLogs.Remove(id);
             return;
@@ -146,8 +144,6 @@ namespace CrunchEconomy
             if (result == MyStoreBuyItemResults.Success && PossibleLogs.ContainsKey(id))
             {
                 log.Info(PossibleLogs[id]);
-
-
             }
             PossibleLogs.Remove(id);
             return;

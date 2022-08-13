@@ -2,5 +2,5 @@
 <PluginManifest xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <Name>CrunchEconomy</Name>
   <Guid>0ac0a83e-662d-4b20-ae18-1e70c4dacf1a</Guid>
-  <Version>v2.24</Version>
+  <Version>v2.29</Version>
 </PluginManifest>
