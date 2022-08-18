@@ -374,7 +374,7 @@ namespace CrunchEconomy
                     }
                     else
                     {
-                        if (!CrunchEconCore.StorageProvider.GetGridsForSale().ContainsKey(storeItem.Item.Value.SubtypeName) && !CrunchEconCore.sellOffers.ContainsKey(store.DisplayNameText))
+                        if (!CrunchEconCore.ConfigProvider.GetGridsForSale().ContainsKey(storeItem.Item.Value.SubtypeName) && !CrunchEconCore.sellOffers.ContainsKey(store.DisplayNameText))
                         {
                             //  CrunchEconCore.Log.Info("bruh");
                             return true;
@@ -396,7 +396,7 @@ namespace CrunchEconomy
                             {
 
                                 //   CrunchEconCore.Log.Info("grids?");
-                                if (CrunchEconCore.StorageProvider.GetGridsForSale().TryGetValue(storeItem.Item.Value.SubtypeName, out GridSale sale))
+                                if (CrunchEconCore.ConfigProvider.GetGridsForSale().TryGetValue(storeItem.Item.Value.SubtypeName, out GridSale sale))
                                 {
                                     if (amount > 1)
                                     {

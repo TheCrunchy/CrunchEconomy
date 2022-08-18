@@ -341,10 +341,10 @@ namespace CrunchEconomy
             Context.Respond("reloading");
             CrunchEconCore.individualTimers.Clear();
             CrunchEconCore.LoadConfig();
-            CrunchEconCore.StorageProvider.LoadStations();
-            CrunchEconCore.StorageProvider.LoadAllBuyOrders();
-            CrunchEconCore.StorageProvider.LoadAllSellOffers();
-            CrunchEconCore.StorageProvider.LoadAllGridSales();
+            CrunchEconCore.ConfigProvider.LoadStations();
+            CrunchEconCore.ConfigProvider.LoadAllBuyOrders();
+            CrunchEconCore.ConfigProvider.LoadAllSellOffers();
+            CrunchEconCore.ConfigProvider.LoadAllGridSales();
         }
 
         [Command("pause", "stop the economy refreshing")]
@@ -360,15 +360,13 @@ namespace CrunchEconomy
         public void Start()
         {
             Context.Respond("Starting the economy refreshing.");
-            CrunchEconCore.StorageProvider.LoadStations();
-            foreach (Stations station in CrunchEconCore.stations)
+            CrunchEconCore.ConfigProvider.LoadStations();
+            foreach (var station in CrunchEconCore.stations)
             {
                 station.nextBuyRefresh = DateTime.Now;
                 station.nextSellRefresh = DateTime.Now;
             }
             CrunchEconCore.paused = false;
         }
-
-
     }
 }
