@@ -73,7 +73,7 @@ namespace CrunchEconomy
 
         public static bool paused = false;
 
-        public static IStorageProvider StorageProvider { get; set; }
+        public static IPlayerDataProvider StorageProvider { get; set; }
         public static IConfigProvider ConfigProvider { get; set; }
 
         public static MyFixedPoint CountComponents(IEnumerable<VRage.Game.ModAPI.IMyInventory> inventories, MyDefinitionId id)
@@ -2228,7 +2228,7 @@ namespace CrunchEconomy
             }
             try
             {
-                StorageProvider.LoadAllGridSales();
+                ConfigProvider.LoadAllGridSales();
             }
             catch (Exception ex)
             {
@@ -2238,7 +2238,7 @@ namespace CrunchEconomy
             }
             try
             {
-                StorageProvider.LoadAllSellOffers();
+                ConfigProvider.LoadAllSellOffers();
             }
             catch (Exception ex)
             {
@@ -2248,7 +2248,7 @@ namespace CrunchEconomy
             }
             try
             {
-                StorageProvider.LoadStations();
+                ConfigProvider.LoadStations();
             }
             catch (Exception ex)
             {
@@ -2258,7 +2258,7 @@ namespace CrunchEconomy
             }
             try
             {
-                StorageProvider.LoadAllBuyOrders();
+                ConfigProvider.LoadAllBuyOrders();
             }
             catch (Exception ex)
             {

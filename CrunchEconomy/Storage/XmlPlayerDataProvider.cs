@@ -11,7 +11,7 @@ using NLog;
 
 namespace CrunchEconomy.Storage
 {
-    public class XmlStorageProvider : IStorageProvider
+    public class XmlPlayerDataProvider : IPlayerDataProvider
     {
         public string FolderLocation { get; set; }
         public FileUtils Utils = new FileUtils();
@@ -25,7 +25,7 @@ namespace CrunchEconomy.Storage
             Utils.WriteToXmlFile<PlayerData>($"{FolderLocation}//PlayerData//Data//{data.steamId}.xml", data);
         }
 
-        public XmlStorageProvider(string StorageFolder)
+        public XmlPlayerDataProvider(string StorageFolder)
         {
             FolderLocation = StorageFolder;
             Directory.CreateDirectory(FolderLocation + "//PlayerData//Data//");

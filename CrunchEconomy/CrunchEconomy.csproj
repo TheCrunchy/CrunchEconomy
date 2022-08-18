@@ -120,8 +120,8 @@
     <Compile Include="Stations.cs" />
     <Compile Include="Storage\IConfigProvider.cs" />
     <Compile Include="Storage\XmlConfigProvider.cs" />
-    <Compile Include="Storage\IStorageProvider.cs" />
-    <Compile Include="Storage\XmlStorageProvider.cs" />
+    <Compile Include="Storage\IPlayerDataProvider.cs" />
+    <Compile Include="Storage\XmlPlayerDataProvider.cs" />
     <Compile Include="SurveyMissions\SurveyMission.cs" />
     <Compile Include="SurveyMissions\SurveyStage.cs" />
     <Compile Include="WhitelistFile.cs" />

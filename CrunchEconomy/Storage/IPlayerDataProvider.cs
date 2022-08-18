@@ -3,7 +3,7 @@ using CrunchEconomy.SurveyMissions;
 
 namespace CrunchEconomy.Storage
 {
-    public interface IStorageProvider
+    public interface IPlayerDataProvider
     {
         string FolderLocation { get; set; }
         void SavePlayerData(PlayerData data);
