@@ -186,8 +186,7 @@ namespace CrunchEconomy.Contracts
                                                 data.getMiningContracts()[contract.ContractId] = contract;
 
                                                 //REDO THIS
-                                                CrunchEconCore.ContractSave.Remove(contract.ContractId);
-                                                CrunchEconCore.ContractSave.Add(contract.ContractId, contract);
+                                                CrunchEconCore.StorageProvider.AddContractToBeSaved(contract);
                                                 return;
                                             }
                                             else
@@ -216,8 +215,7 @@ namespace CrunchEconomy.Contracts
                                                 //im not sure i need this anymore, since the contract data is saved seperately
                                                 data.getMiningContracts()[contract.ContractId] = contract;
                                                 //REDO THIS
-                                                CrunchEconCore.ContractSave.Remove(contract.ContractId);
-                                                CrunchEconCore.ContractSave.Add(contract.ContractId, contract);
+                                                CrunchEconCore.StorageProvider.AddContractToBeSaved(contract);
                                                 return;
                                             }
                                         }

@@ -50,6 +50,7 @@ using static CrunchEconomy.Stations;
 using static CrunchEconomy.Contracts.GeneratedContract;
 using static CrunchEconomy.RepConfig;
 using System.Threading.Tasks;
+using CrunchEconomy.Storage;
 using static CrunchEconomy.WhitelistFile;
 using Sandbox.Definitions;
 
@@ -71,6 +72,8 @@ namespace CrunchEconomy
         public static DateTime NextFileRefresh = DateTime.Now.AddMinutes(1);
 
         public static bool paused = false;
+
+        public static IStorageProvider StorageProvider { get; set; }
 
         public static MyFixedPoint CountComponents(IEnumerable<VRage.Game.ModAPI.IMyInventory> inventories, MyDefinitionId id)
         {
@@ -198,8 +201,6 @@ namespace CrunchEconomy
         {
             if (grid != null)
             {
-
-
                 foreach (var block in grid.GetFatBlocks())
                 {
 
@@ -502,8 +503,6 @@ namespace CrunchEconomy
         public static Dictionary<ulong, PlayerData> playerData = new Dictionary<ulong, PlayerData>();
         public static Boolean AlliancePluginEnabled = false;
         //i should really split this into multiple methods so i dont have one huge method for everything
-        public static Dictionary<Guid, Contract> ContractSave = new Dictionary<Guid, Contract>();
-        public static Dictionary<Guid, SurveyMission> SurveySave = new Dictionary<Guid, SurveyMission>();
         public bool HandleDeliver(Contract contract, MyPlayer player, PlayerData data, MyCockpit controller)
         {
 
@@ -534,8 +533,8 @@ namespace CrunchEconomy
                 if (contract.DeliveryLocation == null && contract.DeliveryLocation == string.Empty)
                 {
                     contract.DeliveryLocation = DrillPatch.GenerateDeliveryLocation(player.GetPosition(), contract).ToString();
-                    CrunchEconCore.ContractSave.Remove(contract.ContractId);
-                    CrunchEconCore.ContractSave.Add(contract.ContractId, contract);
+
+                    StorageProvider.AddContractToBeSaved(contract);
                 }
                 Vector3D coords = contract.getCoords();
                 int rep = 0;
@@ -709,9 +708,7 @@ namespace CrunchEconomy
 
                             FileUtils utils = new FileUtils();
                             contract.status = ContractStatus.Completed;
-                            File.Delete(path + "//PlayerData//Mining//InProgress//" + contract.ContractId + ".xml");
-                            CrunchEconCore.ContractSave.Remove(contract.ContractId);
-                            CrunchEconCore.ContractSave.Add(contract.ContractId, contract);
+                            StorageProvider.AddContractToBeSaved(contract, true);
 
                             playerData[player.Id.SteamId] = data;
 
@@ -1008,8 +1005,8 @@ namespace CrunchEconomy
                                             data.SetLoadedSurvey(null);
                                             data.surveyMission = Guid.Empty;
                                         }
-                                        CrunchEconCore.SurveySave.Remove(mission.id);
-                                        CrunchEconCore.SurveySave.Add(mission.id, mission);
+
+                                        StorageProvider.AddSurveyToBeSaved(mission);
                                         playerData[player.Id.SteamId] = data;
                                         utils.WriteToJsonFile<PlayerData>(path + "//PlayerData//Data//" + data.steamId + ".json", data);
                                     }
@@ -1019,20 +1016,16 @@ namespace CrunchEconomy
                                         data.SetLoadedSurvey(null);
                                         data.surveyMission = Guid.Empty;
                                         File.Delete(path + "//PlayerData//Survey//InProgress" + mission.id + ".xml");
-                                        CrunchEconCore.SurveySave.Remove(mission.id);
-                                        CrunchEconCore.SurveySave.Add(mission.id, mission);
+                                        StorageProvider.AddSurveyToBeSaved(mission);
                                         playerData[player.Id.SteamId] = data;
                                         utils.WriteToJsonFile<PlayerData>(path + "//PlayerData//Data//" + data.steamId + ".json", data);
                                     }
                                     playerSurveyTimes.Remove(player.Id.SteamId);
-                                    List<IMyGps> playerList = new List<IMyGps>();
+                                    var playerList = new List<IMyGps>();
                                     MySession.Static.Gpss.GetGpsList(player.Identity.IdentityId, playerList);
-                                    foreach (IMyGps gps in playerList)
+                                    foreach (var gps in playerList.Where(gps => gps.Description != null && gps.Description.Contains("SURVEY LOCATION.")))
                                     {
-                                        if (gps.Description != null && gps.Description.Contains("SURVEY LOCATION."))
-                                        {
-                                            MyAPIGateway.Session?.GPS.RemoveGps(player.Identity.IdentityId, gps);
-                                        }
+                                        MyAPIGateway.Session?.GPS.RemoveGps(player.Identity.IdentityId, gps);
                                     }
 
 
@@ -1084,8 +1077,7 @@ namespace CrunchEconomy
                             }
                             data.SetLoadedSurvey(mission);
                             data.NextSurveyMission = DateTime.Now.AddSeconds(60);
-                            CrunchEconCore.SurveySave.Remove(mission.id);
-                            CrunchEconCore.SurveySave.Add(mission.id, mission);
+                            StorageProvider.AddSurveyToBeSaved(mission);
                             playerData[player.Id.SteamId] = data;
                             // utils.WriteToJsonFile<PlayerData>(path + "//PlayerData//Data//" + data.steamId + ".json", data);
                         }
@@ -1180,8 +1172,7 @@ namespace CrunchEconomy
                         }
                         data.SetLoadedSurvey(newSurvey);
                         data.NextSurveyMission = DateTime.Now.AddSeconds(config.SecondsBetweenSurveyMissions);
-                        CrunchEconCore.SurveySave.Remove(newSurvey.id);
-                        CrunchEconCore.SurveySave.Add(newSurvey.id, newSurvey);
+                        StorageProvider.AddSurveyToBeSaved(newSurvey);
 
                         playerData[player.Id.SteamId] = data;
                         utils.WriteToJsonFile<PlayerData>(path + "//PlayerData//Data//" + data.steamId + ".json", data);
@@ -1345,7 +1336,7 @@ namespace CrunchEconomy
                 }
                 try
                 {
-                    LoadAllGridSales();
+                    StorageProvider.LoadAllGridSales();
                 }
                 catch (Exception ex)
                 {
@@ -1355,7 +1346,7 @@ namespace CrunchEconomy
                 }
                 try
                 {
-                    LoadAllSellOffers();
+                    StorageProvider.LoadAllSellOffers();
                 }
                 catch (Exception ex)
                 {
@@ -1365,7 +1356,7 @@ namespace CrunchEconomy
                 }
                 try
                 {
-                    LoadAllStations();
+                    StorageProvider.LoadStations();
                     DoStationShit();
                 }
                 catch (Exception ex)
@@ -1376,7 +1367,7 @@ namespace CrunchEconomy
                 }
                 try
                 {
-                    LoadAllBuyOrders();
+                    StorageProvider.LoadAllBuyOrders();
                 }
                 catch (Exception ex)
                 {
@@ -1428,59 +1419,9 @@ namespace CrunchEconomy
 
             if (ticks % 64 == 0 && TorchState == TorchSessionState.Loaded)
             {
-
-                string type = "//Mining";
-                foreach (KeyValuePair<Guid, Contract> keys in ContractSave)
-                {
-                    //  utils.SaveMiningData(AlliancePlugin.path + "//MiningStuff//PlayerData//" + keys.Key + ".xml", keys.Value);i
-                    Contract contract = keys.Value;
-                    if (contract.type == ContractType.Mining)
-                    {
-                        type = "//Mining";
-                    }
-                    if (contract.type == ContractType.Hauling)
-                    {
-                        type = "//Hauling";
-                    }
-                    switch (contract.status)
-                    {
-                        case ContractStatus.InProgress:
-                            utils.WriteToXmlFile<Contract>(path + "//PlayerData//" + type + "//InProgress//" + contract.ContractId + ".xml", keys.Value);
-                            break;
-                        case ContractStatus.Completed:
-                            utils.WriteToXmlFile<Contract>(path + "//PlayerData//" + type + "//Completed//" + contract.ContractId + ".xml", keys.Value);
-                            break;
-                        case ContractStatus.Failed:
-                            utils.WriteToXmlFile<Contract>(path + "//PlayerData//" + type + "//Failed//" + contract.ContractId + ".xml", keys.Value);
-                            break;
-                    }
-
-                }
-                ContractSave.Clear();
-
-                foreach (KeyValuePair<Guid, SurveyMission> keys in SurveySave)
-                {
-                    //  utils.SaveMiningData(AlliancePlugin.path + "//MiningStuff//PlayerData//" + keys.Key + ".xml", keys.Value);i
-                    SurveyMission contract = keys.Value;
-                    type = "//Survey";
-
-                    switch (contract.status)
-                    {
-                        case ContractStatus.InProgress:
-                            utils.WriteToXmlFile<SurveyMission>(path + "//PlayerData//" + type + "//InProgress//" + contract.id + ".xml", keys.Value);
-                            break;
-                        case ContractStatus.Completed:
-                            utils.WriteToXmlFile<SurveyMission>(path + "//PlayerData//" + type + "//Completed//" + contract.id + ".xml", keys.Value);
-                            break;
-                        case ContractStatus.Failed:
-                            utils.WriteToXmlFile<SurveyMission>(path + "//PlayerData//" + type + "//Failed//" + contract.id + ".xml", keys.Value);
-                            break;
-                    }
-
-                }
-                SurveySave.Clear();
+                StorageProvider.SaveContracts();
                 DateTime now = DateTime.Now;
-                foreach (Stations station in stations)
+                foreach (var station in stations)
                 {
                     //first check if its any, then we can load the grid to do the editing
                     try
@@ -2159,24 +2100,15 @@ namespace CrunchEconomy
             }
         }
 
-        public void SaveStation(Stations station)
+        public void SaveStation(Stations Station)
         {
-            utils.WriteToXmlFile<Stations>(path + "//Stations//" + station.Name + ".xml", station);
-
-
+            StorageProvider.SaveStation(Station);
         }
+
         public void ClearStoreOfPlayersSellingOrders(MyStoreBlock store)
         {
-            List<MyStoreItem> yeet = new List<MyStoreItem>();
-            foreach (MyStoreItem item in store.PlayerItems)
-            {
-                if (item.StoreItemType == StoreItemTypes.Order)
-                {
-
-                    yeet.Add(item);
-                }
-            }
-            foreach (MyStoreItem item in yeet)
+            var yeet = store.PlayerItems.Where(item => item.StoreItemType == StoreItemTypes.Order).ToList();
+            foreach (var item in yeet)
             {
                 store.CancelStoreItem(item.Id);
             }
@@ -2185,15 +2117,8 @@ namespace CrunchEconomy
         public void ClearStoreOfPlayersBuyingOffers(MyStoreBlock store)
         {
 
-            List<MyStoreItem> yeet = new List<MyStoreItem>();
-            foreach (MyStoreItem item in store.PlayerItems)
-            {
-                if (item.StoreItemType == StoreItemTypes.Offer)
-                {
-                    yeet.Add(item);
-                }
-            }
-            foreach (MyStoreItem item in yeet)
+            var yeet = store.PlayerItems.Where(item => item.StoreItemType == StoreItemTypes.Offer).ToList();
+            foreach (var item in yeet)
             {
                 store.CancelStoreItem(item.Id);
             }
@@ -2204,139 +2129,18 @@ namespace CrunchEconomy
         public static Dictionary<String, List<BuyOrder>> buyOrders = new Dictionary<string, List<BuyOrder>>();
         public static Dictionary<String, List<SellOffer>> sellOffers = new Dictionary<string, List<SellOffer>>();
         public static FileUtils utils = new FileUtils();
-        public static void LoadAllStations()
-        {
-            stations.Clear();
-            foreach (String s in Directory.GetFiles(path + "//Stations//"))
-            {
-
-
-                try
-                {
-                    Stations stat = utils.ReadFromXmlFile<Stations>(s);
-                    if (stat.Enabled)
-                    {
-                        stat.SetupModifiers();
-                        if (!stat.WorldName.Equals("default"))
-                        {
-                            if (stat.WorldName.Equals(MyMultiplayer.Static.HostName))
-                            {
-                                stations.Add(stat);
-                            }
-                        }
-                        else
-                        {
-                            stations.Add(stat);
-                        }
-
-
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log.Error("Error loading stations " + s + " " + ex.ToString());
-                }
-
-            }
-        }
-        public static void LoadAllBuyOrders()
-        {
-            buyOrders.Clear();
-            foreach (String s in Directory.GetDirectories(path + "//BuyOrders//"))
-            {
-                String temp = new DirectoryInfo(s).Name;
-
-                List<BuyOrder> temporaryList = new List<BuyOrder>();
-                foreach (String s2 in Directory.GetFiles(s))
-                {
-                    try
-                    {
-                        BuyOrder order = utils.ReadFromXmlFile<BuyOrder>(s2);
-                        if (order.Enabled)
-                        {
-                            if (order.IndividualRefreshTimer)
-                            {
-                                order.path = s2;
-                            }
-                            temporaryList.Add(order);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error("Error loading buy orders " + s2 + " " + ex.ToString());
-
-                    }
-                }
-                buyOrders.Add(temp, temporaryList);
-            }
-
-        }
-
-        public static void LoadAllGridSales()
-        {
-            gridsForSale.Clear();
-
-            foreach (String s2 in Directory.GetFiles(path + "//GridSelling//"))
-            {
-                try
-                {
-                    GridSale sale = utils.ReadFromXmlFile<GridSale>(s2);
-                    if (sale.Enabled && !gridsForSale.ContainsKey(sale.ItemSubTypeId))
-                    {
-                        gridsForSale.Add(sale.ItemSubTypeId, sale);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log.Error("Error loading sell offers " + s2 + " " + ex.ToString());
-
-                }
-            }
-        }
-
-        public static void LoadAllSellOffers()
-        {
-            sellOffers.Clear();
-            foreach (String s in Directory.GetDirectories(path + "//SellOffers//"))
-            {
-                String temp = new DirectoryInfo(s).Name;
-                List<SellOffer> temporaryList = new List<SellOffer>();
-                foreach (String s2 in Directory.GetFiles(s))
-                {
-                    try
-                    {
-                        SellOffer order = utils.ReadFromXmlFile<SellOffer>(s2);
-                        if (order.Enabled)
-                        {
-                            if (order.IndividualRefreshTimer)
-                            {
-                                order.path = s2;
-                            }
-                            temporaryList.Add(order);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error("Error loading sell offers " + s2 + " " + ex.ToString());
-
-                    }
-                }
-                sellOffers.Add(temp, temporaryList);
-            }
-
-        }
 
         public static MyGps ParseGPS(string input, string desc = null)
         {
 
             int num = 0;
             bool flag = true;
-            MatchCollection matchCollection = Regex.Matches(input, "GPS:([^:]{0,32}):([\\d\\.-]*):([\\d\\.-]*):([\\d\\.-]*):");
+            var matchCollection = Regex.Matches(input, "GPS:([^:]{0,32}):([\\d\\.-]*):([\\d\\.-]*):([\\d\\.-]*):");
 
-            Color color = new Color(117, 201, 241);
+            var color = new Color(117, 201, 241);
             foreach (Match match in matchCollection)
             {
-                string str = match.Groups[1].Value;
+                var str = match.Groups[1].Value;
                 double x;
                 double y;
                 double z;
@@ -2352,7 +2156,7 @@ namespace CrunchEconomy
                 {
                     continue;
                 }
-                MyGps gps = new MyGps()
+                var gps = new MyGps()
                 {
                     Name = str,
                     Description = desc,
@@ -2366,7 +2170,7 @@ namespace CrunchEconomy
             }
             return null;
         }
-        public static Dictionary<String, GridSale> gridsForSale = new Dictionary<string, GridSale>();
+
 
         private void SessionChanged(ITorchSession session, TorchSessionState state)
         {
@@ -2375,144 +2179,90 @@ namespace CrunchEconomy
             {
                 return;
             }
-            if (state == TorchSessionState.Loaded)
+
+            if (state != TorchSessionState.Loaded) return;
+
+            if (config.SetMinPricesTo1)
             {
-
-                string type = "//Mining";
-                foreach (KeyValuePair<Guid, Contract> keys in ContractSave)
+                sessionManager.AddOverrideMod(2825413709);
+                foreach (var def in MyDefinitionManager.Static.GetAllDefinitions())
                 {
-                    //  utils.SaveMiningData(AlliancePlugin.path + "//MiningStuff//PlayerData//" + keys.Key + ".xml", keys.Value);i
-                    Contract contract = keys.Value;
-                    if (contract.type == ContractType.Mining)
+                    if (def is MyComponentDefinition definition)
                     {
-                        type = "//Mining";
+                        definition.MinimalPricePerUnit = 1;
                     }
-                    if (contract.type == ContractType.Hauling)
+                    if (def is MyPhysicalItemDefinition itemDefinition)
                     {
-                        type = "//Hauling";
+                        itemDefinition.MinimalPricePerUnit = 1;
                     }
-                    switch (contract.status)
-                    {
-                        case ContractStatus.InProgress:
-                            utils.WriteToXmlFile<Contract>(path + "//PlayerData//" + type + "//InProgress//" + contract.ContractId + ".xml", keys.Value);
-                            break;
-                        case ContractStatus.Completed:
-                            utils.WriteToXmlFile<Contract>(path + "//PlayerData//" + type + "//Completed//" + contract.ContractId + ".xml", keys.Value);
-                            break;
-                        case ContractStatus.Failed:
-                            utils.WriteToXmlFile<Contract>(path + "//PlayerData//" + type + "//Failed//" + contract.ContractId + ".xml", keys.Value);
-                            break;
-                    }
-
-                }
-                foreach (KeyValuePair<Guid, SurveyMission> keys in SurveySave)
-                {
-                    //  utils.SaveMiningData(AlliancePlugin.path + "//MiningStuff//PlayerData//" + keys.Key + ".xml", keys.Value);i
-                    SurveyMission contract = keys.Value;
-                    type = "//Survey";
-
-                    switch (contract.status)
-                    {
-                        case ContractStatus.InProgress:
-                            utils.WriteToXmlFile<SurveyMission>(path + "//PlayerData//" + type + "//InProgress//" + contract.id + ".xml", keys.Value);
-                            break;
-                        case ContractStatus.Completed:
-                            utils.WriteToXmlFile<SurveyMission>(path + "//PlayerData//" + type + "//Completed//" + contract.id + ".xml", keys.Value);
-                            break;
-                        case ContractStatus.Failed:
-                            utils.WriteToXmlFile<SurveyMission>(path + "//PlayerData//" + type + "//Failed//" + contract.id + ".xml", keys.Value);
-                            break;
-                    }
-
                 }
             }
+            session.Managers.GetManager<IMultiplayerManagerBase>().PlayerJoined += Login;
 
-
-            if (state == TorchSessionState.Loaded)
+            if (session.Managers.GetManager<PluginManager>().Plugins.TryGetValue(Guid.Parse("74796707-646f-4ebd-8700-d077a5f47af3"), out ITorchPlugin All))
             {
-                if (config.SetMinPricesTo1)
-                {
-                    sessionManager.AddOverrideMod(2825413709);
-                    foreach (MyDefinitionBase def in MyDefinitionManager.Static.GetAllDefinitions())
-                    {
-
-                        if ((def as MyComponentDefinition) != null)
-                        {
-                            (def as MyComponentDefinition).MinimalPricePerUnit = 1;
-                        }
-                        if ((def as MyPhysicalItemDefinition) != null)
-                        {
-                            (def as MyPhysicalItemDefinition).MinimalPricePerUnit = 1;
-                        }
-                    }
-                }
-                session.Managers.GetManager<IMultiplayerManagerBase>().PlayerJoined += Login;
-
-                if (session.Managers.GetManager<PluginManager>().Plugins.TryGetValue(Guid.Parse("74796707-646f-4ebd-8700-d077a5f47af3"), out ITorchPlugin All))
-                {
-                    Type alli = All.GetType().Assembly.GetType("AlliancesPlugin.AlliancePlugin");
-                    try
-                    {
-                        AllianceTaxes = All.GetType().GetMethod("AddToTaxes", BindingFlags.Public | BindingFlags.Static, null, new Type[4] { typeof(ulong), typeof(long), typeof(string), typeof(Vector3D) }, null);
-                        //    BackupGrid = GridBackupPlugin.GetType().GetMethod("BackupGridsManuallyWithBuilders", BindingFlags.Public | BindingFlags.Instance, null, new Type[2] { typeof(List<MyObjectBuilder_CubeGrid>), typeof(long) }, null);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error("Shits fucked");
-
-                    }
-                    Alliance = All;
-                    AlliancePluginEnabled = true;
-                }
-
+                var alli = All.GetType().Assembly.GetType("AlliancesPlugin.AlliancePlugin");
                 try
                 {
-                    ContractUtils.LoadAllContracts();
+                    AllianceTaxes = All.GetType().GetMethod("AddToTaxes", BindingFlags.Public | BindingFlags.Static, null, new Type[4] { typeof(ulong), typeof(long), typeof(string), typeof(Vector3D) }, null);
+                    //    BackupGrid = GridBackupPlugin.GetType().GetMethod("BackupGridsManuallyWithBuilders", BindingFlags.Public | BindingFlags.Instance, null, new Type[2] { typeof(List<MyObjectBuilder_CubeGrid>), typeof(long) }, null);
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex);
-                }
-                try
-                {
-                    LoadAllGridSales();
-                }
-                catch (Exception ex)
-                {
-                    Log.Error("Error loading grid sales " + ex.ToString());
-
+                    Log.Error("Shits fucked");
 
                 }
-                try
-                {
-                    LoadAllSellOffers();
-                }
-                catch (Exception ex)
-                {
-                    Log.Error("Error loading Sell offers " + ex.ToString());
+                Alliance = All;
+                AlliancePluginEnabled = true;
+            }
+
+            try
+            {
+                ContractUtils.LoadAllContracts();
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex);
+            }
+            try
+            {
+                StorageProvider.LoadAllGridSales();
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Error loading grid sales " + ex.ToString());
 
 
-                }
-                try
-                {
-                    LoadAllStations();
-                }
-                catch (Exception ex)
-                {
-                    Log.Error("Error loading Stations " + ex.ToString());
+            }
+            try
+            {
+                StorageProvider.LoadAllSellOffers();
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Error loading Sell offers " + ex.ToString());
 
 
-                }
-                try
-                {
-                    LoadAllBuyOrders();
-                }
-                catch (Exception ex)
-                {
-                    Log.Error("Error loading Buy Orders " + ex.ToString());
+            }
+            try
+            {
+                StorageProvider.LoadStations();
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Error loading Stations " + ex.ToString());
 
 
-                }
+            }
+            try
+            {
+                StorageProvider.LoadAllBuyOrders();
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Error loading Buy Orders " + ex.ToString());
+
+
             }
         }
         public static RepConfig repConfig;
@@ -2657,47 +2407,6 @@ namespace CrunchEconomy
                 contract.StationsToDeliverTo.Add(new StationDelivery());
                 utils.WriteToXmlFile<GeneratedContract>(path + "//ContractConfigs//Hauling//Example.xml", contract);
             }
-            if (!Directory.Exists(path + "//PlayerData//Data//"))
-            {
-                Directory.CreateDirectory(path + "//PlayerData//Data//");
-            }
-            if (!Directory.Exists(path + "//PlayerData//Mining//Completed//"))
-            {
-                Directory.CreateDirectory(path + "//PlayerData//Mining//Completed//");
-            }
-            if (!Directory.Exists(path + "//PlayerData//Mining//Failed//"))
-            {
-                Directory.CreateDirectory(path + "//PlayerData//Mining//Failed//");
-            }
-            if (!Directory.Exists(path + "//PlayerData//Mining//InProgress//"))
-            {
-                Directory.CreateDirectory(path + "//PlayerData//Mining//InProgress//");
-            }
-            if (!Directory.Exists(path + "//PlayerData//Hauling//Completed//"))
-            {
-                Directory.CreateDirectory(path + "//PlayerData//Hauling//Completed//");
-            }
-            if (!Directory.Exists(path + "//PlayerData//Hauling//Failed//"))
-            {
-                Directory.CreateDirectory(path + "//PlayerData//Hauling//Failed//");
-            }
-            if (!Directory.Exists(path + "//PlayerData//Hauling//InProgress//"))
-            {
-                Directory.CreateDirectory(path + "//PlayerData//Hauling//InProgress//");
-            }
-            if (!Directory.Exists(path + "//PlayerData//Survey//Completed//"))
-            {
-                Directory.CreateDirectory(path + "//PlayerData//Survey//Completed//");
-            }
-            if (!Directory.Exists(path + "//PlayerData//Survey//Failed//"))
-            {
-                Directory.CreateDirectory(path + "//PlayerData//Survey//Failed//");
-            }
-            if (!Directory.Exists(path + "//PlayerData//Survey//InProgress//"))
-            {
-                Directory.CreateDirectory(path + "//PlayerData//Survey//InProgress//");
-            }
-
             TorchBase = Torch;
         }
 

@@ -193,10 +193,8 @@ namespace CrunchEconomy
                     ids[Context.Player.SteamUserId] = derp;
                     DialogMessage m = new DialogMessage("Contract", "Cancel", sb.ToString());
                     ModCommunication.SendMessageTo(m, Context.Player.SteamUserId);
-                  
-                    File.Delete(CrunchEconCore.path + "//PlayerData//Mining//InProgress//" + cancel.ContractId + ".xml");
-                    CrunchEconCore.ContractSave.Remove(cancel.ContractId);
-                    CrunchEconCore.ContractSave.Add(cancel.ContractId, cancel);
+                    
+                    CrunchEconCore.StorageProvider.AddContractToBeSaved(cancel, true);
                     CrunchEconCore.utils.WriteToJsonFile<PlayerData>(CrunchEconCore.path + "//PlayerData//Data//" + data.steamId + ".json", data);
                 }
                 else

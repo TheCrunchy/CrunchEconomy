@@ -341,11 +341,12 @@ namespace CrunchEconomy
             Context.Respond("reloading");
             CrunchEconCore.individualTimers.Clear();
             CrunchEconCore.LoadConfig();
-            CrunchEconCore.LoadAllStations();
-            CrunchEconCore.LoadAllBuyOrders();
-            CrunchEconCore.LoadAllSellOffers();
-            CrunchEconCore.LoadAllGridSales();
+            CrunchEconCore.StorageProvider.LoadStations();
+            CrunchEconCore.StorageProvider.LoadAllBuyOrders();
+            CrunchEconCore.StorageProvider.LoadAllSellOffers();
+            CrunchEconCore.StorageProvider.LoadAllGridSales();
         }
+
         [Command("pause", "stop the economy refreshing")]
         [Permission(MyPromoteLevel.Admin)]
         public void Pause()
@@ -359,7 +360,7 @@ namespace CrunchEconomy
         public void Start()
         {
             Context.Respond("Starting the economy refreshing.");
-            CrunchEconCore.LoadAllStations();
+            CrunchEconCore.StorageProvider.LoadStations();
             foreach (Stations station in CrunchEconCore.stations)
             {
                 station.nextBuyRefresh = DateTime.Now;

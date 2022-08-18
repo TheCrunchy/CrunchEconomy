@@ -274,9 +274,7 @@ namespace CrunchEconomy
                                         DialogMessage m = new DialogMessage("Contract", "Cancel", sb.ToString());
                                         ModCommunication.SendMessageTo(m, player.Id.SteamId);
                                         cancel.status = ContractStatus.Failed;
-                                        File.Delete(CrunchEconCore.path + "//PlayerData//Mining//InProgress//" + cancel.ContractId + ".xml");
-                                        CrunchEconCore.ContractSave.Remove(cancel.ContractId);
-                                        CrunchEconCore.ContractSave.Add(cancel.ContractId, cancel);
+                                        CrunchEconCore.StorageProvider.AddContractToBeSaved(cancel, true);
                                         CrunchEconCore.utils.WriteToJsonFile<PlayerData>(CrunchEconCore.path + "//PlayerData//Data//" + data.steamId + ".json", data);
                                         return true;
                                     }
@@ -376,7 +374,7 @@ namespace CrunchEconomy
                     }
                     else
                     {
-                        if (!CrunchEconCore.gridsForSale.ContainsKey(storeItem.Item.Value.SubtypeName) && !CrunchEconCore.sellOffers.ContainsKey(store.DisplayNameText))
+                        if (!CrunchEconCore.StorageProvider.GetGridsForSale().ContainsKey(storeItem.Item.Value.SubtypeName) && !CrunchEconCore.sellOffers.ContainsKey(store.DisplayNameText))
                         {
                             //  CrunchEconCore.Log.Info("bruh");
                             return true;
@@ -398,7 +396,7 @@ namespace CrunchEconomy
                             {
 
                                 //   CrunchEconCore.Log.Info("grids?");
-                                if (CrunchEconCore.gridsForSale.TryGetValue(storeItem.Item.Value.SubtypeName, out GridSale sale))
+                                if (CrunchEconCore.StorageProvider.GetGridsForSale().TryGetValue(storeItem.Item.Value.SubtypeName, out GridSale sale))
                                 {
                                     if (amount > 1)
                                     {
@@ -633,8 +631,7 @@ namespace CrunchEconomy
                                                                 CrunchEconCore.playerData.Add(player.Id.SteamId, data);
 
 
-                                                                CrunchEconCore.ContractSave.Remove(temp.ContractId);
-                                                                CrunchEconCore.ContractSave.Add(temp.ContractId, temp);
+                                                                CrunchEconCore.StorageProvider.AddContractToBeSaved(temp);
 
                                                                 CrunchEconCore.utils.WriteToJsonFile<PlayerData>(CrunchEconCore.path + "//PlayerData//Data//" + data.steamId + ".json", data);
 
@@ -839,13 +836,9 @@ namespace CrunchEconomy
                                                                 CrunchEconCore.playerData.Remove(player.Id.SteamId);
                                                                 CrunchEconCore.playerData.Add(player.Id.SteamId, data);
 
-
-                                                                CrunchEconCore.ContractSave.Remove(temp.ContractId);
-                                                                CrunchEconCore.ContractSave.Add(temp.ContractId, temp);
-
+                                                                CrunchEconCore.StorageProvider.AddContractToBeSaved(temp);
+                                                                
                                                                 CrunchEconCore.utils.WriteToJsonFile<PlayerData>(CrunchEconCore.path + "//PlayerData//Data//" + data.steamId + ".json", data);
-
-
 
 
                                                                 StringBuilder contractDetails = new StringBuilder();
