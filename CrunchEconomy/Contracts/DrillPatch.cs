@@ -152,16 +152,13 @@ namespace CrunchEconomy.Contracts
                                 contract.DoPlayerGps(playerId);
                             }
                         }
-
                         CrunchEconCore.SendMessage("Boss Dave", "Contract Ready to be completed, Deliver " + String.Format("{0:n0}", contract.amountToMineOrDeliver) + " " + contract.SubType + " to the delivery GPS.", Color.Gold, (long)MySession.Static.Players.TryGetSteamId(playerId));
                         contract.DoPlayerGps(pilot.GetPlayerIdentityId());
                         messageCooldown.Remove(MySession.Static.Players.TryGetSteamId(playerId));
                         messageCooldown.Add(MySession.Static.Players.TryGetSteamId(playerId), DateTime.Now.AddSeconds(0.5));
 
-                        //im not sure i need this anymore, since the contract data is saved seperately
                         data.GetMiningContracts()[contract.ContractId] = contract;
 
-                        //REDO THIS
                         CrunchEconCore.PlayerStorageProvider.AddContractToBeSaved(contract);
                         return;
                     }
@@ -170,18 +167,13 @@ namespace CrunchEconomy.Contracts
                     {
                         if (DateTime.Now >= time)
                         {
-
                             CrunchEconCore.SendMessage("Boss Dave", "Progress: " + material.MinedOre + " " + String.Format("{0:n0}", contract.minedAmount) + " / " + String.Format("{0:n0}", contract.amountToMineOrDeliver), Color.Gold, (long)MySession.Static.Players.TryGetSteamId(playerId));
                             messageCooldown[MySession.Static.Players.TryGetSteamId(playerId)] = DateTime.Now.AddSeconds(0.5);
                         }
                     }
                     else
                     {
-
                         CrunchEconCore.SendMessage("Boss Dave", "Progress: " + material.MinedOre + " " + String.Format("{0:n0}", contract.minedAmount) + " / " + String.Format("{0:n0}", contract.amountToMineOrDeliver), Color.Gold, (long)MySession.Static.Players.TryGetSteamId(playerId));
-
-
-
                         messageCooldown.Add(MySession.Static.Players.TryGetSteamId(playerId), DateTime.Now.AddSeconds(0.5));
                     }
                     data.GetMiningContracts()[contract.ContractId] = contract;

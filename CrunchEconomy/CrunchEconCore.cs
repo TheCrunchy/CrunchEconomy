@@ -857,19 +857,19 @@ namespace CrunchEconomy
                                             data.surveyMission = Guid.Empty;
                                         }
 
-                                        PlayerStorageProvider.AddSurveyToBeSaved(mission);
+                                        PlayerStorageProvider.AddSurveyToBeSaved(mission, true);
                                         PlayerStorageProvider.playerData[player.Id.SteamId] = data;
-                                        utils.WriteToJsonFile<PlayerData>(path + "//PlayerData//Data//" + data.steamId + ".json", data);
+                                        PlayerStorageProvider.SavePlayerData(data);
+            
                                     }
                                     else
                                     {
                                         mission.status = ContractStatus.Completed;
                                         data.SetLoadedSurvey(null);
                                         data.surveyMission = Guid.Empty;
-                                        File.Delete(path + "//PlayerData//Survey//InProgress" + mission.id + ".xml");
-                                        PlayerStorageProvider.AddSurveyToBeSaved(mission);
+                                        PlayerStorageProvider.AddSurveyToBeSaved(mission, true);
                                         PlayerStorageProvider.playerData[player.Id.SteamId] = data;
-                                        utils.WriteToJsonFile<PlayerData>(path + "//PlayerData//Data//" + data.steamId + ".json", data);
+                                        PlayerStorageProvider.SavePlayerData(data);
                                     }
                                     playerSurveyTimes.Remove(player.Id.SteamId);
                                     var playerList = new List<IMyGps>();
