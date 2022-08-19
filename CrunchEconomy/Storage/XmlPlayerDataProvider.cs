@@ -15,20 +15,55 @@ namespace CrunchEconomy.Storage
     public class XmlPlayerDataProvider : IPlayerDataProvider
     {
         public string FolderLocation { get; set; }
-        public FileUtils Utils = new FileUtils();
+        public FileUtils Utils { get; set; } = new FileUtils();
         public Logger Log = LogManager.GetLogger("CrunchEcon-StorageProvider");
 
-        private Dictionary<Guid, Contract> _contractSave = new Dictionary<Guid, Contract>();
-        private Dictionary<Guid, SurveyMission> _surveySave = new Dictionary<Guid, SurveyMission>();
-        private Dictionary<ulong, PlayerData> playerData = new Dictionary<ulong, PlayerData>();
+        public Dictionary<Guid, Contract> _contractSave { get; set; } = new Dictionary<Guid, Contract>();
+        public Dictionary<Guid, SurveyMission> _surveySave { get; set; } = new Dictionary<Guid, SurveyMission>();
+        public Dictionary<ulong, PlayerData> playerData { get; set; } = new Dictionary<ulong, PlayerData>();
+
+        public void Setup(Config Config)
+        {
+            FolderLocation = CrunchEconCore.path;
+        }
+
         public void SavePlayerData(PlayerData Data)
         {
             Utils.WriteToXmlFile<PlayerData>($"{FolderLocation}//PlayerData//Data//{Data.steamId}.xml", Data);
         }
 
-        public PlayerData GetPlayerData(ulong SteamId, bool login = false)
+        public Dictionary<Guid,Contract> LoadMiningContracts(List<Guid> Ids)
         {
-            if (!login)
+                        var temporary = new Dictionary<Guid, Contract>();
+            foreach (var id in Ids)
+            {
+                var path = $"{FolderLocation}//PlayerData//Mining//InProgress//{id}.xml";
+                if (!File.Exists(path)) continue;
+                if (temporary.ContainsKey(id)) continue;
+                var contract = CrunchEconCore.utils.ReadFromXmlFile<Contract>(path);
+                temporary.Add(id, contract);
+            }
+
+            return temporary;
+        }
+        public Dictionary<Guid, Contract> LoadHaulingContracts(List<Guid> Ids)
+        {
+            var temporary = new Dictionary<Guid, Contract>();
+            foreach (var id in Ids)
+            {
+                var path = $"{FolderLocation}//PlayerData//Hauling//InProgress//{id}.xml";
+                if (!File.Exists(path)) continue;
+                if (temporary.ContainsKey(id)) continue;
+                var contract = CrunchEconCore.utils.ReadFromXmlFile<Contract>(path);
+                temporary.Add(id, contract);
+            }
+
+            return temporary;
+        }
+
+        public PlayerData GetPlayerData(ulong SteamId, bool Login = false)
+        {
+            if (!Login)
             {
                 return LoadPlayerData(SteamId);
             }

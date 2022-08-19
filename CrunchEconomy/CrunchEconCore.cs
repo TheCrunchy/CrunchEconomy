@@ -51,6 +51,7 @@ using static CrunchEconomy.Contracts.GeneratedContract;
 using static CrunchEconomy.RepConfig;
 using System.Threading.Tasks;
 using CrunchEconomy.Storage;
+using CrunchEconomy.Storage.Interfaces;
 using static CrunchEconomy.WhitelistFile;
 using Sandbox.Definitions;
 
@@ -73,7 +74,7 @@ namespace CrunchEconomy
 
         public static bool paused = false;
 
-        public static IPlayerDataProvider StorageProvider { get; set; }
+        public static IPlayerDataProvider PlayerStorageProvider { get; set; }
         public static IConfigProvider ConfigProvider { get; set; }
 
         public static MyFixedPoint CountComponents(IEnumerable<VRage.Game.ModAPI.IMyInventory> inventories, MyDefinitionId id)
@@ -407,8 +408,9 @@ namespace CrunchEconomy
 
             DoFactionShit(player);
 
-            var data = StorageProvider.GetPlayerData(player.SteamId);
-            data.getMiningContracts();
+            var data = PlayerStorageProvider.GetPlayerData(player.SteamId);
+            data.GetHaulingContracts();
+            data.GetMiningContracts();
             var id = MySession.Static.Players.TryGetIdentityId(player.SteamId);
             if (id == 0)
             {
@@ -421,12 +423,12 @@ namespace CrunchEconomy
                 MyAPIGateway.Session?.GPS.RemoveGps(id, gps);
             }
 
-            foreach (var c in data.getMiningContracts().Values.Where(c => c.minedAmount >= c.amountToMineOrDeliver))
+            foreach (var c in data.GetMiningContracts().Values.Where(c => c.minedAmount >= c.amountToMineOrDeliver))
             {
                 c.DoPlayerGps(id);
             }
 
-            foreach (var c in data.getHaulingContracts().Values)
+            foreach (var c in data.GetHaulingContracts().Values)
             {
                 c.DoPlayerGps(id);
             }
@@ -436,394 +438,275 @@ namespace CrunchEconomy
             var gpscol = (MyGpsCollection)MyAPIGateway.Session?.GPS;
 
             //this as linq no work
-            foreach (var stat in stations)
+            foreach (var gps in from stat in stations where stat.GiveGPSOnLogin where stat.getGPS() != null select stat.getGPS())
             {
-                if (!stat.GiveGPSOnLogin) continue;
-                if (stat.getGPS() == null) continue;
-                var gps = stat.getGPS();
-                gps.DiscardAt = new TimeSpan(6000);
-                gpscol.SendAddGpsRequest(iden.IdentityId, ref gps);
+                var myGps = gps;
+                myGps.DiscardAt = new TimeSpan(6000);
+                gpscol.SendAddGpsRequest(iden.IdentityId, ref myGps);
             }
         }
 
-        public static void Logout(IPlayer p)
-        {
-            if (CrunchEconCore.config != null && !CrunchEconCore.config.PluginEnabled)
-            {
-                return;
-            }
-            if (p == null)
-            {
-                return;
-            }
+        //public static void Logout(IPlayer p)
+        //{
+        //    if (CrunchEconCore.config != null && !CrunchEconCore.config.PluginEnabled)
+        //    {
+        //        return;
+        //    }
+        //    if (p == null)
+        //    {
+        //        return;
+        //    }
 
-            if (File.Exists(path + "//PlayerData//Data//" + p.SteamId.ToString() + ".json"))
-            {
-                PlayerData data = utils.ReadFromJsonFile<PlayerData>(path + "//PlayerData//Data//" + p.SteamId.ToString() + ".json");
-                playerData.Remove(p.SteamId);
-                data.getMiningContracts();
-                data.getHaulingContracts();
-                playerData.Add(p.SteamId, data);
-            }
-        }
+        //    if (File.Exists(path + "//PlayerData//Data//" + p.SteamId.ToString() + ".json"))
+        //    {
+        //        PlayerData data = utils.ReadFromJsonFile<PlayerData>(path + "//PlayerData//Data//" + p.SteamId.ToString() + ".json");
+        //        playerData.Remove(p.SteamId);
+        //        data.getMiningContracts();
+        //        data.getHaulingContracts();
+        //        playerData.Add(p.SteamId, data);
+        //    }
+        //}
 
 
         public static Boolean AlliancePluginEnabled = false;
         //i should really split this into multiple methods so i dont have one huge method for everything
         public bool HandleDeliver(Contract contract, MyPlayer player, PlayerData data, MyCockpit controller)
         {
+            var proceed = false;
+            switch (contract.type)
+            {
+                case ContractType.Mining:
+                    {
+                        if (config.MiningContractsEnabled)
+                        {
+                            if (contract.minedAmount >= contract.amountToMineOrDeliver)
+                            {
+                                proceed = true;
+                            }
+                        }
 
-            bool proceed = false;
+                        break;
+                    }
+                case ContractType.Hauling:
+                    {
+                        if (config.HaulingContractsEnabled)
+                        {
+                            proceed = true;
+                        }
+
+                        break;
+                    }
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+
+            if (!proceed) return false;
+            if (contract.DeliveryLocation == null && contract.DeliveryLocation == string.Empty)
+            {
+                contract.DeliveryLocation = DrillPatch.GenerateDeliveryLocation(player.GetPosition(), contract).ToString();
+                PlayerStorageProvider.AddContractToBeSaved(contract);
+            }
+
+            Vector3D coords = contract.getCoords();
+            var rep = 0;
+            var distance = Vector3.Distance(coords, controller.PositionComp.GetPosition());
+            if (!(distance <= 500)) return false;
+
+            var itemsToRemove = new Dictionary<MyDefinitionId, int>();
+            string parseThis;
 
             if (contract.type == ContractType.Mining)
             {
-                if (config.MiningContractsEnabled)
-                {
-                    if (contract.minedAmount >= contract.amountToMineOrDeliver)
-                    {
-                        proceed = true;
-                    }
-                }
+                parseThis = "MyObjectBuilder_Ore/" + contract.SubType;
+                rep = data.MiningReputation;
             }
             else
             {
-                if (contract.type == ContractType.Hauling)
-                {
-                    if (config.HaulingContractsEnabled)
-                    {
-                        proceed = true;
-                    }
-                }
+                parseThis = "MyObjectBuilder_" + contract.TypeIfHauling + "/" + contract.SubType;
+                rep = data.HaulingReputation;
             }
-            if (proceed)
+            if (MyDefinitionId.TryParse(parseThis, out MyDefinitionId id))
             {
-                if (contract.DeliveryLocation == null && contract.DeliveryLocation == string.Empty)
-                {
-                    contract.DeliveryLocation = DrillPatch.GenerateDeliveryLocation(player.GetPosition(), contract).ToString();
-
-                    StorageProvider.AddContractToBeSaved(contract);
-                }
-                Vector3D coords = contract.getCoords();
-                int rep = 0;
-                float distance = Vector3.Distance(coords, controller.PositionComp.GetPosition());
-                if (distance <= 500)
-                {
-                    Dictionary<MyDefinitionId, int> itemsToRemove = new Dictionary<MyDefinitionId, int>();
-                    string parseThis;
-
-                    if (contract.type == ContractType.Mining)
-                    {
-                        parseThis = "MyObjectBuilder_Ore/" + contract.SubType;
-                        rep = data.MiningReputation;
-                    }
-                    else
-                    {
-                        parseThis = "MyObjectBuilder_" + contract.TypeIfHauling + "/" + contract.SubType;
-                        rep = data.HaulingReputation;
-                    }
-                    if (MyDefinitionId.TryParse(parseThis, out MyDefinitionId id))
-                    {
-                        itemsToRemove.Add(id, contract.amountToMineOrDeliver);
-
-                    }
-
-                    List<VRage.Game.ModAPI.IMyInventory> inventories = GetInventoriesForContract(controller.CubeGrid);
-
-                    if (FacUtils.IsOwnerOrFactionOwned(controller.CubeGrid, player.Identity.IdentityId, true))
-                    {
-                        if (ConsumeComponents(inventories, itemsToRemove, player.Id.SteamId))
-                        {
-
-                            if (contract.type == ContractType.Mining)
-                            {
-
-                                data.MiningReputation += contract.reputation;
-                                data.MiningContracts.Remove(contract.ContractId);
-                            }
-                            else
-                            {
-                                data.HaulingReputation += contract.reputation;
-                                data.HaulingContracts.Remove(contract.ContractId);
-                            }
-                            if (data.MiningReputation >= 5000)
-                            {
-                                data.MiningReputation = 5000;
-                            }
-                            if (data.HaulingReputation >= 5000)
-                            {
-                                data.HaulingReputation = 5000;
-                            }
-                            if (data.MiningReputation >= 100)
-                            {
-                                contract.contractPrice += Convert.ToInt64(contract.contractPrice * 0.025f);
-                            }
-                            if (data.MiningReputation >= 250)
-                            {
-                                contract.contractPrice += Convert.ToInt64(contract.contractPrice * 0.025f);
-                            }
-                            if (data.MiningReputation >= 500)
-                            {
-                                contract.contractPrice += Convert.ToInt64(contract.contractPrice * 0.025f);
-                            }
-                            if (data.MiningReputation >= 750)
-                            {
-                                contract.contractPrice += Convert.ToInt64(contract.contractPrice * 0.025f);
-                            }
-                            if (data.MiningReputation >= 1000)
-                            {
-                                contract.contractPrice += Convert.ToInt64(contract.contractPrice * 0.025f);
-                            }
-                            if (data.MiningReputation >= 2000)
-                            {
-                                contract.contractPrice += Convert.ToInt64(contract.contractPrice * 0.025f);
-                            }
-                            if (data.MiningReputation >= 3000)
-                            {
-                                contract.contractPrice += Convert.ToInt64(contract.contractPrice * 0.05f);
-                            }
-                            if (contract.DistanceBonus > 0)
-                            {
-                                contract.contractPrice += contract.DistanceBonus;
-                            }
-                            if (AlliancePluginEnabled)
-                            {
-                                //patch into alliances and process the payment there
-                                //contract.AmountPaid = contract.contractPrice;
-                                try
-                                {
-                                    object[] MethodInput = new object[] { player.Id.SteamId, contract.contractPrice, "Mining", controller.CubeGrid.PositionComp.GetPosition() };
-                                    contract.contractPrice = (long)AllianceTaxes?.Invoke(null, MethodInput);
-
-                                }
-                                catch (Exception ex)
-                                {
-                                    Log.Error(ex);
-                                }
-                            }
-
-                            if (contract.DoRareItemReward)
-                            {
-                                foreach (RewardItem item in contract.PlayerLoot)
-                                {
-                                    if (MyDefinitionId.TryParse("MyObjectBuilder_" + item.TypeId + "/" + item.SubTypeId, out MyDefinitionId reward) && item.Enabled && rep >= item.ReputationRequired)
-                                    {
-                                        //  Log.Info("Tried to do ");
-                                        Random rand = new Random();
-                                        int amount = rand.Next(item.ItemMinAmount, item.ItemMaxAmount);
-                                        double chance = rand.NextDouble();
-                                        if (chance <= item.chance)
-                                        {
-                                            if (SpawnLoot(controller.CubeGrid, reward, (MyFixedPoint)amount))
-                                            {
-                                                contract.GivenItemReward = true;
-                                                SendMessage("Boss Dave", "Heres a bonus for a job well done " + amount + " " + reward.ToString().Replace("MyObjectBuilder_", ""), Color.Gold, (long)player.Id.SteamId);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-
-                            //  BoundingSphereD sphere = new BoundingSphereD(coords, 400);
-                            MyCubeGrid grid = MyAPIGateway.Entities.GetEntityById(contract.StationEntityId) as MyCubeGrid;
-                            if (grid != null)
-                            {
-
-                                foreach (RewardItem item in contract.PutInStation)
-                                {
-                                    if (item.Enabled && rep >= item.ReputationRequired)
-                                    {
-                                        Random random = new Random();
-                                        if (random.NextDouble() <= item.chance)
-                                        {
-                                            if (MyDefinitionId.TryParse("MyObjectBuilder_" + item.TypeId + "/" + item.SubTypeId, out MyDefinitionId newid))
-                                            {
-                                                int amount = random.Next(item.ItemMinAmount, item.ItemMaxAmount);
-                                                Stations station = new Stations();
-                                                station.CargoName = contract.CargoName;
-                                                station.OwnerFactionTag = FacUtils.GetFactionTag(FacUtils.GetOwner(grid));
-                                                station.ViewOnlyNamedCargo = true;
-                                                SpawnItems(grid, newid, amount, station);
-                                            }
-                                        }
-                                    }
-                                }
-                                if (contract.PutTheHaulInStation)
-                                {
-                                    foreach (KeyValuePair<MyDefinitionId, int> pair in itemsToRemove)
-                                    {
-                                        Stations station = new Stations();
-                                        station.CargoName = contract.CargoName;
-                                        station.OwnerFactionTag = FacUtils.GetFactionTag(FacUtils.GetOwner(grid));
-                                        station.ViewOnlyNamedCargo = true;
-                                        SpawnItems(grid, pair.Key, pair.Value, station);
-                                    }
-                                }
-
-                            }
-                            else
-                            {
-                                Log.Error("Couldnt find station to put items in! Did it get cut and pasted? at " + coords.ToString());
-                            }
-                            contract.AmountPaid = contract.contractPrice;
-                            contract.TimeCompleted = DateTime.Now;
-                            EconUtils.addMoney(player.Identity.IdentityId, contract.contractPrice);
-
-
-                            contract.PlayerSteamId = player.Id.SteamId;
-
-
-
-                            FileUtils utils = new FileUtils();
-                            contract.status = ContractStatus.Completed;
-                            StorageProvider.AddContractToBeSaved(contract, true);
-
-                            playerData[player.Id.SteamId] = data;
-
-                            return true;
-
-                            //SAVE THE PLAYER DATA WITH INCREASED REPUTATION
-
-                        }
-                    }
-                }
+                itemsToRemove.Add(id, contract.amountToMineOrDeliver);
             }
-            return false;
 
-        }
-        public void DoContractDelivery(MyPlayer player, bool DoNewContract)
-        {
-            if (config.MiningContractsEnabled)
+            var inventories = GetInventoriesForContract(controller.CubeGrid);
+
+            if (!FacUtils.IsOwnerOrFactionOwned(controller.CubeGrid, player.Identity.IdentityId, true)) return false;
+            if (!ConsumeComponents(inventories, itemsToRemove, player.Id.SteamId)) return false;
+            if (contract.type == ContractType.Mining)
             {
-                if (DoNewContract)
-                {
-
-                    try
-                    {
-
-                        if (playerData.TryGetValue(player.Id.SteamId, out PlayerData data))
-                        {
-                            //if (data.getMiningContracts().Count == 0)
-                            //{
-                            //    GeneratedContract con = ContractUtils.GetRandomPlayerContract(ContractType.Mining);
-                            //    if (con != null)
-                            //    {
-                            //        data.addMining(ContractUtils.GeneratedToPlayer(con));
-                            //        playerData[player.Id.SteamId] = data;
-                            //        utils.WriteToJsonFile<PlayerData>(path + "//PlayerData//Data//" + data.steamId + ".json", data);
-
-                            //    }
-
-                            //}
-                            SendMessage("Boss Dave", "Check contracts with !contract info", Color.Gold, (long)player.Id.SteamId);
-                        }
-                        //else
-                        //{
-                        //    PlayerData newdata = new PlayerData();
-                        //    newdata.steamId = player.Id.SteamId;
-                        //    GeneratedContract con = ContractUtils.GetRandomPlayerContract(ContractType.Mining);
-                        //    if (con != null)
-                        //    {
-                        //        newdata.addMining(ContractUtils.GeneratedToPlayer(con));
-                        //        playerData.Add(player.Id.SteamId, newdata);
-                        //        utils.WriteToJsonFile<PlayerData>(path + "//PlayerData//Data//" + newdata.steamId + ".json", newdata);
-                        //        SendMessage("Boss Dave", "Heres a new job !contract info", Color.Gold, (long)player.Id.SteamId);
-                        //    }
-
-                        //}
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error("Probably a null contract " + ex.ToString());
-
-
-                    }
-
-                }
+                data.MiningReputation += contract.reputation;
+                data.MiningContracts.Remove(contract.ContractId);
             }
-            if (player.GetPosition() != null)
+            else
             {
+                data.HaulingReputation += contract.reputation;
+                data.HaulingContracts.Remove(contract.ContractId);
+            }
 
-                // GenerateNewMiningContracts(player);
-
+            if (data.MiningReputation >= 5000)
+            {
+                data.MiningReputation = 5000;
+            }
+            if (data.HaulingReputation >= 5000)
+            {
+                data.HaulingReputation = 5000;
+            }
+            if (data.MiningReputation >= 100)
+            {
+                contract.contractPrice += Convert.ToInt64(contract.contractPrice * 0.025f);
+            }
+            if (data.MiningReputation >= 250)
+            {
+                contract.contractPrice += Convert.ToInt64(contract.contractPrice * 0.025f);
+            }
+            if (data.MiningReputation >= 500)
+            {
+                contract.contractPrice += Convert.ToInt64(contract.contractPrice * 0.025f);
+            }
+            if (data.MiningReputation >= 750)
+            {
+                contract.contractPrice += Convert.ToInt64(contract.contractPrice * 0.025f);
+            }
+            if (data.MiningReputation >= 1000)
+            {
+                contract.contractPrice += Convert.ToInt64(contract.contractPrice * 0.025f);
+            }
+            if (data.MiningReputation >= 2000)
+            {
+                contract.contractPrice += Convert.ToInt64(contract.contractPrice * 0.025f);
+            }
+            if (data.MiningReputation >= 3000)
+            {
+                contract.contractPrice += Convert.ToInt64(contract.contractPrice * 0.05f);
+            }
+            if (contract.DistanceBonus > 0)
+            {
+                contract.contractPrice += contract.DistanceBonus;
+            }
+            if (AlliancePluginEnabled)
+            {
+                //patch into alliances and process the payment there
+                //contract.AmountPaid = contract.contractPrice;
                 try
                 {
-                    if (config.MiningContractsEnabled)
+                    var MethodInput = new object[] { player.Id.SteamId, contract.contractPrice, "Mining", controller.CubeGrid.PositionComp.GetPosition() };
+                    contract.contractPrice = (long)AllianceTaxes?.Invoke(null, MethodInput);
+
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex);
+                }
+            }
+
+            if (contract.DoRareItemReward)
+            {
+                foreach (var item in contract.PlayerLoot)
+                {
+                    if (!MyDefinitionId.TryParse("MyObjectBuilder_" + item.TypeId + "/" + item.SubTypeId,
+                            out var reward) || !item.Enabled || rep < item.ReputationRequired) continue;
+                    //  Log.Info("Tried to do ");
+                    var rand = new Random();
+                    var amount = rand.Next(item.ItemMinAmount, item.ItemMaxAmount);
+                    var chance = rand.NextDouble();
+                    if (!(chance <= item.chance)) continue;
+                    if (!SpawnLoot(controller.CubeGrid, reward, (MyFixedPoint)amount)) continue;
+                    contract.GivenItemReward = true;
+                    SendMessage("Boss Dave", $"Heres a bonus for a job well done {amount} {reward.ToString().Replace("MyObjectBuilder_", "")}", Color.Gold, (long)player.Id.SteamId);
+                }
+            }
+
+            //  BoundingSphereD sphere = new BoundingSphereD(coords, 400);
+            var grid = MyAPIGateway.Entities.GetEntityById(contract.StationEntityId) as MyCubeGrid;
+            if (grid != null)
+            {
+                foreach (var item in contract.PutInStation)
+                {
+                    if (!item.Enabled || rep < item.ReputationRequired) continue;
+                    var random = new Random();
+                    if (!(random.NextDouble() <= item.chance)) continue;
+                    if (!MyDefinitionId.TryParse("MyObjectBuilder_" + item.TypeId + "/" + item.SubTypeId,
+                            out var newid)) continue;
+                    var amount = random.Next(item.ItemMinAmount, item.ItemMaxAmount);
+                    var station = new Stations
                     {
-                        if (playerData.TryGetValue(player.Id.SteamId, out PlayerData data))
+                        CargoName = contract.CargoName,
+                        OwnerFactionTag = FacUtils.GetFactionTag(FacUtils.GetOwner(grid)),
+                        ViewOnlyNamedCargo = true
+                    };
+                    SpawnItems(grid, newid, amount, station);
+                }
+                if (contract.PutTheHaulInStation)
+                {
+                    foreach (var pair in itemsToRemove)
+                    {
+                        var station = new Stations
                         {
-                            MyPlayer playerOnline = player;
-                            if (player.Character != null && player?.Controller.ControlledEntity is MyCockpit controller)
-                            {
-                                MyCubeGrid grid = controller.CubeGrid;
-                                List<Contract> delete = new List<Contract>();
-
-                                foreach (Contract contract in data.getMiningContracts().Values)
-                                {
-                                    try
-                                    {
-                                        if (HandleDeliver(contract, player, data, controller))
-                                        {
-                                            delete.Add(contract);
-
-                                        }
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        Log.Error(ex.ToString());
-                                        delete.Add(contract);
-                                    }
-                                }
-                                foreach (Contract contract in data.getHaulingContracts().Values)
-                                {
-                                    try
-                                    {
-                                        if (HandleDeliver(contract, player, data, controller))
-                                        {
-                                            delete.Add(contract);
-
-                                        }
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        Log.Error(ex.ToString());
-                                        delete.Add(contract);
-                                    }
-                                }
-                                foreach (Contract contract in delete)
-                                {
-                                    if (contract.type == ContractType.Mining)
-                                    {
-                                        data.getMiningContracts().Remove(contract.ContractId);
-                                        data.MiningContracts.Remove(contract.ContractId);
-                                    }
-                                    else
-                                    {
-                                        data.getHaulingContracts().Remove(contract.ContractId);
-                                        data.MiningContracts.Remove(contract.ContractId);
-                                    }
-
-                                }
-                                playerData[player.Id.SteamId] = data;
-                                try
-                                {
-                                    StorageProvider.SavePlayerData(data);
-
-                                }
-                                catch (Exception ex)
-                                {
-                                    Log.Error("WHY YOU DO THIS?");
-
-                                }
-                            }
-                        }
+                            CargoName = contract.CargoName,
+                            OwnerFactionTag = FacUtils.GetFactionTag(FacUtils.GetOwner(grid)),
+                            ViewOnlyNamedCargo = true
+                        };
+                        SpawnItems(grid, pair.Key, pair.Value, station);
                     }
                 }
 
-                catch (Exception ex)
-                {
+            }
+            else
+            {
+                Log.Error("Couldnt find station to put items in! Did it get cut and pasted? at " + coords.ToString());
+            }
+            contract.AmountPaid = contract.contractPrice;
+            contract.TimeCompleted = DateTime.Now;
+            EconUtils.addMoney(player.Identity.IdentityId, contract.contractPrice);
+            contract.PlayerSteamId = player.Id.SteamId;
+            contract.status = ContractStatus.Completed;
+            PlayerStorageProvider.AddContractToBeSaved(contract, true);
+            PlayerStorageProvider.playerData[player.Id.SteamId] = data;
 
-                    Log.Error(ex);
+            return true;
+
+            //SAVE THE PLAYER DATA WITH INCREASED REPUTATION
+
+        }
+
+        public void DoContractDelivery(MyPlayer player, bool DoNewContract)
+        {
+            if (player.GetPosition() == null) return;
+
+            if (!config.MiningContractsEnabled) return;
+            var data = PlayerStorageProvider.GetPlayerData(player.Id.SteamId);
+            if (data.MiningContracts.Count <= 0 && data.HaulingContracts.Count <= 0) return;
+            var playerOnline = player;
+            if (player.Character == null ||
+                !(player?.Controller.ControlledEntity is MyCockpit controller)) return;
+            var grid = controller.CubeGrid;
+            var delete = new List<Contract>();
+            delete.AddRange(data.GetMiningContracts().Values.Where(contract => HandleDeliver(contract, player, data, controller)));
+            delete.AddRange(data.GetHaulingContracts().Values.Where(contract => HandleDeliver(contract, player, data, controller)));
+            foreach (var contract in delete)
+            {
+                if (contract.type == ContractType.Mining)
+                {
+                    data.GetMiningContracts().Remove(contract.ContractId);
+                    data.MiningContracts.Remove(contract.ContractId);
                 }
+                else
+                {
+                    data.GetHaulingContracts().Remove(contract.ContractId);
+                    data.MiningContracts.Remove(contract.ContractId);
+                }
+            }
+
+            PlayerStorageProvider.playerData[player.Id.SteamId] = data;
+            try
+            {
+                PlayerStorageProvider.SavePlayerData(data);
+            }
+            catch (Exception ex)
+            {
+                Log.Error("WHY YOU DO THIS?");
             }
         }
 
@@ -974,8 +857,8 @@ namespace CrunchEconomy
                                             data.surveyMission = Guid.Empty;
                                         }
 
-                                        StorageProvider.AddSurveyToBeSaved(mission);
-                                        playerData[player.Id.SteamId] = data;
+                                        PlayerStorageProvider.AddSurveyToBeSaved(mission);
+                                        PlayerStorageProvider.playerData[player.Id.SteamId] = data;
                                         utils.WriteToJsonFile<PlayerData>(path + "//PlayerData//Data//" + data.steamId + ".json", data);
                                     }
                                     else
@@ -984,8 +867,8 @@ namespace CrunchEconomy
                                         data.SetLoadedSurvey(null);
                                         data.surveyMission = Guid.Empty;
                                         File.Delete(path + "//PlayerData//Survey//InProgress" + mission.id + ".xml");
-                                        StorageProvider.AddSurveyToBeSaved(mission);
-                                        playerData[player.Id.SteamId] = data;
+                                        PlayerStorageProvider.AddSurveyToBeSaved(mission);
+                                        PlayerStorageProvider.playerData[player.Id.SteamId] = data;
                                         utils.WriteToJsonFile<PlayerData>(path + "//PlayerData//Data//" + data.steamId + ".json", data);
                                     }
                                     playerSurveyTimes.Remove(player.Id.SteamId);
@@ -1032,7 +915,7 @@ namespace CrunchEconomy
                                     }
                                     data.NextSurveyMission = data.NextSurveyMission.AddSeconds(60);
                                     data.SetLoadedSurvey(mission);
-                                    playerData[player.Id.SteamId] = data;
+                                    PlayerStorageProvider.playerData[player.Id.SteamId] = data;
                                     playerSurveyTimes[player.Id.SteamId] = DateTime.Now;
                                     ShouldReturn = true;
                                 }
@@ -1045,8 +928,8 @@ namespace CrunchEconomy
                             }
                             data.SetLoadedSurvey(mission);
                             data.NextSurveyMission = DateTime.Now.AddSeconds(60);
-                            StorageProvider.AddSurveyToBeSaved(mission);
-                            playerData[player.Id.SteamId] = data;
+                            PlayerStorageProvider.AddSurveyToBeSaved(mission);
+                            PlayerStorageProvider.playerData[player.Id.SteamId] = data;
                             // utils.WriteToJsonFile<PlayerData>(path + "//PlayerData//Data//" + data.steamId + ".json", data);
                         }
                         else
@@ -1140,9 +1023,9 @@ namespace CrunchEconomy
                         }
                         data.SetLoadedSurvey(newSurvey);
                         data.NextSurveyMission = DateTime.Now.AddSeconds(config.SecondsBetweenSurveyMissions);
-                        StorageProvider.AddSurveyToBeSaved(newSurvey);
+                        PlayerStorageProvider.AddSurveyToBeSaved(newSurvey);
 
-                        playerData[player.Id.SteamId] = data;
+                        PlayerStorageProvider.playerData[player.Id.SteamId] = data;
                         utils.WriteToJsonFile<PlayerData>(path + "//PlayerData//Data//" + data.steamId + ".json", data);
                     }
                     else
@@ -1156,7 +1039,7 @@ namespace CrunchEconomy
                 Log.Error(ex);
                 data.SetLoadedSurvey(null);
                 data.surveyMission = Guid.Empty;
-                playerData[player.Id.SteamId] = data;
+                PlayerStorageProvider.playerData[player.Id.SteamId] = data;
                 utils.WriteToJsonFile<PlayerData>(path + "//PlayerData//Data//" + data.steamId + ".json", data);
                 throw;
             }
@@ -1366,7 +1249,7 @@ namespace CrunchEconomy
                     }
 
                     if (config == null || !config.SurveyContractsEnabled) continue;
-                    var data = StorageProvider.GetPlayerData(player.Id.SteamId);
+                    var data = PlayerStorageProvider.GetPlayerData(player.Id.SteamId);
                     GenerateNewSurveyMission(data, player);
                 }
 
@@ -1374,7 +1257,7 @@ namespace CrunchEconomy
 
             if (ticks % 64 == 0 && TorchState == TorchSessionState.Loaded)
             {
-                StorageProvider.SaveContracts();
+                PlayerStorageProvider.SaveContracts();
                 DateTime now = DateTime.Now;
                 foreach (var station in stations)
                 {
