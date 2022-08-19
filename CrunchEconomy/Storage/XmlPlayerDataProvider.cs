@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using CrunchEconomy.Contracts;
+using CrunchEconomy.Storage.Interfaces;
 using CrunchEconomy.SurveyMissions;
 using NLog;
 
@@ -32,9 +33,9 @@ namespace CrunchEconomy.Storage
             Utils.WriteToXmlFile<PlayerData>($"{FolderLocation}//PlayerData//Data//{Data.steamId}.xml", Data);
         }
 
-        public Dictionary<Guid,Contract> LoadMiningContracts(List<Guid> Ids)
+        public Dictionary<Guid, Contract> LoadMiningContracts(List<Guid> Ids)
         {
-                        var temporary = new Dictionary<Guid, Contract>();
+            var temporary = new Dictionary<Guid, Contract>();
             foreach (var id in Ids)
             {
                 var path = $"{FolderLocation}//PlayerData//Mining//InProgress//{id}.xml";
@@ -73,19 +74,28 @@ namespace CrunchEconomy.Storage
         public PlayerData LoadPlayerData(ulong SteamId)
         {
             var data = Utils.ReadFromXmlFile<PlayerData>($"{FolderLocation}//PlayerData//Data//{SteamId}.xml");
-            playerData.Add(SteamId, data);
-            if (data != null) return data;
+            playerData.Remove(SteamId);
+            if (data != null)
+            {
+                playerData.Add(SteamId, data);
+                return data;
+            }
 
             File.Delete($"{FolderLocation}//PlayerData//Data//{SteamId}.xml");
-            if (!playerData.TryGetValue(SteamId, out var previousData)) return new PlayerData()
+            if (playerData.TryGetValue(SteamId, out var previousData))
+            {
+                Utils.WriteToXmlFile<PlayerData>($"{FolderLocation}//PlayerData//Data//{SteamId}.xml", previousData);
+                playerData.Add(SteamId, previousData);
+                Log.Error($"Corrupt Player Data, if they had a previous save before login, that has been restored. {SteamId}");
+                return previousData;
+            }
+
+            var temp = new PlayerData()
             {
                 steamId = SteamId
             };
-
-            Utils.WriteToXmlFile<PlayerData>($"{FolderLocation}//PlayerData//Data//{SteamId}.xml", previousData);
-            playerData.Add(SteamId, previousData);
-            Log.Error($"Corrupt Player Data, if they had a previous save before login, that has been restored. {SteamId}");
-            return previousData;
+            playerData.Add(SteamId, temp);
+            return temp;
         }
 
         public XmlPlayerDataProvider(string StorageFolder)

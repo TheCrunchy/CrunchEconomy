@@ -371,7 +371,7 @@ namespace CrunchEconomy
                 MyFaction player = MySession.Static.Factions.TryGetPlayerFaction(iden.IdentityId) as MyFaction;
                 await Task.Run(() =>
                 {
-                    foreach (RepItem item in repConfig.RepConfigs)
+                    foreach (RepItem item in ConfigProvider.RepConfig.RepConfigs)
                     {
                         if (item.Enabled)
                         {
@@ -717,6 +717,7 @@ namespace CrunchEconomy
         {
             try
             {
+                List<IMyGps> playerList;
                 if (data.surveyMission != Guid.Empty)
                 {
                     //   Log.Info("Has survey");
@@ -852,7 +853,6 @@ namespace CrunchEconomy
                                         else
                                         {
                                             mission.status = ContractStatus.Completed;
-                                            File.Delete(path + "//PlayerData//Survey//InProgress" + mission.id + ".xml");
                                             data.SetLoadedSurvey(null);
                                             data.surveyMission = Guid.Empty;
                                         }
@@ -860,7 +860,7 @@ namespace CrunchEconomy
                                         PlayerStorageProvider.AddSurveyToBeSaved(mission, true);
                                         PlayerStorageProvider.playerData[player.Id.SteamId] = data;
                                         PlayerStorageProvider.SavePlayerData(data);
-            
+
                                     }
                                     else
                                     {
@@ -872,7 +872,7 @@ namespace CrunchEconomy
                                         PlayerStorageProvider.SavePlayerData(data);
                                     }
                                     playerSurveyTimes.Remove(player.Id.SteamId);
-                                    var playerList = new List<IMyGps>();
+                                    playerList = new List<IMyGps>();
                                     MySession.Static.Gpss.GetGpsList(player.Identity.IdentityId, playerList);
                                     foreach (var gps in playerList.Where(gps => gps.Description != null && gps.Description.Contains("SURVEY LOCATION.")))
                                     {
@@ -932,107 +932,89 @@ namespace CrunchEconomy
                             PlayerStorageProvider.playerData[player.Id.SteamId] = data;
                             // utils.WriteToJsonFile<PlayerData>(path + "//PlayerData//Data//" + data.steamId + ".json", data);
                         }
-                        else
-                        {
-                            //  Log.Info("not within distance");
-                            ShouldReturn = false;
-                        }
-                    }
-                    else
-                    {
-                        ShouldReturn = false;
                     }
                     if (ShouldReturn)
                     {
                         return;
                     }
                 }
-                if (DateTime.Now >= data.NextSurveyMission)
+
+                if (DateTime.Now < data.NextSurveyMission) return;
+
+                var newSurvey = ContractUtils.GetNewMission(data);
+                if (newSurvey == null) return;
+
+                playerList = new List<IMyGps>();
+                MySession.Static.Gpss.GetGpsList(player.Identity.IdentityId, playerList);
+                foreach (var gps in playerList.Where(gps => gps.Description != null && gps.Description.Contains("SURVEY LOCATION.")))
                 {
-
-                    SurveyMission newSurvey = ContractUtils.GetNewMission(data);
-                    if (newSurvey != null)
-                    {
-                        List<IMyGps> playerList = new List<IMyGps>();
-                        MySession.Static.Gpss.GetGpsList(player.Identity.IdentityId, playerList);
-                        foreach (IMyGps gps in playerList)
-                        {
-                            if (gps.Description != null && gps.Description.Contains("SURVEY LOCATION."))
-                            {
-                                MyAPIGateway.Session?.GPS.RemoveGps(player.Identity.IdentityId, gps);
-                            }
-                        }
-
-                        data.surveyMission = newSurvey.id;
-                        if (newSurvey.getStage(1).FindRandomPositionAroundLocation)
-
-                        {
-                            MyGps gps = ContractUtils.ScanChat(newSurvey.getStage(1).LocationGPS);
-
-                            if (newSurvey.getStage(1).FindRandomPositionAroundLocation)
-                            {
-                                int negative = System.Math.Abs(newSurvey.getStage(1).RadiusToPickRandom) * (-1);
-                                int positive = newSurvey.getStage(1).RadiusToPickRandom;
-
-                                Random rand = new Random();
-                                int x = rand.Next(negative, positive);
-                                int y = rand.Next(negative, positive);
-                                int z = rand.Next(negative, positive);
-                                Vector3 offset = new Vector3(x, y, z);
-                                gps.Coords += offset;
-                            }
-
-                            newSurvey.CurrentPosX = gps.Coords.X;
-                            newSurvey.CurrentPosY = gps.Coords.Y;
-                            newSurvey.CurrentPosZ = gps.Coords.Z;
-                            StringBuilder sb = new StringBuilder();
-                            sb.AppendLine(newSurvey.getStage(1).GPSDescription);
-                            sb.AppendLine("");
-                            sb.AppendLine("Reward: " + String.Format("{0:n0}", newSurvey.getStage(1).CreditReward) + " SC.");
-                            sb.AppendLine("");
-                            sb.AppendLine("SURVEY LOCATION.");
-                            gps.Description = sb.ToString();
-                            gps.GPSColor = Color.Gold;
-                            gps.Name = newSurvey.getStage(1).GPSName;
-                            gps.ShowOnHud = true;
-                            gps.DiscardAt = new TimeSpan(6000);
-
-                            MyGpsCollection gpscol = (MyGpsCollection)MyAPIGateway.Session?.GPS;
-                            gpscol.SendAddGpsRequest(player.Identity.IdentityId, ref gps);
-                        }
-                        else
-                        {
-                            MyGps gps = ContractUtils.ScanChat(newSurvey.getStage(1).LocationGPS);
-                            newSurvey.CurrentPosX = gps.Coords.X;
-                            newSurvey.CurrentPosY = gps.Coords.Y;
-                            newSurvey.CurrentPosZ = gps.Coords.Z;
-                            StringBuilder sb = new StringBuilder();
-                            sb.AppendLine(newSurvey.getStage(1).GPSDescription);
-                            sb.AppendLine("");
-                            sb.AppendLine("Reward: " + String.Format("{0:n0}", newSurvey.getStage(1).CreditReward) + " SC.");
-                            sb.AppendLine("");
-                            sb.AppendLine("SURVEY LOCATION.");
-                            gps.Description = sb.ToString();
-                            gps.GPSColor = Color.Gold;
-                            gps.Name = newSurvey.getStage(1).GPSName;
-                            gps.ShowOnHud = true;
-                            gps.DiscardAt = new TimeSpan(6000);
-
-                            MyGpsCollection gpscol = (MyGpsCollection)MyAPIGateway.Session?.GPS;
-                            gpscol.SendAddGpsRequest(player.Identity.IdentityId, ref gps);
-                        }
-                        data.SetLoadedSurvey(newSurvey);
-                        data.NextSurveyMission = DateTime.Now.AddSeconds(config.SecondsBetweenSurveyMissions);
-                        PlayerStorageProvider.AddSurveyToBeSaved(newSurvey);
-
-                        PlayerStorageProvider.playerData[player.Id.SteamId] = data;
-                        utils.WriteToJsonFile<PlayerData>(path + "//PlayerData//Data//" + data.steamId + ".json", data);
-                    }
-                    else
-                    {
-                        //    Log.Info("null");
-                    }
+                    MyAPIGateway.Session?.GPS.RemoveGps(player.Identity.IdentityId, gps);
                 }
+
+                data.surveyMission = newSurvey.id;
+                if (newSurvey.getStage(1).FindRandomPositionAroundLocation)
+
+                {
+                    MyGps gps = ContractUtils.ScanChat(newSurvey.getStage(1).LocationGPS);
+
+                    if (newSurvey.getStage(1).FindRandomPositionAroundLocation)
+                    {
+                        int negative = System.Math.Abs(newSurvey.getStage(1).RadiusToPickRandom) * (-1);
+                        int positive = newSurvey.getStage(1).RadiusToPickRandom;
+
+                        Random rand = new Random();
+                        int x = rand.Next(negative, positive);
+                        int y = rand.Next(negative, positive);
+                        int z = rand.Next(negative, positive);
+                        Vector3 offset = new Vector3(x, y, z);
+                        gps.Coords += offset;
+                    }
+
+                    newSurvey.CurrentPosX = gps.Coords.X;
+                    newSurvey.CurrentPosY = gps.Coords.Y;
+                    newSurvey.CurrentPosZ = gps.Coords.Z;
+                    StringBuilder sb = new StringBuilder();
+                    sb.AppendLine(newSurvey.getStage(1).GPSDescription);
+                    sb.AppendLine("");
+                    sb.AppendLine("Reward: " + String.Format("{0:n0}", newSurvey.getStage(1).CreditReward) + " SC.");
+                    sb.AppendLine("");
+                    sb.AppendLine("SURVEY LOCATION.");
+                    gps.Description = sb.ToString();
+                    gps.GPSColor = Color.Gold;
+                    gps.Name = newSurvey.getStage(1).GPSName;
+                    gps.ShowOnHud = true;
+                    gps.DiscardAt = new TimeSpan(6000);
+
+                    MyGpsCollection gpscol = (MyGpsCollection)MyAPIGateway.Session?.GPS;
+                    gpscol.SendAddGpsRequest(player.Identity.IdentityId, ref gps);
+                }
+                else
+                {
+                    MyGps gps = ContractUtils.ScanChat(newSurvey.getStage(1).LocationGPS);
+                    newSurvey.CurrentPosX = gps.Coords.X;
+                    newSurvey.CurrentPosY = gps.Coords.Y;
+                    newSurvey.CurrentPosZ = gps.Coords.Z;
+                    StringBuilder sb = new StringBuilder();
+                    sb.AppendLine(newSurvey.getStage(1).GPSDescription);
+                    sb.AppendLine("");
+                    sb.AppendLine("Reward: " + String.Format("{0:n0}", newSurvey.getStage(1).CreditReward) + " SC.");
+                    sb.AppendLine("");
+                    sb.AppendLine("SURVEY LOCATION.");
+                    gps.Description = sb.ToString();
+                    gps.GPSColor = Color.Gold;
+                    gps.Name = newSurvey.getStage(1).GPSName;
+                    gps.ShowOnHud = true;
+                    gps.DiscardAt = new TimeSpan(6000);
+
+                    MyGpsCollection gpscol = (MyGpsCollection)MyAPIGateway.Session?.GPS;
+                    gpscol.SendAddGpsRequest(player.Identity.IdentityId, ref gps);
+                }
+                data.SetLoadedSurvey(newSurvey);
+                data.NextSurveyMission = DateTime.Now.AddSeconds(config.SecondsBetweenSurveyMissions);
+                PlayerStorageProvider.AddSurveyToBeSaved(newSurvey);
+
+                PlayerStorageProvider.playerData[player.Id.SteamId] = data;
+                PlayerStorageProvider.SavePlayerData(data);
             }
             catch (Exception ex)
             {
@@ -1040,7 +1022,7 @@ namespace CrunchEconomy
                 data.SetLoadedSurvey(null);
                 data.surveyMission = Guid.Empty;
                 PlayerStorageProvider.playerData[player.Id.SteamId] = data;
-                utils.WriteToJsonFile<PlayerData>(path + "//PlayerData//Data//" + data.steamId + ".json", data);
+                PlayerStorageProvider.SavePlayerData(data);
                 throw;
             }
         }
@@ -1048,15 +1030,13 @@ namespace CrunchEconomy
 
         public static string GetPlayerName(ulong steamId)
         {
-            MyIdentity id = GetIdentityByNameOrId(steamId.ToString());
+            var id = GetIdentityByNameOrId(steamId.ToString());
             if (id != null && id.DisplayName != null)
             {
                 return id.DisplayName;
             }
-            else
-            {
-                return steamId.ToString();
-            }
+
+            return steamId.ToString();
         }
         public static MyIdentity GetIdentityByNameOrId(string playerNameOrSteamId)
         {
@@ -1064,14 +1044,12 @@ namespace CrunchEconomy
             {
                 if (identity.DisplayName == playerNameOrSteamId)
                     return identity;
-                if (ulong.TryParse(playerNameOrSteamId, out ulong steamId))
-                {
-                    ulong id = MySession.Static.Players.TryGetSteamId(identity.IdentityId);
-                    if (id == steamId)
-                        return identity;
-                    if (identity.IdentityId == (long)steamId)
-                        return identity;
-                }
+                if (!ulong.TryParse(playerNameOrSteamId, out ulong steamId)) continue;
+                var id = MySession.Static.Players.TryGetSteamId(identity.IdentityId);
+                if (id == steamId)
+                    return identity;
+                if (identity.IdentityId == (long)steamId)
+                    return identity;
 
             }
             return null;
@@ -1081,71 +1059,45 @@ namespace CrunchEconomy
             Log.Info("Redoing station whitelists");
             await Task.Run(() =>
             {
-                foreach (Stations station in stations)
+                foreach (var station in stations)
                 {
+                    if (!station.WhitelistedSafezones) continue;
+                    var sphere = new BoundingSphereD(station.getGPS().Coords, 200);
 
-                    if (station.WhitelistedSafezones)
+                    foreach (var zone in MyAPIGateway.Entities.GetEntitiesInSphere(ref sphere).OfType<MySafeZone>())
                     {
+                        zone.Factions.Clear();
+                        zone.AccessTypeFactions = station.DoBlacklist ? MySafeZoneAccess.Blacklist : MySafeZoneAccess.Whitelist;
 
-                        BoundingSphereD sphere = new BoundingSphereD(station.getGPS().Coords, 200);
-
-                        foreach (MySafeZone zone in MyAPIGateway.Entities.GetEntitiesInSphere(ref sphere).OfType<MySafeZone>())
+                        foreach (var s in station.Whitelist)
                         {
-                            zone.Factions.Clear();
-                            if (station.DoBlacklist)
+                            if (s.Contains("LIST:"))
                             {
-                                zone.AccessTypeFactions = MySafeZoneAccess.Blacklist;
-                            }
-                            else
-                            {
-                                zone.AccessTypeFactions = MySafeZoneAccess.Whitelist;
-                            }
-
-                            foreach (String s in station.Whitelist)
-                            {
-                                if (s.Contains("LIST:"))
+                                //split the list
+                                //     Log.Info("Is list");
+                                var temp = s.Split(':')[1];
+                                //    Log.Info(temp);
+                                foreach (var tag in from list in ConfigProvider.Whitelist.whitelist where list.ListName == temp from tag in list.FactionTags where MySession.Static.Factions.TryGetFactionByTag(tag) != null select tag)
                                 {
-                                    //split the list
-                                    //     Log.Info("Is list");
-                                    String temp = s.Split(':')[1];
-                                    //    Log.Info(temp);
-                                    foreach (Whitelist list in whitelist.whitelist)
-                                    {
-                                        //        Log.Info("Checking the lists");
-                                        //       Log.Info(list.ListName);
-                                        if (list.ListName == temp)
-                                        {
-                                            //       Log.Info("its the right name");
-                                            foreach (String tag in list.FactionTags)
-                                            {
-                                                //     Log.Info("looping through the tags " + tag);
-                                                if (MySession.Static.Factions.TryGetFactionByTag(tag) != null)
-                                                {
-                                                    //        Log.Info("fac isnt null");
-                                                    zone.Factions.Add(MySession.Static.Factions.TryGetFactionByTag(tag));
-                                                }
-                                            }
-                                        }
-
-                                    }
-                                }
-                                else if (s.Contains("FAC:"))
-                                {
-                                    String temp = s.Split(':')[1];
-                                    if (MySession.Static.Factions.TryGetFactionByTag(temp) != null)
-                                    {
-                                        zone.Factions.Add(MySession.Static.Factions.TryGetFactionByTag(temp));
-                                    }
-
+                                    //        Log.Info("fac isnt null");
+                                    zone.Factions.Add(MySession.Static.Factions.TryGetFactionByTag(tag));
                                 }
                             }
-                            MySessionComponentSafeZones.RequestUpdateSafeZone((MyObjectBuilder_SafeZone)zone.GetObjectBuilder());
+                            else if (s.Contains("FAC:"))
+                            {
+                                var temp = s.Split(':')[1];
+                                if (MySession.Static.Factions.TryGetFactionByTag(temp) != null)
+                                {
+                                    zone.Factions.Add(MySession.Static.Factions.TryGetFactionByTag(temp));
+                                }
+                            }
                         }
-
+                        MySessionComponentSafeZones.RequestUpdateSafeZone((MyObjectBuilder_SafeZone)zone.GetObjectBuilder());
                     }
                 }
             });
         }
+
         public static Random rnd = new Random();
         public override void Update()
         {
@@ -1169,8 +1121,7 @@ namespace CrunchEconomy
                 Log.Info("Loading stuff for CrunchEcon");
                 try
                 {
-                    repConfig = utils.ReadFromXmlFile<RepConfig>(path + "\\ReputationConfig.xml");
-                    whitelist = utils.ReadFromXmlFile<WhitelistFile>(path + "\\Whitelist.xml");
+
                     //MarketCommands.list.RefreshList();
                 }
                 catch (Exception ex)
@@ -2103,8 +2054,7 @@ namespace CrunchEconomy
 
             }
         }
-        public static RepConfig repConfig;
-        public static WhitelistFile whitelist;
+
         public override void Init(ITorchBase torch)
         {
 
@@ -2125,125 +2075,6 @@ namespace CrunchEconomy
             if (!Directory.Exists(path + "//Logs//"))
             {
                 Directory.CreateDirectory(path + "//Logs//");
-            }
-            if (File.Exists(path + "\\Whitelist.xml"))
-            {
-                whitelist = utils.ReadFromXmlFile<WhitelistFile>(path + "\\Whitelist.xml");
-                utils.WriteToXmlFile<WhitelistFile>(path + "\\Whitelist.xml", whitelist, false);
-            }
-            else
-            {
-                whitelist = new WhitelistFile();
-                Whitelist temp = new Whitelist();
-                temp.FactionTags.Add("BOB");
-                temp.ListName = "LIST1";
-
-                whitelist.whitelist.Add(temp);
-                Whitelist temp2 = new Whitelist();
-                temp2.FactionTags.Add("CAR");
-                temp2.FactionTags.Add("BOB");
-                temp2.ListName = "LIST2";
-                whitelist.whitelist.Add(temp2);
-                utils.WriteToXmlFile<WhitelistFile>(path + "\\Whitelist.xml", whitelist, false);
-            }
-            if (File.Exists(path + "\\ReputationConfig.xml"))
-            {
-                repConfig = utils.ReadFromXmlFile<RepConfig>(path + "\\ReputationConfig.xml");
-                utils.WriteToXmlFile<RepConfig>(path + "\\ReputationConfig.xml", repConfig, false);
-            }
-            else
-            {
-                repConfig = new RepConfig();
-                RepItem item = new RepItem();
-
-                repConfig.RepConfigs.Add(item);
-                utils.WriteToXmlFile<RepConfig>(path + "\\ReputationConfig.xml", repConfig, false);
-            }
-            if (!Directory.Exists(path + "//Stations//"))
-            {
-                Directory.CreateDirectory(path + "//Stations//");
-                Stations station = new Stations();
-                station.Enabled = false;
-                PriceModifier modifier = new PriceModifier();
-                station.Modifiers.Add(modifier);
-                station.Whitelist.Add("FAC:BOB");
-                station.Whitelist.Add("LIST:LIST1");
-                CraftedItem item = new CraftedItem();
-                item.typeid = "Ore";
-                item.subtypeid = "Iron";
-                item.amountPerCraft = 500;
-                item.chanceToCraft = 1;
-
-                RecipeItem recipe = new RecipeItem();
-                recipe.typeid = "Ore";
-                recipe.subtypeid = "Stone";
-                recipe.amount = 500;
-
-                item.RequriedItems.Add(recipe);
-                station.CraftableItems.Add(item);
-                utils.WriteToXmlFile<Stations>(path + "//Stations//Example.xml", station);
-            }
-            if (!Directory.Exists(path + "//BuyOrders//Example//"))
-            {
-                Directory.CreateDirectory(path + "//BuyOrders//Example//");
-                BuyOrder example = new BuyOrder();
-                utils.WriteToXmlFile<BuyOrder>(path + "//BuyOrders//Example//Example.xml", example);
-
-            }
-            if (!Directory.Exists(path + "//SellOffers//Example//"))
-            {
-                Directory.CreateDirectory(path + "//SellOffers//Example//");
-                SellOffer example = new SellOffer();
-                var gps = "put a gps string here";
-                example.gpsToPickFrom.Add(gps);
-                utils.WriteToXmlFile<SellOffer>(path + "//SellOffers//Example//Example.xml", example);
-            }
-            if (!Directory.Exists(path + "//GridSelling//"))
-            {
-                GridSale gridSale = new GridSale();
-
-                Directory.CreateDirectory(path + "//GridSelling//");
-                utils.WriteToXmlFile<GridSale>(path + "//GridSelling//ExampleSale.xml", gridSale);
-            }
-            if (!Directory.Exists(path + "//GridSelling//Grids//"))
-            {
-                Directory.CreateDirectory(path + "//GridSelling//Grids//");
-            }
-
-            if (!Directory.Exists(path + "//ContractConfigs//Survey//"))
-            {
-                SurveyMission mission = new SurveyMission();
-                mission.configs.Add(new SurveyStage());
-                Directory.CreateDirectory(path + "//ContractConfigs//Survey//");
-                utils.WriteToXmlFile<SurveyMission>(path + "//ContractConfigs//Survey//Example1.xml", mission);
-                mission.configs.Add(new SurveyStage());
-                utils.WriteToXmlFile<SurveyMission>(path + "//ContractConfigs//Survey//Example2.xml", mission);
-                mission.configs.Add(new SurveyStage());
-                utils.WriteToXmlFile<SurveyMission>(path + "//ContractConfigs//Survey//Example3.xml", mission);
-            }
-            if (!Directory.Exists(path + "//ContractConfigs//Mining//"))
-            {
-                GeneratedContract contract = new GeneratedContract();
-
-                Directory.CreateDirectory(path + "//ContractConfigs//Mining//");
-                contract.PlayerLoot.Add(new RewardItem());
-                contract.PutInStation.Add(new RewardItem());
-                contract.ItemsToPickFrom.Add(new ContractInfo());
-                contract.ItemsToPickFrom.Add(new ContractInfo());
-                contract.StationsToDeliverTo.Add(new StationDelivery());
-                utils.WriteToXmlFile<GeneratedContract>(path + "//ContractConfigs//Mining//Example.xml", contract);
-            }
-            if (!Directory.Exists(path + "//ContractConfigs//Hauling//"))
-            {
-                GeneratedContract contract = new GeneratedContract();
-                Directory.CreateDirectory(path + "//ContractConfigs//Hauling//");
-                contract.type = ContractType.Hauling;
-                contract.PlayerLoot.Add(new RewardItem());
-                contract.PutInStation.Add(new RewardItem());
-                contract.ItemsToPickFrom.Add(new ContractInfo());
-                contract.ItemsToPickFrom.Add(new ContractInfo());
-                contract.StationsToDeliverTo.Add(new StationDelivery());
-                utils.WriteToXmlFile<GeneratedContract>(path + "//ContractConfigs//Hauling//Example.xml", contract);
             }
             TorchBase = Torch;
         }

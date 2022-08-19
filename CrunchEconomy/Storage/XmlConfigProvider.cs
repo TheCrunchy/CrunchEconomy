@@ -4,6 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using CrunchEconomy.Contracts;
+using CrunchEconomy.SurveyMissions;
 using NLog;
 using NLog.Fluent;
 using Sandbox.Engine.Multiplayer;
@@ -13,6 +15,8 @@ namespace CrunchEconomy.Storage
     public class XmlConfigProvider : IConfigProvider
     {
         public Logger Log = LogManager.GetLogger("CrunchEcon-ConfigProvider");
+        public RepConfig RepConfig { get; set; }
+        public WhitelistFile Whitelist { get; set; }
         public FileUtils Utils = new FileUtils();
         public string FolderLocation { get; set; }
         // ReSharper disable once FieldCanBeMadeReadOnly.Local
@@ -22,10 +26,153 @@ namespace CrunchEconomy.Storage
         // ReSharper disable once FieldCanBeMadeReadOnly.Local
         private Dictionary<string, GridSale> _gridsForSale = new Dictionary<string, GridSale>();
 
+        public void LoadRepConfig()
+        {
+            if (File.Exists(FolderLocation + "\\ReputationConfig.xml"))
+            {
+                RepConfig = Utils.ReadFromXmlFile<RepConfig>(FolderLocation + "\\ReputationConfig.xml");
+            Utils.WriteToXmlFile<RepConfig>(FolderLocation + "\\ReputationConfig.xml", RepConfig, false);
+            }
+            else
+            {
+                RepConfig = new RepConfig();
+                var item = new RepConfig.RepItem();
+
+                RepConfig.RepConfigs.Add(item);
+                Utils.WriteToXmlFile<RepConfig>(FolderLocation + "\\ReputationConfig.xml", RepConfig, false);
+            }
+        }
+
+        public void LoadWhitelist()
+        {
+            if (File.Exists(FolderLocation + "\\Whitelist.xml"))
+            {
+                Whitelist = Utils.ReadFromXmlFile<WhitelistFile>(FolderLocation + "\\Whitelist.xml");
+                Utils.WriteToXmlFile<WhitelistFile>(FolderLocation + "\\Whitelist.xml", Whitelist, false);
+            }
+            else
+            {
+                Whitelist = new WhitelistFile();
+                var temp = new WhitelistFile.Whitelist();
+                temp.FactionTags.Add("BOB");
+                temp.ListName = "LIST1";
+
+                Whitelist.whitelist.Add(temp);
+                var temp2 = new WhitelistFile.Whitelist();
+                temp2.FactionTags.Add("CAR");
+                temp2.FactionTags.Add("BOB");
+                temp2.ListName = "LIST2";
+                Whitelist.whitelist.Add(temp2);
+                Utils.WriteToXmlFile<WhitelistFile>(FolderLocation + "\\Whitelist.xml", Whitelist, false);
+            }
+        }
+
         public XmlConfigProvider(string FolderLocation)
         {
             this.FolderLocation = FolderLocation;
+
+            LoadWhitelist();
+            LoadRepConfig();
+
+            if (!Directory.Exists(FolderLocation + "//Stations//"))
+            {
+                Directory.CreateDirectory(FolderLocation + "//Stations//");
+                var station = new Stations
+                {
+                    Enabled = false
+                };
+                var modifier = new Stations.PriceModifier();
+                station.Modifiers.Add(modifier);
+                station.Whitelist.Add("FAC:BOB");
+                station.Whitelist.Add("LIST:LIST1");
+                var item = new Stations.CraftedItem
+                {
+                    typeid = "Ore",
+                    subtypeid = "Iron",
+                    amountPerCraft = 500,
+                    chanceToCraft = 1
+                };
+
+                var recipe = new Stations.RecipeItem
+                {
+                    typeid = "Ore",
+                    subtypeid = "Stone",
+                    amount = 500
+                };
+
+                item.RequriedItems.Add(recipe);
+                station.CraftableItems.Add(item);
+                Utils.WriteToXmlFile<Stations>(FolderLocation + "//Stations//Example.xml", station);
+            }
+
+            if (!Directory.Exists(FolderLocation + "//BuyOrders//Example//"))
+            {
+                Directory.CreateDirectory(FolderLocation + "//BuyOrders//Example//");
+                var example = new BuyOrder();
+                Utils.WriteToXmlFile<BuyOrder>(FolderLocation + "//BuyOrders//Example//Example.xml", example);
+            }
+
+            if (!Directory.Exists(FolderLocation + "//SellOffers//Example//"))
+            {
+                Directory.CreateDirectory(FolderLocation + "//SellOffers//Example//");
+                var example = new SellOffer();
+                var gps = "put a gps string here";
+                example.gpsToPickFrom.Add(gps);
+                Utils.WriteToXmlFile<SellOffer>(FolderLocation + "//SellOffers//Example//Example.xml", example);
+            }
+
+            if (!Directory.Exists(FolderLocation + "//GridSelling//"))
+            {
+                var gridSale = new GridSale();
+
+                Directory.CreateDirectory(FolderLocation + "//GridSelling//");
+                Utils.WriteToXmlFile<GridSale>(FolderLocation + "//GridSelling//ExampleSale.xml", gridSale);
+            }
+
+            if (!Directory.Exists(FolderLocation + "//GridSelling//Grids//"))
+            {
+                Directory.CreateDirectory(FolderLocation + "//GridSelling//Grids//");
+            }
+
+            if (!Directory.Exists(FolderLocation + "//ContractConfigs//Survey//"))
+            {
+                var mission = new SurveyMission();
+                mission.configs.Add(new SurveyStage());
+                Directory.CreateDirectory(FolderLocation + "//ContractConfigs//Survey//");
+                Utils.WriteToXmlFile<SurveyMission>(FolderLocation + "//ContractConfigs//Survey//Example1.xml", mission);
+                mission.configs.Add(new SurveyStage());
+                Utils.WriteToXmlFile<SurveyMission>(FolderLocation + "//ContractConfigs//Survey//Example2.xml", mission);
+                mission.configs.Add(new SurveyStage());
+                Utils.WriteToXmlFile<SurveyMission>(FolderLocation + "//ContractConfigs//Survey//Example3.xml", mission);
+            }
+
+            if (!Directory.Exists(FolderLocation + "//ContractConfigs//Mining//"))
+            {
+                var contract = new GeneratedContract();
+
+                Directory.CreateDirectory(FolderLocation + "//ContractConfigs//Mining//");
+                contract.PlayerLoot.Add(new RewardItem());
+                contract.PutInStation.Add(new RewardItem());
+                contract.ItemsToPickFrom.Add(new GeneratedContract.ContractInfo());
+                contract.ItemsToPickFrom.Add(new GeneratedContract.ContractInfo());
+                contract.StationsToDeliverTo.Add(new GeneratedContract.StationDelivery());
+                Utils.WriteToXmlFile<GeneratedContract>(FolderLocation + "//ContractConfigs//Mining//Example.xml", contract);
+            }
+
+            if (!Directory.Exists(FolderLocation + "//ContractConfigs//Hauling//"))
+            {
+                var contract = new GeneratedContract();
+                Directory.CreateDirectory(FolderLocation + "//ContractConfigs//Hauling//");
+                contract.type = ContractType.Hauling;
+                contract.PlayerLoot.Add(new RewardItem());
+                contract.PutInStation.Add(new RewardItem());
+                contract.ItemsToPickFrom.Add(new GeneratedContract.ContractInfo());
+                contract.ItemsToPickFrom.Add(new GeneratedContract.ContractInfo());
+                contract.StationsToDeliverTo.Add(new GeneratedContract.StationDelivery());
+                Utils.WriteToXmlFile<GeneratedContract>(FolderLocation + "//ContractConfigs//Hauling//Example.xml", contract);
+            }
         }
+
         public List<Stations> GetStations()
         {
             return _stations;
