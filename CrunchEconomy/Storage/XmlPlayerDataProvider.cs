@@ -1,6 +1,7 @@
 ﻿using Sandbox.Engine.Multiplayer;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Eventing.Reader;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -19,10 +20,37 @@ namespace CrunchEconomy.Storage
 
         private Dictionary<Guid, Contract> _contractSave = new Dictionary<Guid, Contract>();
         private Dictionary<Guid, SurveyMission> _surveySave = new Dictionary<Guid, SurveyMission>();
-
-        public void SavePlayerData(PlayerData data)
+        private Dictionary<ulong, PlayerData> playerData = new Dictionary<ulong, PlayerData>();
+        public void SavePlayerData(PlayerData Data)
         {
-            Utils.WriteToXmlFile<PlayerData>($"{FolderLocation}//PlayerData//Data//{data.steamId}.xml", data);
+            Utils.WriteToXmlFile<PlayerData>($"{FolderLocation}//PlayerData//Data//{Data.steamId}.xml", Data);
+        }
+
+        public PlayerData GetPlayerData(ulong SteamId, bool login = false)
+        {
+            if (!login)
+            {
+                return LoadPlayerData(SteamId);
+            }
+            return playerData.TryGetValue(SteamId, out var data) ? data : LoadPlayerData(SteamId);
+        }
+
+        public PlayerData LoadPlayerData(ulong SteamId)
+        {
+            var data = Utils.ReadFromXmlFile<PlayerData>($"{FolderLocation}//PlayerData//Data//{SteamId}.xml");
+            playerData.Add(SteamId, data);
+            if (data != null) return data;
+
+            File.Delete($"{FolderLocation}//PlayerData//Data//{SteamId}.xml");
+            if (!playerData.TryGetValue(SteamId, out var previousData)) return new PlayerData()
+            {
+                steamId = SteamId
+            };
+
+            Utils.WriteToXmlFile<PlayerData>($"{FolderLocation}//PlayerData//Data//{SteamId}.xml", previousData);
+            playerData.Add(SteamId, previousData);
+            Log.Error($"Corrupt Player Data, if they had a previous save before login, that has been restored. {SteamId}");
+            return previousData;
         }
 
         public XmlPlayerDataProvider(string StorageFolder)

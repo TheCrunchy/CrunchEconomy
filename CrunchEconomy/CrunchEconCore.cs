@@ -394,92 +394,58 @@ namespace CrunchEconomy
 
         }
 
-        public static void Login(IPlayer p)
+        public static void Login(IPlayer player)
         {
             if (CrunchEconCore.config != null && !CrunchEconCore.config.PluginEnabled)
             {
                 return;
             }
-            if (p == null)
+            if (player == null)
             {
                 return;
             }
 
-            DoFactionShit(p);
+            DoFactionShit(player);
 
-            if (File.Exists(path + "//PlayerData//Data//" + p.SteamId.ToString() + ".json"))
+            var data = StorageProvider.GetPlayerData(player.SteamId);
+            data.getMiningContracts();
+            var id = MySession.Static.Players.TryGetIdentityId(player.SteamId);
+            if (id == 0)
             {
-                PlayerData data = utils.ReadFromJsonFile<PlayerData>(path + "//PlayerData//Data//" + p.SteamId.ToString() + ".json");
-                if (data == null)
-                {
+                return;
+            }
+            var playerList = new List<IMyGps>();
+            MySession.Static.Gpss.GetGpsList(id, playerList);
+            foreach (var gps in playerList.Where(Gps => Gps.Description != null && Gps.Description.Contains("Contract Delivery Location.")))
+            {
+                MyAPIGateway.Session?.GPS.RemoveGps(id, gps);
+            }
 
-                    File.Delete(path + "//PlayerData//Data//" + p.SteamId.ToString() + ".json");
-                    if (playerData.TryGetValue(p.SteamId, out PlayerData reee))
-                    {
-                        utils.WriteToJsonFile<PlayerData>(path + "//PlayerData//Data//" + p.SteamId.ToString() + ".json", reee);
-                    }
-                    CrunchEconCore.Log.Error("Corrupt Player Data, if they had a previous save before login, that has been restored. " + p.SteamId);
+            foreach (var c in data.getMiningContracts().Values.Where(c => c.minedAmount >= c.amountToMineOrDeliver))
+            {
+                c.DoPlayerGps(id);
+            }
 
-                    return;
-                }
-                playerData.Remove(p.SteamId);
+            foreach (var c in data.getHaulingContracts().Values)
+            {
+                c.DoPlayerGps(id);
+            }
+            var iden = GetIdentityByNameOrId(player.SteamId.ToString());
+            if (iden == null) return;
 
-                data.getMiningContracts();
-                data.getHaulingContracts();
-                playerData.Add(p.SteamId, data);
-                long id = MySession.Static.Players.TryGetIdentityId(p.SteamId);
-                if (id == 0)
-                {
-                    return;
-                }
-                List<IMyGps> playerList = new List<IMyGps>();
-                MySession.Static.Gpss.GetGpsList(id, playerList);
-                foreach (IMyGps gps in playerList)
-                {
-                    if (gps.Description != null && gps.Description.Contains("Contract Delivery Location."))
-                    {
-                        MyAPIGateway.Session?.GPS.RemoveGps(id, gps);
-                    }
-                }
+            var gpscol = (MyGpsCollection)MyAPIGateway.Session?.GPS;
 
-                foreach (Contract c in data.getMiningContracts().Values)
-                {
-
-                    if (c.minedAmount >= c.amountToMineOrDeliver)
-                    {
-                        c.DoPlayerGps(id);
-                    }
-
-                }
-
-                foreach (Contract c in data.getHaulingContracts().Values)
-                {
-
-                    c.DoPlayerGps(id);
-
-                }
-                MyIdentity iden = GetIdentityByNameOrId(p.SteamId.ToString());
-                if (iden != null)
-                {
-                    MyGpsCollection gpscol = (MyGpsCollection)MyAPIGateway.Session?.GPS;
-
-                    foreach (Stations stat in stations)
-                    {
-                        if (stat.GiveGPSOnLogin)
-                        {
-                            if (stat.getGPS() != null)
-                            {
-                                MyGps gps = stat.getGPS();
-                                gps.DiscardAt = new TimeSpan(6000);
-                                gpscol.SendAddGpsRequest(iden.IdentityId, ref gps);
-
-                            }
-
-                        }
-                    }
-                }
+            //this as linq no work
+            foreach (var stat in stations)
+            {
+                if (!stat.GiveGPSOnLogin) continue;
+                if (stat.getGPS() == null) continue;
+                var gps = stat.getGPS();
+                gps.DiscardAt = new TimeSpan(6000);
+                gpscol.SendAddGpsRequest(iden.IdentityId, ref gps);
             }
         }
+
         public static void Logout(IPlayer p)
         {
             if (CrunchEconCore.config != null && !CrunchEconCore.config.PluginEnabled)
@@ -501,7 +467,7 @@ namespace CrunchEconomy
             }
         }
 
-        public static Dictionary<ulong, PlayerData> playerData = new Dictionary<ulong, PlayerData>();
+
         public static Boolean AlliancePluginEnabled = false;
         //i should really split this into multiple methods so i dont have one huge method for everything
         public bool HandleDeliver(Contract contract, MyPlayer player, PlayerData data, MyCockpit controller)
@@ -841,7 +807,7 @@ namespace CrunchEconomy
                                 try
                                 {
                                     StorageProvider.SavePlayerData(data);
-                               
+
                                 }
                                 catch (Exception ex)
                                 {
@@ -1384,7 +1350,7 @@ namespace CrunchEconomy
             if (ticks % 256 == 0 && TorchState == TorchSessionState.Loaded)
             {
 
-                foreach (MyPlayer player in MySession.Static.Players.GetOnlinePlayers())
+                foreach (var player in MySession.Static.Players.GetOnlinePlayers())
                 {
                     if (config.MiningContractsEnabled || config.HaulingContractsEnabled)
                     {
@@ -1398,23 +1364,10 @@ namespace CrunchEconomy
                             DoContractDelivery(player, false);
                         }
                     }
-                    if (config != null && config.SurveyContractsEnabled)
-                    {
-                        if (playerData.TryGetValue(player.Id.SteamId, out PlayerData data))
-                        {
 
-
-                            GenerateNewSurveyMission(data, player);
-
-                        }
-                        else
-                        {
-
-                            data = new PlayerData();
-                            data.steamId = player.Id.SteamId;
-                            GenerateNewSurveyMission(data, player);
-                        }
-                    }
+                    if (config == null || !config.SurveyContractsEnabled) continue;
+                    var data = StorageProvider.GetPlayerData(player.Id.SteamId);
+                    GenerateNewSurveyMission(data, player);
                 }
 
             }

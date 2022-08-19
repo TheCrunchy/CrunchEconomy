@@ -10,5 +10,7 @@ namespace CrunchEconomy.Storage
         void AddContractToBeSaved(Contract Contract, bool Delete = false);
         void AddSurveyToBeSaved(SurveyMission Mission, bool Delete = false);
         void SaveContracts();
+        PlayerData GetPlayerData(ulong SteamId, bool login = false);
+        PlayerData LoadPlayerData(ulong SteamId);
     }
 }

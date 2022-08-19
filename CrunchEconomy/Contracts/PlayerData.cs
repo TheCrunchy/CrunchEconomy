@@ -51,6 +51,7 @@ namespace CrunchEconomy.Contracts
         }
         public void addMining(Contract contract)
         {
+            //test
             if (!loadedMining.ContainsKey(contract.ContractId))
             {
                 loadedMining.Add(contract.ContractId, contract);
