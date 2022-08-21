@@ -1,13 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Torch.Commands;
 using Torch.Commands.Permissions;
 using VRage.Game.ModAPI;
 
-namespace CrunchEconomy
+namespace CrunchEconomy.ModifierFluctuations
 {
     [Category("stationmodifier")]
     public class FluctuationCommands : CommandModule

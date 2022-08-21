@@ -5,6 +5,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using CrunchEconomy.Contracts;
+using CrunchEconomy.Station_Stuff;
+using CrunchEconomy.Station_Stuff.Objects;
+using CrunchEconomy.Storage.Interfaces;
 using CrunchEconomy.SurveyMissions;
 using NLog;
 using NLog.Fluent;
@@ -20,11 +23,10 @@ namespace CrunchEconomy.Storage
         public FileUtils Utils = new FileUtils();
         public string FolderLocation { get; set; }
         // ReSharper disable once FieldCanBeMadeReadOnly.Local
-        private List<Stations> _stations = new List<Stations>();
-        public Dictionary<string, List<BuyOrder>> _buyOrders { get; set; } = new Dictionary<string, List<BuyOrder>>();
-        public Dictionary<string, List<SellOffer>> _sellOffers { get; set; } = new Dictionary<string, List<SellOffer>>();
-        // ReSharper disable once FieldCanBeMadeReadOnly.Local
-        private Dictionary<string, GridSale> _gridsForSale = new Dictionary<string, GridSale>();
+        public List<Stations> Stations { get; set; }= new List<Stations>();
+        public Dictionary<string, List<BuyOrder>> BuyOrders { get; set; } = new Dictionary<string, List<BuyOrder>>();
+        public Dictionary<string, List<SellOffer>> SellOffers { get; set; } = new Dictionary<string, List<SellOffer>>();
+        public Dictionary<string, GridSale> GridsForSale { get; set; } = new Dictionary<string, GridSale>();
 
         public void LoadRepConfig()
         {
@@ -175,19 +177,19 @@ namespace CrunchEconomy.Storage
 
         public List<Stations> GetStations()
         {
-            return _stations;
+            return Stations;
         }
         public Dictionary<string, GridSale> GetGridsForSale()
         {
-            return _gridsForSale;
+            return GridsForSale;
         }
         public Dictionary<string, List<BuyOrder>> GetBuyOrders()
         {
-            return _buyOrders;
+            return BuyOrders;
         }
         public Dictionary<string, List<SellOffer>> GetSellOffers()
         {
-            return _sellOffers;
+            return SellOffers;
         }
 
         public void SaveStation(Stations station)
@@ -197,7 +199,7 @@ namespace CrunchEconomy.Storage
 
         public void LoadStations()
         {
-            _stations.Clear();
+            Stations.Clear();
             foreach (var s in Directory.GetFiles(FolderLocation + "//Stations//"))
             {
                 try
@@ -210,7 +212,7 @@ namespace CrunchEconomy.Storage
                         continue;
 
                     stat.SetupModifiers();
-                    _stations.Add(stat);
+                    Stations.Add(stat);
                 }
                 catch (Exception ex)
                 {
@@ -221,14 +223,14 @@ namespace CrunchEconomy.Storage
 
         public void LoadAllBuyOrders()
         {
-            _buyOrders.Clear();
+            BuyOrders.Clear();
             foreach (var s in Directory.GetDirectories(FolderLocation + "//BuyOrders//", "*", SearchOption.AllDirectories))
             {
                 var temp = new DirectoryInfo(s).Name;
                 var temporaryList = new List<BuyOrder>();
-                if (_buyOrders.ContainsKey(temp))
+                if (BuyOrders.ContainsKey(temp))
                 {
-                    temporaryList = _buyOrders[temp];
+                    temporaryList = BuyOrders[temp];
                 }
                 try
                 {
@@ -245,21 +247,21 @@ namespace CrunchEconomy.Storage
                     Log.Error($"Error loading buy orders {s} {ex.ToString()}");
 
                 }
-                _buyOrders.Remove(temp);
-                _buyOrders.Add(temp, temporaryList);
+                BuyOrders.Remove(temp);
+                BuyOrders.Add(temp, temporaryList);
             }
         }
 
         public void LoadAllSellOffers()
         {
-            _sellOffers.Clear();
+            SellOffers.Clear();
             foreach (var s in Directory.GetDirectories(FolderLocation + "//SellOffers//", "*", SearchOption.AllDirectories))
             {
                 var temp = new DirectoryInfo(s).Name;
                 var temporaryList = new List<SellOffer>();
-                if (_sellOffers.ContainsKey(temp))
+                if (SellOffers.ContainsKey(temp))
                 {
-                    temporaryList = _sellOffers[temp];
+                    temporaryList = SellOffers[temp];
                 }
                 try
                 {
@@ -276,23 +278,23 @@ namespace CrunchEconomy.Storage
                     Log.Error($"Error loading sell offers {s} {ex.ToString()}");
 
                 }
-                _sellOffers.Remove(temp);
-                _sellOffers.Add(temp, temporaryList);
+                SellOffers.Remove(temp);
+                SellOffers.Add(temp, temporaryList);
             }
         }
 
         public void LoadAllGridSales()
         {
-            _gridsForSale.Clear();
+            GridsForSale.Clear();
 
             foreach (var s2 in Directory.GetFiles($"{FolderLocation}//GridSelling//"))
             {
                 try
                 {
                     var sale = Utils.ReadFromXmlFile<GridSale>(s2);
-                    if (sale.Enabled && !_gridsForSale.ContainsKey(sale.ItemSubTypeId))
+                    if (sale.Enabled && !GridsForSale.ContainsKey(sale.ItemSubTypeId))
                     {
-                        _gridsForSale.Add(sale.ItemSubTypeId, sale);
+                        GridsForSale.Add(sale.ItemSubTypeId, sale);
                     }
                 }
                 catch (Exception ex)

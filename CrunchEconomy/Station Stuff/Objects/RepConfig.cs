@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace CrunchEconomy
+namespace CrunchEconomy.Station_Stuff.Objects
 {
     public class RepConfig
     {

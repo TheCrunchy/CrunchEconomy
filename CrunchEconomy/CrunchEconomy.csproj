@@ -87,7 +87,11 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BuyOrder.cs" />
+    <Compile Include="Station Stuff\Logic\ContractLogic.cs" />
+    <Compile Include="Station Stuff\Logic\CraftingLogic.cs" />
+    <Compile Include="Station Stuff\Logic\InventoryLogic.cs" />
+    <Compile Include="Station Stuff\Logic\StoresLogic.cs" />
+    <Compile Include="Station Stuff\Objects\BuyOrder.cs" />
     <Compile Include="Config.cs" />
     <Compile Include="ContractCommands.cs" />
     <Compile Include="Contracts\ContractStatus.cs" />
@@ -111,20 +115,20 @@
     <Compile Include="PendingSale.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ModifierFluctuations\RandomFluc.cs" />
-    <Compile Include="RepConfig.cs" />
-    <Compile Include="SellOffer.cs" />
+    <Compile Include="Station Stuff\Objects\RepConfig.cs" />
+    <Compile Include="Station Stuff\Objects\SellOffer.cs" />
     <Compile Include="ShipMarket\ItemStatus.cs" />
     <Compile Include="ShipMarket\MarketCommands.cs" />
     <Compile Include="ShipMarket\MarketItem.cs" />
     <Compile Include="ShipMarket\MarketList.cs" />
-    <Compile Include="Stations.cs" />
+    <Compile Include="Station Stuff\Objects\Stations.cs" />
     <Compile Include="Storage\Interfaces\IConfigProvider.cs" />
     <Compile Include="Storage\Interfaces\IPlayerDataProvider.cs" />
     <Compile Include="Storage\XmlConfigProvider.cs" />
     <Compile Include="Storage\XmlPlayerDataProvider.cs" />
     <Compile Include="SurveyMissions\SurveyMission.cs" />
     <Compile Include="SurveyMissions\SurveyStage.cs" />
-    <Compile Include="WhitelistFile.cs" />
+    <Compile Include="Station Stuff\Objects\WhitelistFile.cs" />
   </ItemGroup>
   <ItemGroup>
     <WCFMetadata Include="Connected Services\" />

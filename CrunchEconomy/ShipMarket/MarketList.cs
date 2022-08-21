@@ -1,13 +1,9 @@
-﻿using CrunchEconomy;
-using Sandbox.Game.World;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Sandbox.Game.World;
 
-namespace ShipMarket
+namespace CrunchEconomy.ShipMarket
 {
     public class MarketList
     {

@@ -1,11 +1,8 @@
-﻿using Sandbox.Game.Screens.Helpers;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Sandbox.Game.Screens.Helpers;
 
-namespace CrunchEconomy
+namespace CrunchEconomy.Station_Stuff.Objects
 {
     public class Stations
     {

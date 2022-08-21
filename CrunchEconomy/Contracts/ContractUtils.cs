@@ -9,6 +9,8 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using CrunchEconomy.Station_Stuff;
+using CrunchEconomy.Station_Stuff.Objects;
 using VRage.Game;
 using VRageMath;
 using static CrunchEconomy.Contracts.GeneratedContract;
