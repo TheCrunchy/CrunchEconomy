@@ -5,9 +5,11 @@ using System.Text;
 using System.Threading.Tasks;
 using CrunchEconomy;
 using CrunchEconomy.Station_Stuff.Objects;
+using Sandbox.Common.ObjectBuilders;
 using Sandbox.Engine.Multiplayer;
 using Sandbox.Game.Entities;
 using Sandbox.Game.Entities.Blocks;
+using Sandbox.Game.World;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Ingame;
 using VRage;
@@ -405,6 +407,40 @@ namespace CrunchEconomy.Station_Stuff.Logic
         public static void SaveStation(Stations station)
         {
             CrunchEconCore.ConfigProvider.SaveStation(station);
+        }
+
+        public static void RefreshWhitelists(Stations station)
+        {
+            if (!station.WhitelistedSafezones) return;
+            var sphere = new BoundingSphereD(station.getGPS().Coords, 200);
+
+            foreach (var zone in MyAPIGateway.Entities.GetEntitiesInSphere(ref sphere).OfType<MySafeZone>())
+            {
+                zone.Factions.Clear();
+                zone.AccessTypeFactions = station.DoBlacklist ? MySafeZoneAccess.Blacklist : MySafeZoneAccess.Whitelist;
+
+                foreach (var s in station.Whitelist)
+                {
+                    if (s.Contains("LIST:"))
+                    {
+                        var temp = s.Split(':')[1];
+       
+                        foreach (var tag in from list in CrunchEconCore.ConfigProvider.Whitelist.whitelist where list.ListName == temp from tag in list.FactionTags where MySession.Static.Factions.TryGetFactionByTag(tag) != null select tag)
+                        {
+                            zone.Factions.Add(MySession.Static.Factions.TryGetFactionByTag(tag));
+                        }
+                    }
+                    else if (s.Contains("FAC:"))
+                    {
+                        var temp = s.Split(':')[1];
+                        if (MySession.Static.Factions.TryGetFactionByTag(temp) != null)
+                        {
+                            zone.Factions.Add(MySession.Static.Factions.TryGetFactionByTag(temp));
+                        }
+                    }
+                }
+                MySessionComponentSafeZones.RequestUpdateSafeZone((MyObjectBuilder_SafeZone)zone.GetObjectBuilder());
+            }
         }
     }
 }
