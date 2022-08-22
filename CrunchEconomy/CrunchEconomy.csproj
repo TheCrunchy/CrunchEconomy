@@ -94,7 +94,7 @@
     <Compile Include="Station Stuff\Logic\SurveyLogic.cs" />
     <Compile Include="Station Stuff\Objects\BuyOrder.cs" />
     <Compile Include="Config.cs" />
-    <Compile Include="ContractCommands.cs" />
+    <Compile Include="Commands\ContractCommands.cs" />
     <Compile Include="Contracts\ContractStatus.cs" />
     <Compile Include="Contracts\ContractType.cs" />
     <Compile Include="Contracts\ContractUtils.cs" />
@@ -104,7 +104,7 @@
     <Compile Include="Contracts\RewardItem.cs" />
     <Compile Include="Contracts\ShipContract.cs" />
     <Compile Include="CrunchEconCore.cs" />
-    <Compile Include="EconCommands.cs" />
+    <Compile Include="Commands\EconCommands.cs" />
     <Compile Include="EconUtils.cs" />
     <Compile Include="FacUtils.cs" />
     <Compile Include="FileUtils.cs" />

@@ -36,7 +36,7 @@ namespace CrunchEconomy.Station_Stuff.Logic
                         }
                     }
 
-                    if (!InventoryLogic.ConsumeComponents(inventories, comps, 0l)) continue;
+                    if (!InventoryLogic.ConsumeComponents(inventories, comps, 0L)) continue;
 
                     InventoryLogic.SpawnItems(grid, id, item.amountPerCraft, station);
                     comps.Clear();

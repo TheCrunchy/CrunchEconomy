@@ -38,43 +38,36 @@ namespace CrunchEconomy.Contracts
             var sb = new StringBuilder();
             sb.AppendLine("Deliver grid !contract info");
             sb.AppendLine("Contract Delivery Location.");
-            if (ScanChat(DeliveryLocation) != null)
-            {
-                var gpsRef = ScanChat(DeliveryLocation);
-                gpsRef.GPSColor = Color.DarkOrange;
-                gpsRef.ShowOnHud = true;
-                gpsRef.Description = sb.ToString();
-                gpsRef.DisplayName = "Grid Delivery Location. ";
-                gpsRef.Name = "Grid Delivery Location. ";
-                gpsRef.DiscardAt = new TimeSpan(600);
-                gpscol.SendAddGpsRequest(identityId, ref gpsRef);
-            }
+            if (ScanChat(DeliveryLocation) == null) return;
+            var gpsRef = ScanChat(DeliveryLocation);
+            gpsRef.GPSColor = Color.DarkOrange;
+            gpsRef.ShowOnHud = true;
+            gpsRef.Description = sb.ToString();
+            gpsRef.DisplayName = "Grid Delivery Location. ";
+            gpsRef.Name = "Grid Delivery Location. ";
+            gpsRef.DiscardAt = new TimeSpan(600);
+            gpscol.SendAddGpsRequest(identityId, ref gpsRef);
         }
         public Vector3 getCoords()
         {
             var sb = new StringBuilder();
             sb.AppendLine("Deliver grid !contract info");
             sb.AppendLine("Contract Delivery Location.");
-            if (ScanChat(DeliveryLocation) != null)
-            {
-                var gpsRef = ScanChat(DeliveryLocation);
-                gpsRef.GPSColor = Color.DarkOrange;
-                gpsRef.ShowOnHud = true;
-                gpsRef.Description = sb.ToString();
-                gpsRef.DisplayName = "Grid Delivery Location. ";
-                gpsRef.Name = "Grid Delivery Location. ";
-                gpsRef.DiscardAt = new TimeSpan(600);
+            if (ScanChat(DeliveryLocation) == null) return new Vector3(0, 0, 0);
+            var gpsRef = ScanChat(DeliveryLocation);
+            gpsRef.GPSColor = Color.DarkOrange;
+            gpsRef.ShowOnHud = true;
+            gpsRef.Description = sb.ToString();
+            gpsRef.DisplayName = "Grid Delivery Location. ";
+            gpsRef.Name = "Grid Delivery Location. ";
+            gpsRef.DiscardAt = new TimeSpan(600);
 
 
-                return gpsRef.Coords;
-            }
+            return gpsRef.Coords;
 
-            return new Vector3(0, 0, 0);
         }
         public static MyGps ScanChat(string input, string desc = null)
         {
-
-            var num = 0;
             var flag = true;
             var matchCollection = Regex.Matches(input, "GPS:([^:]{0,32}):([\\d\\.-]*):([\\d\\.-]*):([\\d\\.-]*):");
 

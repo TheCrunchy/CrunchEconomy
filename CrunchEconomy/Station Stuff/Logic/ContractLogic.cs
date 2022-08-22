@@ -245,7 +245,7 @@ namespace CrunchEconomy.Station_Stuff.Logic
                 }
             }
 
-           CrunchEconCore.PlayerStorageProvider.playerData[player.Id.SteamId] = data;
+            CrunchEconCore.PlayerStorageProvider.playerData[player.Id.SteamId] = data;
             try
             {
                 CrunchEconCore.PlayerStorageProvider.SavePlayerData(data);

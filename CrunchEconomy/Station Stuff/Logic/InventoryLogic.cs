@@ -158,7 +158,7 @@ namespace CrunchEconomy.Station_Stuff.Logic
             {
                 var needed = CountComponentsTwo(inventories, c.Key, c.Value, toRemove);
                 if (needed <= 0) continue;
-                if (steamid != 0l)
+                if (steamid != 0L)
                 {
                     CrunchEconCore.SendMessage("[Econ]", "Missing " + needed + " " + c.Key.SubtypeName + " All components must be inside one grid.", Color.Red, (long)steamid);
                 }
