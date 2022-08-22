@@ -1,16 +1,10 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using NLog;
 using Sandbox;
 using Sandbox.Common.ObjectBuilders;
-using Sandbox.Engine.Multiplayer;
 using Sandbox.Game.Entities;
-using Sandbox.Game.Entities.Blocks;
-using Sandbox.Game.Entities.Character;
-using Sandbox.Game.Entities.Cube;
 using Sandbox.Game.Multiplayer;
 using Sandbox.Game.Screens.Helpers;
 using Sandbox.Game.World;
@@ -19,12 +13,10 @@ using Torch.Commands;
 using VRage;
 using VRage.Game;
 using VRage.Game.Entity;
-using VRage.Game.ModAPI.Ingame;
-using VRage.Groups;
 using VRage.ObjectBuilders;
 using VRageMath;
 
-namespace CrunchEconomy
+namespace CrunchEconomy.Helpers
 {
 
     //Class from LordTylus ALE Core
@@ -32,18 +24,18 @@ namespace CrunchEconomy
     public static class GridManager
     {
 
-        public static readonly Logger Log = LogManager.GetCurrentClassLogger();
+        public static readonly Logger log = LogManager.GetCurrentClassLogger();
 
-        public static string newGridName;
+        public static string NewGridName;
 
 
-        public static MyIdentity GetIdentityByNameOrId(string playerNameOrSteamId)
+        public static MyIdentity GetIdentityByNameOrId(string PlayerNameOrSteamId)
         {
             foreach (var identity in MySession.Static.Players.GetAllIdentities())
             {
-                if (identity.DisplayName == playerNameOrSteamId)
+                if (identity.DisplayName == PlayerNameOrSteamId)
                     return identity;
-                if (ulong.TryParse(playerNameOrSteamId, out var steamId))
+                if (ulong.TryParse(PlayerNameOrSteamId, out var steamId))
                 {
                     var id = MySession.Static.Players.TryGetSteamId(identity.IdentityId);
                     if (id == steamId)
@@ -56,11 +48,11 @@ namespace CrunchEconomy
             return null;
         }
 
-        public static MyObjectBuilder_ShipBlueprintDefinition[] getBluePrint(string name, long newOwner, bool keepProjection, List<MyCubeGrid> grids)
+        public static MyObjectBuilder_ShipBlueprintDefinition[] GetBluePrint(string Name, long NewOwner, bool KeepProjection, List<MyCubeGrid> Grids)
         {
             var objectBuilders = new List<MyObjectBuilder_CubeGrid>();
 
-            foreach (var grid in grids)
+            foreach (var grid in Grids)
             {
 
                 /* What else should it be? LOL? */
@@ -72,23 +64,23 @@ namespace CrunchEconomy
 
             var definition = MyObjectBuilderSerializer.CreateNewObject<MyObjectBuilder_ShipBlueprintDefinition>();
 
-            definition.Id = new MyDefinitionId(new MyObjectBuilderType(typeof(MyObjectBuilder_ShipBlueprintDefinition)), name);
-            definition.CubeGrids = objectBuilders.Select(x => (MyObjectBuilder_CubeGrid)x.Clone()).ToArray();
+            definition.Id = new MyDefinitionId(new MyObjectBuilderType(typeof(MyObjectBuilder_ShipBlueprintDefinition)), Name);
+            definition.CubeGrids = objectBuilders.Select(X => (MyObjectBuilder_CubeGrid)X.Clone()).ToArray();
 
             /* Reset ownership as it will be different on the new server anyway */
             foreach (var cubeGrid in definition.CubeGrids)
             {
-                cubeGrid.DisplayName = newOwner.ToString();
+                cubeGrid.DisplayName = NewOwner.ToString();
 
                 foreach (var cubeBlock in cubeGrid.CubeBlocks)
                 {
-                    var ownerID = GetIdentityByNameOrId(newOwner.ToString()).IdentityId;
-                    cubeBlock.Owner = ownerID;
-                    cubeBlock.BuiltBy = ownerID;
+                    var ownerId = GetIdentityByNameOrId(NewOwner.ToString()).IdentityId;
+                    cubeBlock.Owner = ownerId;
+                    cubeBlock.BuiltBy = ownerId;
 
 
                     /* Remove Projections if not needed */
-                    if (!keepProjection)
+                    if (!KeepProjection)
                         if (cubeBlock is MyObjectBuilder_ProjectorBase projector)
                         {
                             projector.ProjectedGrid = null;
@@ -135,14 +127,14 @@ namespace CrunchEconomy
         }
 
 
-        public static List<MyObjectBuilder_CubeGrid> GetObjectBuilders(string path)
+        public static List<MyObjectBuilder_CubeGrid> GetObjectBuilders(string Path)
         {
-            if (MyObjectBuilderSerializer.DeserializeXML(path, out MyObjectBuilder_Definitions Definition))
+            if (MyObjectBuilderSerializer.DeserializeXML(Path, out MyObjectBuilder_Definitions definition))
             {
                 var gridsToReturn = new List<MyObjectBuilder_CubeGrid>();
-                if (Definition.Prefabs != null && Definition.Prefabs.Count() != 0)
+                if (definition.Prefabs != null && definition.Prefabs.Count() != 0)
                 {
-                    foreach (var prefab in Definition.Prefabs)
+                    foreach (var prefab in definition.Prefabs)
                     {
                         foreach (var grid in prefab.CubeGrids)
                         {
@@ -150,9 +142,9 @@ namespace CrunchEconomy
                         }
                     }
                 }
-                else if (Definition.ShipBlueprints != null && Definition.ShipBlueprints.Count() != 0)
+                else if (definition.ShipBlueprints != null && definition.ShipBlueprints.Count() != 0)
                 {
-                    foreach (var bp in Definition.ShipBlueprints)
+                    foreach (var bp in definition.ShipBlueprints)
                     {
                         foreach (var grid in bp.CubeGrids)
                         {
@@ -164,20 +156,20 @@ namespace CrunchEconomy
 
             return null;
         }
-        public static bool LoadGrid(string path, Vector3D playerPosition, bool keepOriginalLocation, ulong steamID, String name, bool force = false, CommandContext context = null)
+        public static bool LoadGrid(string Path, Vector3D PlayerPosition, bool KeepOriginalLocation, ulong SteamId, String Name, bool Force = false, CommandContext Context = null)
         {
-            if (MyObjectBuilderSerializer.DeserializeXML(path, out MyObjectBuilder_Definitions myObjectBuilder_Definitions))
+            if (MyObjectBuilderSerializer.DeserializeXML(Path, out MyObjectBuilder_Definitions myObjectBuilderDefinitions))
             {
 
-                var shipBlueprints = myObjectBuilder_Definitions.ShipBlueprints;
+                var shipBlueprints = myObjectBuilderDefinitions.ShipBlueprints;
 
                 if (shipBlueprints == null)
                 {
 
-                    Log.Warn("No ShipBlueprints in File '" + path + "'");
+                    log.Warn("No ShipBlueprints in File '" + Path + "'");
 
-                    if (context != null)
-                        context.Respond("There arent any Grids in your file to import!");
+                    if (Context != null)
+                        Context.Respond("There arent any Grids in your file to import!");
 
                     return false;
                 }
@@ -185,10 +177,10 @@ namespace CrunchEconomy
                 foreach (var shipBlueprint in shipBlueprints)
                 {
 
-                    if (!LoadShipBlueprint(shipBlueprint, playerPosition, keepOriginalLocation, (long)steamID, name, context, force))
+                    if (!LoadShipBlueprint(shipBlueprint, PlayerPosition, KeepOriginalLocation, (long)SteamId, Name, Context, Force))
                     {
 
-                        Log.Warn("Error Loading ShipBlueprints from File '" + path + "'");
+                        log.Warn("Error Loading ShipBlueprints from File '" + Path + "'");
                         return false;
                     }
                 }
@@ -196,25 +188,25 @@ namespace CrunchEconomy
                 return true;
             }
 
-            Log.Warn("Error Loading File '" + path + "' check Keen Logs.");
+            log.Warn("Error Loading File '" + Path + "' check Keen Logs.");
 
             return false;
         }
 
 
 
-        public static bool LoadShipBlueprint(MyObjectBuilder_ShipBlueprintDefinition shipBlueprint,
-            Vector3D playerPosition, bool keepOriginalLocation, long steamID, string Name, CommandContext context = null, bool force = false)
+        public static bool LoadShipBlueprint(MyObjectBuilder_ShipBlueprintDefinition ShipBlueprint,
+            Vector3D PlayerPosition, bool KeepOriginalLocation, long SteamId, string Name, CommandContext Context = null, bool Force = false)
         {
-            var grids = shipBlueprint.CubeGrids;
+            var grids = ShipBlueprint.CubeGrids;
 
             if (grids == null || grids.Length == 0)
             {
 
-                Log.Warn("No grids in blueprint!");
+                log.Warn("No grids in blueprint!");
 
-                if (context != null)
-                    context.Respond("No grids in blueprint!");
+                if (Context != null)
+                    Context.Respond("No grids in blueprint!");
 
                 return false;
             }
@@ -223,26 +215,26 @@ namespace CrunchEconomy
             {
                 foreach (var block in grid.CubeBlocks)
                 {
-                    var ownerID = GetIdentityByNameOrId(steamID.ToString()).IdentityId;
-                    block.Owner = ownerID;
-                    block.BuiltBy = ownerID;
+                    var ownerId = GetIdentityByNameOrId(SteamId.ToString()).IdentityId;
+                    block.Owner = ownerId;
+                    block.BuiltBy = ownerId;
                 }
             }
 
             var objectBuilderList = new List<MyObjectBuilder_EntityBase>(grids.ToList());
 
-            if (!keepOriginalLocation)
+            if (!KeepOriginalLocation)
             {
 
                 /* Where do we want to paste the grids? Lets find out. */
-                var pos = FindPastePosition(grids, playerPosition);
+                var pos = FindPastePosition(grids, PlayerPosition);
                 if (pos == null)
                 {
 
-                    Log.Warn("No free Space found!");
+                    log.Warn("No free Space found!");
 
-                    if (context != null)
-                        context.Respond("No free space available!");
+                    if (Context != null)
+                        Context.Respond("No free space available!");
 
                     return false;
                 }
@@ -253,12 +245,12 @@ namespace CrunchEconomy
                 if (!UpdateGridsPosition(grids, newPosition))
                 {
 
-                    if (context != null)
-                        context.Respond("The File to be imported does not seem to be compatible with the server!");
+                    if (Context != null)
+                        Context.Respond("The File to be imported does not seem to be compatible with the server!");
 
                     return false;
                 }
-                var player = MySession.Static.Players.GetPlayerByName(GetIdentityByNameOrId(steamID.ToString()).DisplayName).Character;
+                var player = MySession.Static.Players.GetPlayerByName(GetIdentityByNameOrId(SteamId.ToString()).DisplayName).Character;
                 var gps = CreateGps(pos.Value, Color.LightGreen, 60, Name);
                 var gpsCollection = (MyGpsCollection)MyAPIGateway.Session?.GPS;
                 var gpsRef = gps;
@@ -266,7 +258,7 @@ namespace CrunchEconomy
                 entityId = gps.EntityId;
                 gpsCollection.SendAddGpsRequest(player.GetPlayerIdentityId(), ref gpsRef, entityId, true);
             }
-            else if (!force)
+            else if (!Force)
             {
 
                 var sphere = FindBoundingSphere(grids);
@@ -284,8 +276,8 @@ namespace CrunchEconomy
                     if (entity is MyCubeGrid)
                     {
 
-                        if (context != null)
-                            context.Respond("There are potentially other grids in the way. If you are certain is free you can set 'force' to true!");
+                        if (Context != null)
+                            Context.Respond("There are potentially other grids in the way. If you are certain is free you can set 'force' to true!");
 
                         return false;
                     }
@@ -319,7 +311,7 @@ namespace CrunchEconomy
 
             return true;
         }
-        private static MyGps CreateGps(Vector3D Position, Color gpsColor, int seconds, string Name)
+        private static MyGps CreateGps(Vector3D Position, Color GpsColor, int Seconds, string Name)
         {
 
             var gps = new MyGps
@@ -327,10 +319,10 @@ namespace CrunchEconomy
                 Coords = Position,
                 Name = Name.Split('_')[0],
                 DisplayName = Name.Split('_')[0] + " Paste Position",
-                GPSColor = gpsColor,
+                GPSColor = GpsColor,
                 IsContainerGPS = true,
                 ShowOnHud = true,
-                DiscardAt = new TimeSpan(0, 0, seconds, 0),
+                DiscardAt = new TimeSpan(0, 0, Seconds, 0),
                 Description = "Paste Position",
             };
             gps.UpdateHash();
@@ -339,7 +331,7 @@ namespace CrunchEconomy
             return gps;
         }
 
-        private static bool UpdateGridsPosition(MyObjectBuilder_CubeGrid[] grids, Vector3D newPosition)
+        private static bool UpdateGridsPosition(MyObjectBuilder_CubeGrid[] Grids, Vector3D NewPosition)
         {
 
             var firstGrid = true;
@@ -347,7 +339,7 @@ namespace CrunchEconomy
             double deltaY = 0;
             double deltaZ = 0;
 
-            foreach (var grid in grids)
+            foreach (var grid in Grids)
             {
 
                 var position = grid.PositionAndOrientation;
@@ -355,7 +347,7 @@ namespace CrunchEconomy
                 if (position == null)
                 {
 
-                    Log.Warn("Position and Orientation Information missing from Grid in file.");
+                    log.Warn("Position and Orientation Information missing from Grid in file.");
 
                     return false;
                 }
@@ -366,13 +358,13 @@ namespace CrunchEconomy
 
                 if (firstGrid)
                 {
-                    deltaX = newPosition.X - currentPosition.X;
-                    deltaY = newPosition.Y - currentPosition.Y;
-                    deltaZ = newPosition.Z - currentPosition.Z;
+                    deltaX = NewPosition.X - currentPosition.X;
+                    deltaY = NewPosition.Y - currentPosition.Y;
+                    deltaZ = NewPosition.Z - currentPosition.Z;
 
-                    currentPosition.X = newPosition.X;
-                    currentPosition.Y = newPosition.Y;
-                    currentPosition.Z = newPosition.Z;
+                    currentPosition.X = NewPosition.X;
+                    currentPosition.Y = NewPosition.Y;
+                    currentPosition.Z = NewPosition.Z;
 
                     firstGrid = false;
 
@@ -394,24 +386,24 @@ namespace CrunchEconomy
             return true;
         }
 
-        private static Vector3D? FindPastePosition(MyObjectBuilder_CubeGrid[] grids, Vector3D playerPosition)
+        private static Vector3D? FindPastePosition(MyObjectBuilder_CubeGrid[] Grids, Vector3D PlayerPosition)
         {
 
-            BoundingSphere sphere = FindBoundingSphere(grids);
+            BoundingSphere sphere = FindBoundingSphere(Grids);
 
             /* 
              * Now we know the radius that can house all grids which will now be 
              * used to determine the perfect place to paste the grids to. 
              */
-            return MyEntities.FindFreePlace(playerPosition, sphere.Radius);
+            return MyEntities.FindFreePlace(PlayerPosition, sphere.Radius);
         }
-        public static BoundingSphereD FindBoundingSphere(MyCubeGrid grid)
+        public static BoundingSphereD FindBoundingSphere(MyCubeGrid Grid)
         {
 
             Vector3? vector = null;
             var radius = 0F;
 
-            var obj = grid.GetObjectBuilder() as MyObjectBuilder_CubeGrid;
+            var obj = Grid.GetObjectBuilder() as MyObjectBuilder_CubeGrid;
             var gridSphere = obj.CalculateBoundingSphere();
 
             /* If this is the first run, we use the center of that grid, and its radius as it is */
@@ -449,13 +441,13 @@ namespace CrunchEconomy
 
             return new BoundingSphereD(vector.Value, radius);
         }
-        private static BoundingSphereD FindBoundingSphere(MyObjectBuilder_CubeGrid[] grids)
+        private static BoundingSphereD FindBoundingSphere(MyObjectBuilder_CubeGrid[] Grids)
         {
 
             Vector3? vector = null;
             var radius = 0F;
 
-            foreach (var grid in grids)
+            foreach (var grid in Grids)
             {
 
                 var gridSphere = grid.CalculateBoundingSphere();

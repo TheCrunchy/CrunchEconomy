@@ -9,15 +9,15 @@ namespace CrunchEconomy.Helpers
         {
             return MyBankingSystem.Static.TryGetAccountInfo(WalletId, out var info) ? info.Balance : 0L;
         }
-        public static void AddMoney(long WalletId, long amount)
+        public static void AddMoney(long WalletId, long Amount)
         {
-            MyBankingSystem.ChangeBalance(WalletId, amount);
+            MyBankingSystem.ChangeBalance(WalletId, Amount);
         }
-        public static void TakeMoney(long walletID, long amount)
+        public static void TakeMoney(long WalletId, long Amount)
         {
-            if (GetBalance(walletID) < amount) return;
-            amount = amount * -1;
-            MyBankingSystem.ChangeBalance(walletID, amount);
+            if (GetBalance(WalletId) < Amount) return;
+            Amount = Amount * -1;
+            MyBankingSystem.ChangeBalance(WalletId, Amount);
         }
     }
 }

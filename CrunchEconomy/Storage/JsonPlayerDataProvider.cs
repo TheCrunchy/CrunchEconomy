@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using CrunchEconomy.Contracts;
+using CrunchEconomy.Helpers;
 using CrunchEconomy.Storage.Interfaces;
 using CrunchEconomy.SurveyMissions;
 using NLog;
@@ -19,26 +20,26 @@ namespace CrunchEconomy.Storage
         public FileUtils Utils { get; set; } = new FileUtils();
         public Logger Log = LogManager.GetLogger("CrunchEcon-StorageProvider");
 
-        public Dictionary<Guid, Contract> _contractSave { get; set; } = new Dictionary<Guid, Contract>();
-        public Dictionary<Guid, SurveyMission> _surveySave { get; set; } = new Dictionary<Guid, SurveyMission>();
-        public Dictionary<ulong, PlayerData> playerData { get; set; } = new Dictionary<ulong, PlayerData>();
+        public Dictionary<Guid, Contract> ContractSave { get; set; } = new Dictionary<Guid, Contract>();
+        public Dictionary<Guid, SurveyMission> SurveySave { get; set; } = new Dictionary<Guid, SurveyMission>();
+        public Dictionary<ulong, PlayerData> PlayerData { get; set; } = new Dictionary<ulong, PlayerData>();
 
         public void Setup(Config Config)
         {
-            FolderLocation = CrunchEconCore.path;
+            FolderLocation = CrunchEconCore.Path;
         }
 
         public void SavePlayerData(PlayerData Data)
         {
             
-            Utils.WriteToJsonFile<PlayerData>($"{FolderLocation}//PlayerData//Data//{Data.steamId}.json", Data);
+            Utils.WriteToJsonFile<PlayerData>($"{FolderLocation}//PlayerData//Data//{Data.SteamId}.json", Data);
         }
 
         public SurveyMission LoadMission(Guid SurveyMission)
         {
-            var path = $"{CrunchEconCore.path}//PlayerData//Survey//InProgress//{SurveyMission}.json";
+            var path = $"{CrunchEconCore.Path}//PlayerData//Survey//InProgress//{SurveyMission}.json";
             if (!File.Exists(path)) return null;
-            var mission = CrunchEconCore.utils.ReadFromJsonFile<SurveyMission>(path);
+            var mission = CrunchEconCore.Utils.ReadFromJsonFile<SurveyMission>(path);
             if (mission == null) return null;
             mission.SetupMissionList();
             return mission;
@@ -52,7 +53,7 @@ namespace CrunchEconomy.Storage
                 var path = $"{FolderLocation}//PlayerData//Mining//InProgress//{id}.json";
                 if (!File.Exists(path)) continue;
                 if (temporary.ContainsKey(id)) continue;
-                var contract = CrunchEconCore.utils.ReadFromJsonFile<Contract>(path);
+                var contract = CrunchEconCore.Utils.ReadFromJsonFile<Contract>(path);
                 temporary.Add(id, contract);
             }
 
@@ -66,7 +67,7 @@ namespace CrunchEconomy.Storage
                 var path = $"{FolderLocation}//PlayerData//Hauling//InProgress//{id}.json";
                 if (!File.Exists(path)) continue;
                 if (temporary.ContainsKey(id)) continue;
-                var contract = CrunchEconCore.utils.ReadFromJsonFile<Contract>(path);
+                var contract = CrunchEconCore.Utils.ReadFromJsonFile<Contract>(path);
                 temporary.Add(id, contract);
             }
 
@@ -79,33 +80,33 @@ namespace CrunchEconomy.Storage
             {
                 return LoadPlayerData(SteamId);
             }
-            return playerData.TryGetValue(SteamId, out var data) ? data : LoadPlayerData(SteamId);
+            return PlayerData.TryGetValue(SteamId, out var data) ? data : LoadPlayerData(SteamId);
         }
 
         public PlayerData LoadPlayerData(ulong SteamId)
         {
             var data = Utils.ReadFromJsonFile<PlayerData>($"{FolderLocation}//PlayerData//Data//{SteamId}.json");
-            playerData.Remove(SteamId);
+            PlayerData.Remove(SteamId);
             if (data != null)
             {
-                playerData.Add(SteamId, data);
+                PlayerData.Add(SteamId, data);
                 return data;
             }
 
             File.Delete($"{FolderLocation}//PlayerData//Data//{SteamId}.json");
-            if (playerData.TryGetValue(SteamId, out var previousData))
+            if (PlayerData.TryGetValue(SteamId, out var previousData))
             {
                 Utils.WriteToJsonFile<PlayerData>($"{FolderLocation}//PlayerData//Data//{SteamId}.json", previousData);
-                playerData.Add(SteamId, previousData);
+                PlayerData.Add(SteamId, previousData);
                 Log.Error($"Corrupt Player Data, if they had a previous save before login, that has been restored. {SteamId}");
                 return previousData;
             }
 
             var temp = new PlayerData()
             {
-                steamId = SteamId
+                SteamId = SteamId
             };
-            playerData.Add(SteamId, temp);
+            PlayerData.Add(SteamId, temp);
             return temp;
         }
 
@@ -130,26 +131,26 @@ namespace CrunchEconomy.Storage
             {
                 File.Delete($"{FolderLocation}//PlayerData//Mining//InProgress//{Contract.ContractId}.json");
             }
-            _contractSave.Remove(Contract.ContractId);
-            _contractSave.Add(Contract.ContractId, Contract);
+            ContractSave.Remove(Contract.ContractId);
+            ContractSave.Add(Contract.ContractId, Contract);
         }
         public void AddSurveyToBeSaved(SurveyMission Mission, bool Delete = false)
         {
             if (Delete)
             {
-                File.Delete($"{FolderLocation}//PlayerData//Survey//InProgress//{Mission.id}.json");
+                File.Delete($"{FolderLocation}//PlayerData//Survey//InProgress//{Mission.Id}.json");
             }
-            _surveySave.Remove(Mission.id);
-            _surveySave.Add(Mission.id, Mission);
+            SurveySave.Remove(Mission.Id);
+            SurveySave.Add(Mission.Id, Mission);
         }
 
         public void SaveContracts()
         {
             string type;
-            foreach (var keys in _contractSave)
+            foreach (var keys in ContractSave)
             {
                 var contract = keys.Value;
-                switch (contract.type)
+                switch (contract.Type)
                 {
                     case ContractType.Mining:
                         type = "//Mining";
@@ -161,7 +162,7 @@ namespace CrunchEconomy.Storage
                         throw new ArgumentOutOfRangeException();
                 }
 
-                switch (contract.status)
+                switch (contract.Status)
                 {
                     case ContractStatus.InProgress:
                         Utils.WriteToJsonFile($"{FolderLocation}//PlayerData//{type}//InProgress//{contract.ContractId}.json", keys.Value);
@@ -177,30 +178,30 @@ namespace CrunchEconomy.Storage
                 }
 
             }
-            _contractSave.Clear();
+            ContractSave.Clear();
 
-            foreach (var keys in _surveySave)
+            foreach (var keys in SurveySave)
             {
                 var mission = keys.Value;
                 type = "//Survey";
 
-                switch (mission.status)
+                switch (mission.Status)
                 {
                     case ContractStatus.InProgress:
-                        Utils.WriteToJsonFile($"{FolderLocation}//PlayerData//{type}//InProgress//{mission.id}.json", keys.Value);
+                        Utils.WriteToJsonFile($"{FolderLocation}//PlayerData//{type}//InProgress//{mission.Id}.json", keys.Value);
                         break;
                     case ContractStatus.Completed:
-                        Utils.WriteToJsonFile($"{FolderLocation}//PlayerData//{type}//Completed//{mission.id}.json", keys.Value);
+                        Utils.WriteToJsonFile($"{FolderLocation}//PlayerData//{type}//Completed//{mission.Id}.json", keys.Value);
                         break;
                     case ContractStatus.Failed:
-                        Utils.WriteToJsonFile($"{FolderLocation}//PlayerData//{type}//Failed//{mission.id}.json", keys.Value);
+                        Utils.WriteToJsonFile($"{FolderLocation}//PlayerData//{type}//Failed//{mission.Id}.json", keys.Value);
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
 
             }
-            _surveySave.Clear();
+            SurveySave.Clear();
         }
 
     }

@@ -1,42 +1,43 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using CrunchEconomy.Helpers;
 using Sandbox.Game.World;
 
 namespace CrunchEconomy.ShipMarket
 {
     public class MarketList
     {
-        private int count = 0;
-        public Dictionary<int, MarketItem> items = new Dictionary<int, MarketItem>();
+        private int _count = 0;
+        public Dictionary<int, MarketItem> Items = new Dictionary<int, MarketItem>();
 
-        public MarketItem GetItem(int key)
+        public MarketItem GetItem(int Key)
         {
-            if (items.ContainsKey(key))
+            if (Items.ContainsKey(Key))
             {
-                return items[key];
+                return Items[Key];
             }
             return null;
         }
-        FileUtils utils = new FileUtils();
-        public Dictionary<Guid, int> tempKeys = new Dictionary<Guid, int>();
+        FileUtils _utils = new FileUtils();
+        public Dictionary<Guid, int> TempKeys = new Dictionary<Guid, int>();
         public void RefreshList()
         {
-            tempKeys.Clear();
-            foreach (var i in items)
+            TempKeys.Clear();
+            foreach (var i in Items)
             {
-                if (!tempKeys.ContainsKey(i.Value.ItemId))
+                if (!TempKeys.ContainsKey(i.Value.ItemId))
                 {
-                    tempKeys.Add(i.Value.ItemId, i.Key);
+                    TempKeys.Add(i.Value.ItemId, i.Key);
                 }
             }
-            items.Clear();
-            foreach (var s in Directory.GetFiles(CrunchEconCore.path + "//ShipMarket//ForSale"))
+            Items.Clear();
+            foreach (var s in Directory.GetFiles(CrunchEconCore.Path + "//ShipMarket//ForSale"))
             {
-                var item = utils.ReadFromJsonFile<MarketItem>(s);
-                if (tempKeys.ContainsKey(item.ItemId))
+                var item = _utils.ReadFromJsonFile<MarketItem>(s);
+                if (TempKeys.ContainsKey(item.ItemId))
                 {
-                    items.Add(tempKeys[item.ItemId], item);
+                    Items.Add(TempKeys[item.ItemId], item);
                 }
                 else
                 {
@@ -44,27 +45,27 @@ namespace CrunchEconomy.ShipMarket
                 }
             }
         }
-        public void BuyShip(int key, long BuyerId)
+        public void BuyShip(int Key, long BuyerId)
         {
-            if (items.ContainsKey(key))
+            if (Items.ContainsKey(Key))
             {
-                var item = items[key];
-                var SellerId = TryGetIdentity(item.SellerSteamId.ToString());
-                if (SellerId != null)
+                var item = Items[Key];
+                var sellerId = TryGetIdentity(item.SellerSteamId.ToString());
+                if (sellerId != null)
                 {
-                    EconUtils.addMoney(SellerId.IdentityId, item.Price);
-                    EconUtils.takeMoney(BuyerId, item.Price);
+                    EconUtils.AddMoney(sellerId.IdentityId, item.Price);
+                    EconUtils.TakeMoney(BuyerId, item.Price);
 
                 }
             }
         }
-        public static MyIdentity TryGetIdentity(string playerNameOrSteamId)
+        public static MyIdentity TryGetIdentity(string PlayerNameOrSteamId)
         {
             foreach (var identity in MySession.Static.Players.GetAllIdentities())
             {
-                if (identity.DisplayName == playerNameOrSteamId)
+                if (identity.DisplayName == PlayerNameOrSteamId)
                     return identity;
-                if (ulong.TryParse(playerNameOrSteamId, out var steamId))
+                if (ulong.TryParse(PlayerNameOrSteamId, out var steamId))
                 {
                     var id = MySession.Static.Players.TryGetSteamId(identity.IdentityId);
                     if (id == steamId)
@@ -76,16 +77,16 @@ namespace CrunchEconomy.ShipMarket
             }
             return null;
         }
-        public Boolean AddItem(MarketItem item)
+        public Boolean AddItem(MarketItem Item)
         {
             var added = false;
-            var attempt = count +=1;
+            var attempt = _count +=1;
             while (!added)
             {
-                if (!items.ContainsKey(attempt))
+                if (!Items.ContainsKey(attempt))
                 {
-                    items.Add(attempt, item);
-                    count = attempt;
+                    Items.Add(attempt, Item);
+                    _count = attempt;
                     return true;
                 }
                 attempt++;
@@ -93,11 +94,11 @@ namespace CrunchEconomy.ShipMarket
           
             return false;
         }
-        public Boolean RemoveItem(int item)
+        public Boolean RemoveItem(int Item)
         {
-            if (items.ContainsKey(item))
+            if (Items.ContainsKey(Item))
             {
-                items.Remove(item);
+                Items.Remove(Item);
                 return true;
             }
             return false;

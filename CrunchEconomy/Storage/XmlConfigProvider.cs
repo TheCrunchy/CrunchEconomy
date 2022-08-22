@@ -60,12 +60,12 @@ namespace CrunchEconomy.Storage
                 temp.FactionTags.Add("BOB");
                 temp.ListName = "LIST1";
 
-                Whitelist.values.Add(temp);
+                Whitelist.Values.Add(temp);
                 var temp2 = new WhitelistFile.Whitelist();
                 temp2.FactionTags.Add("CAR");
                 temp2.FactionTags.Add("BOB");
                 temp2.ListName = "LIST2";
-                Whitelist.values.Add(temp2);
+                Whitelist.Values.Add(temp2);
                 Utils.WriteToXmlFile<WhitelistFile>(FolderLocation + "\\Whitelist.xml", Whitelist, false);
             }
         }

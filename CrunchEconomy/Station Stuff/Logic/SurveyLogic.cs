@@ -23,45 +23,45 @@ namespace CrunchEconomy.Station_Stuff.Logic
 {
     public static class SurveyLogic
     {
-        public static Dictionary<ulong, DateTime> playerSurveyTimes = new Dictionary<ulong, DateTime>();
+        public static Dictionary<ulong, DateTime> PlayerSurveyTimes = new Dictionary<ulong, DateTime>();
         public static Dictionary<ulong, DateTime> MessageCooldowns = new Dictionary<ulong, DateTime>();
-        public static void GenerateNewSurveyMission(PlayerData data, MyPlayer player)
+        public static void GenerateNewSurveyMission(PlayerData Data, MyPlayer Player)
         {
             try
             {
                 List<IMyGps> playerList;
-                if (data.surveyMission != Guid.Empty)
+                if (Data.SurveyMission != Guid.Empty)
                 {
                     //   Log.Info("Has survey");
-                    var ShouldReturn = false;
-                    var mission = data.GetLoadedMission();
+                    var shouldReturn = false;
+                    var mission = Data.GetLoadedMission();
                     if (mission != null)
                     {
                         //   Log.Info("not null");
-                        var distance = Vector3.Distance(new Vector3(mission.CurrentPosX, mission.CurrentPosY, mission.CurrentPosZ), player.GetPosition());
-                        if (distance <= mission.getStage(mission.CurrentStage).RadiusNearLocationToBeInside)
+                        var distance = Vector3.Distance(new Vector3(mission.CurrentPosX, mission.CurrentPosY, mission.CurrentPosZ), Player.GetPosition());
+                        if (distance <= mission.GetStage(mission.CurrentStage).RadiusNearLocationToBeInside)
                         {
                             // Log.Info("within distance");
-                            if (playerSurveyTimes.TryGetValue(player.Id.SteamId, out var time))
+                            if (PlayerSurveyTimes.TryGetValue(Player.Id.SteamId, out var time))
                             {
                                 var seconds = DateTime.Now.Subtract(time);
 
-                                mission.getStage(mission.CurrentStage).Progress += Convert.ToInt32(seconds.TotalSeconds);
+                                mission.GetStage(mission.CurrentStage).Progress += Convert.ToInt32(seconds.TotalSeconds);
                                 //  Log.Info("progress " + mission.getStage(mission.CurrentStage).Progress);
-                                if (mission.getStage(mission.CurrentStage).Progress >= mission.getStage(mission.CurrentStage).SecondsToStayInArea)
+                                if (mission.GetStage(mission.CurrentStage).Progress >= mission.GetStage(mission.CurrentStage).SecondsToStayInArea)
                                 {
                                     // Log.Info("Completed");
-                                    mission.getStage(mission.CurrentStage).Completed = true;
+                                    mission.GetStage(mission.CurrentStage).Completed = true;
                                     //do rewards
-                                    var money = mission.getStage(mission.CurrentStage).CreditReward;
+                                    var money = mission.GetStage(mission.CurrentStage).CreditReward;
                                     if (CrunchEconCore.AlliancePluginEnabled)
                                     {
                                         //patch into alliances and process the payment there
                                         //contract.AmountPaid = contract.contractPrice;
                                         try
                                         {
-                                            var MethodInput = new object[] { player.Id.SteamId, money, "Survey", player.Character.PositionComp.GetPosition() };
-                                            money = (long)CrunchEconCore.AllianceTaxes?.Invoke(null, MethodInput);
+                                            var methodInput = new object[] { Player.Id.SteamId, money, "Survey", Player.Character.PositionComp.GetPosition() };
+                                            money = (long)CrunchEconCore.AllianceTaxes?.Invoke(null, methodInput);
 
                                         }
                                         catch (Exception ex)
@@ -69,50 +69,50 @@ namespace CrunchEconomy.Station_Stuff.Logic
                                             CrunchEconCore.Log.Error(ex);
                                         }
                                     }
-                                    if (mission.getStage(mission.CurrentStage).DoRareItemReward && data.SurveyReputation >= mission.getStage(mission.CurrentStage).MinimumRepRequiredForItem)
+                                    if (mission.GetStage(mission.CurrentStage).DoRareItemReward && Data.SurveyReputation >= mission.GetStage(mission.CurrentStage).MinimumRepRequiredForItem)
                                     {
-                                        if (MyDefinitionId.TryParse("MyObjectBuilder_" + mission.getStage(mission.CurrentStage).RewardItemType, mission.getStage(mission.CurrentStage).RewardItemSubType, out var reward))
+                                        if (MyDefinitionId.TryParse("MyObjectBuilder_" + mission.GetStage(mission.CurrentStage).RewardItemType, mission.GetStage(mission.CurrentStage).RewardItemSubType, out var reward))
                                         {
 
                                             var rand = new Random();
                                             var chance = rand.NextDouble();
-                                            if (chance <= mission.getStage(mission.CurrentStage).ItemRewardChance)
+                                            if (chance <= mission.GetStage(mission.CurrentStage).ItemRewardChance)
                                             {
 
                                                 var itemType = new MyInventoryItemFilter(reward.TypeId + "/" + reward.SubtypeName).ItemType;
-                                                if (player.Character.GetInventory() != null && player.Character.GetInventory().CanItemsBeAdded((MyFixedPoint)mission.getStage(mission.CurrentStage).ItemRewardAmount, itemType))
+                                                if (Player.Character.GetInventory() != null && Player.Character.GetInventory().CanItemsBeAdded((MyFixedPoint)mission.GetStage(mission.CurrentStage).ItemRewardAmount, itemType))
                                                 {
-                                                    player.Character.GetInventory().AddItems((MyFixedPoint)mission.getStage(mission.CurrentStage).ItemRewardAmount, (MyObjectBuilder_PhysicalObject)MyObjectBuilderSerializer.CreateNewObject(reward));
-                                                    CrunchEconCore.SendMessage("Survey", "Bonus item reward in character inventory.", Color.Gold, (long)player.Id.SteamId);
+                                                    Player.Character.GetInventory().AddItems((MyFixedPoint)mission.GetStage(mission.CurrentStage).ItemRewardAmount, (MyObjectBuilder_PhysicalObject)MyObjectBuilderSerializer.CreateNewObject(reward));
+                                                    CrunchEconCore.SendMessage("Survey", "Bonus item reward in character inventory.", Color.Gold, (long)Player.Id.SteamId);
                                                 }
                                             }
 
                                         }
                                     }
-                                    EconUtils.addMoney(player.Identity.IdentityId, money);
+                                    EconUtils.AddMoney(Player.Identity.IdentityId, money);
 
-                                    CrunchEconCore.SendMessage("Survey", mission.getStage(mission.CurrentStage).CompletionMessage, Color.Gold, (long)player.Id.SteamId);
-                                    data.SurveyReputation += mission.getStage(mission.CurrentStage).ReputationGain;
-                                    if (mission.getStage(mission.CurrentStage + 1) != null)
+                                    CrunchEconCore.SendMessage("Survey", mission.GetStage(mission.CurrentStage).CompletionMessage, Color.Gold, (long)Player.Id.SteamId);
+                                    Data.SurveyReputation += mission.GetStage(mission.CurrentStage).ReputationGain;
+                                    if (mission.GetStage(mission.CurrentStage + 1) != null)
                                     {
 
                                         mission.CurrentStage += 1;
-                                        if (data.SurveyReputation >= mission.getStage(mission.CurrentStage).MinimumReputation && data.SurveyReputation <= mission.getStage(mission.CurrentStage).MaximumReputation)
+                                        if (Data.SurveyReputation >= mission.GetStage(mission.CurrentStage).MinimumReputation && Data.SurveyReputation <= mission.GetStage(mission.CurrentStage).MaximumReputation)
                                         {
 
 
-                                            data.NextSurveyMission = data.NextSurveyMission.AddSeconds(60);
+                                            Data.NextSurveyMission = Data.NextSurveyMission.AddSeconds(60);
 
 
-                                            if (mission.getStage(mission.CurrentStage).FindRandomPositionAroundLocation)
+                                            if (mission.GetStage(mission.CurrentStage).FindRandomPositionAroundLocation)
 
                                             {
-                                                var gps = GpsHelper.ParseGPS(mission.getStage(1).LocationGPS);
+                                                var gps = GpsHelper.ParseGps(mission.GetStage(1).LocationGps);
 
-                                                if (mission.getStage(mission.CurrentStage).FindRandomPositionAroundLocation)
+                                                if (mission.GetStage(mission.CurrentStage).FindRandomPositionAroundLocation)
                                                 {
-                                                    var negative = System.Math.Abs(mission.getStage(mission.CurrentStage).RadiusToPickRandom) * (-1);
-                                                    var positive = mission.getStage(mission.CurrentStage).RadiusToPickRandom;
+                                                    var negative = System.Math.Abs(mission.GetStage(mission.CurrentStage).RadiusToPickRandom) * (-1);
+                                                    var positive = mission.GetStage(mission.CurrentStage).RadiusToPickRandom;
 
                                                     var rand = new Random();
                                                     var x = rand.Next(negative, positive);
@@ -126,151 +126,151 @@ namespace CrunchEconomy.Station_Stuff.Logic
                                                 mission.CurrentPosY = gps.Coords.Y;
                                                 mission.CurrentPosZ = gps.Coords.Z;
                                                 var sb = new StringBuilder();
-                                                sb.AppendLine(mission.getStage(mission.CurrentStage).GPSDescription);
+                                                sb.AppendLine(mission.GetStage(mission.CurrentStage).GpsDescription);
                                                 sb.AppendLine("");
-                                                sb.AppendLine("Reward: " + String.Format("{0:n0}", mission.getStage(mission.CurrentStage).CreditReward) + " SC.");
+                                                sb.AppendLine("Reward: " + String.Format("{0:n0}", mission.GetStage(mission.CurrentStage).CreditReward) + " SC.");
                                                 sb.AppendLine("");
                                                 sb.AppendLine("SURVEY LOCATION.");
                                                 gps.Description = sb.ToString();
                                                 gps.GPSColor = Color.Gold;
-                                                gps.Name = mission.getStage(mission.CurrentStage).GPSName;
+                                                gps.Name = mission.GetStage(mission.CurrentStage).GpsName;
                                                 gps.ShowOnHud = true;
                                                 gps.DiscardAt = new TimeSpan(6000);
 
                                                 var gpscol = (MyGpsCollection)MyAPIGateway.Session?.GPS;
-                                                gpscol.SendAddGpsRequest(player.Identity.IdentityId, ref gps);
+                                                gpscol.SendAddGpsRequest(Player.Identity.IdentityId, ref gps);
                                             }
                                             else
                                             {
-                                                var gps = GpsHelper.ParseGPS(mission.getStage(mission.CurrentStage).LocationGPS);
+                                                var gps = GpsHelper.ParseGps(mission.GetStage(mission.CurrentStage).LocationGps);
                                                 mission.CurrentPosX = gps.Coords.X;
                                                 mission.CurrentPosY = gps.Coords.Y;
                                                 mission.CurrentPosZ = gps.Coords.Z;
                                                 var sb = new StringBuilder();
-                                                sb.AppendLine(mission.getStage(mission.CurrentStage).GPSDescription);
+                                                sb.AppendLine(mission.GetStage(mission.CurrentStage).GpsDescription);
                                                 sb.AppendLine("");
-                                                sb.AppendLine("Reward: " + String.Format("{0:n0}", mission.getStage(mission.CurrentStage).CreditReward) + " SC.");
+                                                sb.AppendLine("Reward: " + String.Format("{0:n0}", mission.GetStage(mission.CurrentStage).CreditReward) + " SC.");
                                                 sb.AppendLine("");
                                                 sb.AppendLine("SURVEY LOCATION.");
                                                 gps.Description = sb.ToString();
                                                 gps.GPSColor = Color.Gold;
-                                                gps.Name = mission.getStage(mission.CurrentStage).GPSName;
+                                                gps.Name = mission.GetStage(mission.CurrentStage).GpsName;
                                                 gps.ShowOnHud = true;
                                                 gps.DiscardAt = new TimeSpan(6000);
 
                                                 var gpscol = (MyGpsCollection)MyAPIGateway.Session?.GPS;
-                                                gpscol.SendAddGpsRequest(player.Identity.IdentityId, ref gps);
+                                                gpscol.SendAddGpsRequest(Player.Identity.IdentityId, ref gps);
                                             }
                                         }
                                         else
                                         {
-                                            mission.status = ContractStatus.Completed;
-                                            data.SetLoadedSurvey(null);
-                                            data.surveyMission = Guid.Empty;
+                                            mission.Status = ContractStatus.Completed;
+                                            Data.SetLoadedSurvey(null);
+                                            Data.SurveyMission = Guid.Empty;
                                         }
 
                                         CrunchEconCore.PlayerStorageProvider.AddSurveyToBeSaved(mission, true);
-                                        CrunchEconCore.PlayerStorageProvider.playerData[player.Id.SteamId] = data;
-                                        CrunchEconCore.PlayerStorageProvider.SavePlayerData(data);
+                                        CrunchEconCore.PlayerStorageProvider.PlayerData[Player.Id.SteamId] = Data;
+                                        CrunchEconCore.PlayerStorageProvider.SavePlayerData(Data);
 
                                     }
                                     else
                                     {
-                                        mission.status = ContractStatus.Completed;
-                                        data.SetLoadedSurvey(null);
-                                        data.surveyMission = Guid.Empty;
+                                        mission.Status = ContractStatus.Completed;
+                                        Data.SetLoadedSurvey(null);
+                                        Data.SurveyMission = Guid.Empty;
                                         CrunchEconCore.PlayerStorageProvider.AddSurveyToBeSaved(mission, true);
-                                        CrunchEconCore.PlayerStorageProvider.playerData[player.Id.SteamId] = data;
-                                        CrunchEconCore.PlayerStorageProvider.SavePlayerData(data);
+                                        CrunchEconCore.PlayerStorageProvider.PlayerData[Player.Id.SteamId] = Data;
+                                        CrunchEconCore.PlayerStorageProvider.SavePlayerData(Data);
                                     }
-                                    playerSurveyTimes.Remove(player.Id.SteamId);
+                                    PlayerSurveyTimes.Remove(Player.Id.SteamId);
                                     playerList = new List<IMyGps>();
-                                    MySession.Static.Gpss.GetGpsList(player.Identity.IdentityId, playerList);
-                                    foreach (var gps in playerList.Where(gps => gps.Description != null && gps.Description.Contains("SURVEY LOCATION.")))
+                                    MySession.Static.Gpss.GetGpsList(Player.Identity.IdentityId, playerList);
+                                    foreach (var gps in playerList.Where(Gps => Gps.Description != null && Gps.Description.Contains("SURVEY LOCATION.")))
                                     {
-                                        MyAPIGateway.Session?.GPS.RemoveGps(player.Identity.IdentityId, gps);
+                                        MyAPIGateway.Session?.GPS.RemoveGps(Player.Identity.IdentityId, gps);
                                     }
 
 
                                     return;
                                 }
 
-                                if (MessageCooldowns.TryGetValue(player.Id.SteamId, out var time2))
+                                if (MessageCooldowns.TryGetValue(Player.Id.SteamId, out var time2))
                                 {
                                     if (DateTime.Now >= time2)
                                     {
                                         var message2 = new NotificationMessage();
 
-                                        message2 = new NotificationMessage("Progress " + mission.getStage(mission.CurrentStage).Progress + "/" + mission.getStage(mission.CurrentStage).SecondsToStayInArea, 2000, "Green");
+                                        message2 = new NotificationMessage("Progress " + mission.GetStage(mission.CurrentStage).Progress + "/" + mission.GetStage(mission.CurrentStage).SecondsToStayInArea, 2000, "Green");
                                         //this is annoying, need to figure out how to check the exact world time so a duplicate message isnt possible
 
-                                        ModCommunication.SendMessageTo(message2, player.Id.SteamId);
+                                        ModCommunication.SendMessageTo(message2, Player.Id.SteamId);
 
 
                                         // SendMessage("Survey", "Progress " + mission.getStage(mission.CurrentStage).Progress + "/" + mission.getStage(mission.CurrentStage).SecondsToStayInArea, Color.Gold, (long)player.Id.SteamId);
-                                        MessageCooldowns[player.Id.SteamId] = DateTime.Now.AddSeconds(1);
+                                        MessageCooldowns[Player.Id.SteamId] = DateTime.Now.AddSeconds(1);
                                     }
                                 }
                                 else
                                 {
                                     var message2 = new NotificationMessage();
 
-                                    message2 = new NotificationMessage("Progress " + mission.getStage(mission.CurrentStage).Progress + "/" + mission.getStage(mission.CurrentStage).SecondsToStayInArea, 2000, "Green");
+                                    message2 = new NotificationMessage("Progress " + mission.GetStage(mission.CurrentStage).Progress + "/" + mission.GetStage(mission.CurrentStage).SecondsToStayInArea, 2000, "Green");
                                     //this is annoying, need to figure out how to check the exact world time so a duplicate message isnt possible
 
-                                    ModCommunication.SendMessageTo(message2, player.Id.SteamId);
+                                    ModCommunication.SendMessageTo(message2, Player.Id.SteamId);
 
 
                                     // SendMessage("Survey", "Progress " + mission.getStage(mission.CurrentStage).Progress + "/" + mission.getStage(mission.CurrentStage).SecondsToStayInArea, Color.Gold, (long)player.Id.SteamId);
-                                    MessageCooldowns[player.Id.SteamId] = DateTime.Now.AddSeconds(1);
+                                    MessageCooldowns[Player.Id.SteamId] = DateTime.Now.AddSeconds(1);
                                 }
-                                data.NextSurveyMission = data.NextSurveyMission.AddSeconds(60);
-                                data.SetLoadedSurvey(mission);
-                                CrunchEconCore.PlayerStorageProvider.playerData[player.Id.SteamId] = data;
-                                playerSurveyTimes[player.Id.SteamId] = DateTime.Now;
-                                ShouldReturn = true;
+                                Data.NextSurveyMission = Data.NextSurveyMission.AddSeconds(60);
+                                Data.SetLoadedSurvey(mission);
+                                CrunchEconCore.PlayerStorageProvider.PlayerData[Player.Id.SteamId] = Data;
+                                PlayerSurveyTimes[Player.Id.SteamId] = DateTime.Now;
+                                shouldReturn = true;
 
                             }
                             else
                             {
-                                playerSurveyTimes.Add(player.Id.SteamId, DateTime.Now);
-                                ShouldReturn = true;
+                                PlayerSurveyTimes.Add(Player.Id.SteamId, DateTime.Now);
+                                shouldReturn = true;
                             }
-                            data.SetLoadedSurvey(mission);
-                            data.NextSurveyMission = DateTime.Now.AddSeconds(60);
+                            Data.SetLoadedSurvey(mission);
+                            Data.NextSurveyMission = DateTime.Now.AddSeconds(60);
                             CrunchEconCore.PlayerStorageProvider.AddSurveyToBeSaved(mission);
-                            CrunchEconCore.PlayerStorageProvider.playerData[player.Id.SteamId] = data;
+                            CrunchEconCore.PlayerStorageProvider.PlayerData[Player.Id.SteamId] = Data;
                             // utils.WriteToJsonFile<PlayerData>(path + "//PlayerData//Data//" + data.steamId + ".json", data);
                         }
                     }
-                    if (ShouldReturn)
+                    if (shouldReturn)
                     {
                         return;
                     }
                 }
 
-                if (DateTime.Now < data.NextSurveyMission) return;
+                if (DateTime.Now < Data.NextSurveyMission) return;
 
-                var newSurvey = ContractUtils.GetNewMission(data);
+                var newSurvey = ContractUtils.GetNewMission(Data);
                 if (newSurvey == null) return;
 
                 playerList = new List<IMyGps>();
-                MySession.Static.Gpss.GetGpsList(player.Identity.IdentityId, playerList);
-                foreach (var gps in playerList.Where(gps => gps.Description != null && gps.Description.Contains("SURVEY LOCATION.")))
+                MySession.Static.Gpss.GetGpsList(Player.Identity.IdentityId, playerList);
+                foreach (var gps in playerList.Where(Gps => Gps.Description != null && Gps.Description.Contains("SURVEY LOCATION.")))
                 {
-                    MyAPIGateway.Session?.GPS.RemoveGps(player.Identity.IdentityId, gps);
+                    MyAPIGateway.Session?.GPS.RemoveGps(Player.Identity.IdentityId, gps);
                 }
 
-                data.surveyMission = newSurvey.id;
-                if (newSurvey.getStage(1).FindRandomPositionAroundLocation)
+                Data.SurveyMission = newSurvey.Id;
+                if (newSurvey.GetStage(1).FindRandomPositionAroundLocation)
 
                 {
-                    var gps = GpsHelper.ParseGPS(newSurvey.getStage(1).LocationGPS);
+                    var gps = GpsHelper.ParseGps(newSurvey.GetStage(1).LocationGps);
 
-                    if (newSurvey.getStage(1).FindRandomPositionAroundLocation)
+                    if (newSurvey.GetStage(1).FindRandomPositionAroundLocation)
                     {
-                        var negative = System.Math.Abs(newSurvey.getStage(1).RadiusToPickRandom) * (-1);
-                        var positive = newSurvey.getStage(1).RadiusToPickRandom;
+                        var negative = System.Math.Abs(newSurvey.GetStage(1).RadiusToPickRandom) * (-1);
+                        var positive = newSurvey.GetStage(1).RadiusToPickRandom;
 
                         var rand = new Random();
                         var x = rand.Next(negative, positive);
@@ -284,55 +284,55 @@ namespace CrunchEconomy.Station_Stuff.Logic
                     newSurvey.CurrentPosY = gps.Coords.Y;
                     newSurvey.CurrentPosZ = gps.Coords.Z;
                     var sb = new StringBuilder();
-                    sb.AppendLine(newSurvey.getStage(1).GPSDescription);
+                    sb.AppendLine(newSurvey.GetStage(1).GpsDescription);
                     sb.AppendLine("");
-                    sb.AppendLine("Reward: " + String.Format("{0:n0}", newSurvey.getStage(1).CreditReward) + " SC.");
+                    sb.AppendLine("Reward: " + String.Format("{0:n0}", newSurvey.GetStage(1).CreditReward) + " SC.");
                     sb.AppendLine("");
                     sb.AppendLine("SURVEY LOCATION.");
                     gps.Description = sb.ToString();
                     gps.GPSColor = Color.Gold;
-                    gps.Name = newSurvey.getStage(1).GPSName;
+                    gps.Name = newSurvey.GetStage(1).GpsName;
                     gps.ShowOnHud = true;
                     gps.DiscardAt = new TimeSpan(6000);
 
                     var gpscol = (MyGpsCollection)MyAPIGateway.Session?.GPS;
-                    gpscol.SendAddGpsRequest(player.Identity.IdentityId, ref gps);
+                    gpscol.SendAddGpsRequest(Player.Identity.IdentityId, ref gps);
                 }
                 else
                 {
-                    var gps = GpsHelper.ParseGPS(newSurvey.getStage(1).LocationGPS);
+                    var gps = GpsHelper.ParseGps(newSurvey.GetStage(1).LocationGps);
                     newSurvey.CurrentPosX = gps.Coords.X;
                     newSurvey.CurrentPosY = gps.Coords.Y;
                     newSurvey.CurrentPosZ = gps.Coords.Z;
                     var sb = new StringBuilder();
-                    sb.AppendLine(newSurvey.getStage(1).GPSDescription);
+                    sb.AppendLine(newSurvey.GetStage(1).GpsDescription);
                     sb.AppendLine("");
-                    sb.AppendLine("Reward: " + String.Format("{0:n0}", newSurvey.getStage(1).CreditReward) + " SC.");
+                    sb.AppendLine("Reward: " + String.Format("{0:n0}", newSurvey.GetStage(1).CreditReward) + " SC.");
                     sb.AppendLine("");
                     sb.AppendLine("SURVEY LOCATION.");
                     gps.Description = sb.ToString();
                     gps.GPSColor = Color.Gold;
-                    gps.Name = newSurvey.getStage(1).GPSName;
+                    gps.Name = newSurvey.GetStage(1).GpsName;
                     gps.ShowOnHud = true;
                     gps.DiscardAt = new TimeSpan(6000);
 
                     var gpscol = (MyGpsCollection)MyAPIGateway.Session?.GPS;
-                    gpscol.SendAddGpsRequest(player.Identity.IdentityId, ref gps);
+                    gpscol.SendAddGpsRequest(Player.Identity.IdentityId, ref gps);
                 }
-                data.SetLoadedSurvey(newSurvey);
-                data.NextSurveyMission = DateTime.Now.AddSeconds(CrunchEconCore.config.SecondsBetweenSurveyMissions);
+                Data.SetLoadedSurvey(newSurvey);
+                Data.NextSurveyMission = DateTime.Now.AddSeconds(CrunchEconCore.Config.SecondsBetweenSurveyMissions);
                 CrunchEconCore.PlayerStorageProvider.AddSurveyToBeSaved(newSurvey);
 
-                CrunchEconCore.PlayerStorageProvider.playerData[player.Id.SteamId] = data;
-                CrunchEconCore.PlayerStorageProvider.SavePlayerData(data);
+                CrunchEconCore.PlayerStorageProvider.PlayerData[Player.Id.SteamId] = Data;
+                CrunchEconCore.PlayerStorageProvider.SavePlayerData(Data);
             }
             catch (Exception ex)
             {
                 CrunchEconCore.Log.Error(ex);
-                data.SetLoadedSurvey(null);
-                data.surveyMission = Guid.Empty;
-                CrunchEconCore.PlayerStorageProvider.playerData[player.Id.SteamId] = data;
-                CrunchEconCore.PlayerStorageProvider.SavePlayerData(data); 
+                Data.SetLoadedSurvey(null);
+                Data.SurveyMission = Guid.Empty;
+                CrunchEconCore.PlayerStorageProvider.PlayerData[Player.Id.SteamId] = Data;
+                CrunchEconCore.PlayerStorageProvider.SavePlayerData(Data); 
                 throw;
             }
         }

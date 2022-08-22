@@ -49,6 +49,7 @@ using static CrunchEconomy.Station_Stuff.Objects.Stations;
 using static CrunchEconomy.Contracts.GeneratedContract;
 using static CrunchEconomy.Station_Stuff.Objects.RepConfig;
 using System.Threading.Tasks;
+using CrunchEconomy.Helpers;
 using CrunchEconomy.Station_Stuff;
 using CrunchEconomy.Station_Stuff.Logic;
 using CrunchEconomy.Station_Stuff.Objects;
@@ -68,38 +69,38 @@ namespace CrunchEconomy
 
         public static Logger Log = LogManager.GetLogger("CrunchEcon");
 
-        public static Config config;
+        public static Config Config;
 
-        private TorchSessionManager sessionManager;
-        public static string path;
-        public static string basePath;
+        private TorchSessionManager _sessionManager;
+        public static string Path;
+        public static string BasePath;
 
-        public static bool paused = false;
+        public static bool Paused = false;
 
         public static IPlayerDataProvider PlayerStorageProvider { get; set; }
         public static IConfigProvider ConfigProvider { get; set; }
 
-        int ticks = 0;
-        public static void SendMessage(string author, string message, Color color, long steamID)
+        int _ticks = 0;
+        public static void SendMessage(string Author, string Message, Color Color, long SteamId)
         {
-            var _chatLog = LogManager.GetLogger("Chat");
+            var chatLog = LogManager.GetLogger("Chat");
             var scriptedChatMsg1 = new ScriptedChatMsg
             {
-                Author = author,
-                Text = message,
+                Author = Author,
+                Text = Message,
                 Font = "White",
-                Color = color,
-                Target = Sync.Players.TryGetIdentityId((ulong)steamID)
+                Color = Color,
+                Target = Sync.Players.TryGetIdentityId((ulong)SteamId)
             };
             var scriptedChatMsg2 = scriptedChatMsg1;
             MyMultiplayerBase.SendScriptedChatMessage(ref scriptedChatMsg2);
         }
 
         //got bored, this being async probably doesnt matter at all 
-        public static async void DoFactionShit(IPlayer p)
+        public static async void DoFactionShit(IPlayer P)
         {
 
-            var iden = GetIdentityByNameOrId(p.SteamId.ToString());
+            var iden = GetIdentityByNameOrId(P.SteamId.ToString());
             if (iden == null) return;
             var player = MySession.Static.Factions.TryGetPlayerFaction(iden.IdentityId) as MyFaction;
             await Task.Run(() =>
@@ -118,24 +119,24 @@ namespace CrunchEconomy
             });
         }
 
-        public static void Login(IPlayer player)
+        public static void Login(IPlayer Player)
         {
-            if (CrunchEconCore.config != null && !CrunchEconCore.config.PluginEnabled)
+            if (CrunchEconCore.Config != null && !CrunchEconCore.Config.PluginEnabled)
             {
                 return;
             }
-            if (player == null)
+            if (Player == null)
             {
                 return;
             }
 
-            DoFactionShit(player);
+            DoFactionShit(Player);
 
-            var data = PlayerStorageProvider.GetPlayerData(player.SteamId);
+            var data = PlayerStorageProvider.GetPlayerData(Player.SteamId);
             data.GetHaulingContracts();
             data.GetMiningContracts();
             data.GetMission();
-            var id = MySession.Static.Players.TryGetIdentityId(player.SteamId);
+            var id = MySession.Static.Players.TryGetIdentityId(Player.SteamId);
             if (id == 0)
             {
                 return;
@@ -147,7 +148,7 @@ namespace CrunchEconomy
                 MyAPIGateway.Session?.GPS.RemoveGps(id, gps);
             }
 
-            foreach (var c in data.GetMiningContracts().Values.Where(c => c.minedAmount >= c.amountToMineOrDeliver))
+            foreach (var c in data.GetMiningContracts().Values.Where(C => C.MinedAmount >= C.AmountToMineOrDeliver))
             {
                 c.DoPlayerGps(id);
             }
@@ -156,13 +157,13 @@ namespace CrunchEconomy
             {
                 c.DoPlayerGps(id);
             }
-            var iden = GetIdentityByNameOrId(player.SteamId.ToString());
+            var iden = GetIdentityByNameOrId(Player.SteamId.ToString());
             if (iden == null) return;
 
             var gpscol = (MyGpsCollection)MyAPIGateway.Session?.GPS;
 
             //this as linq no work
-            foreach (var gps in from stat in stations where stat.GiveGPSOnLogin where stat.getGPS() != null select stat.getGPS())
+            foreach (var gps in from stat in Stations where stat.GiveGpsOnLogin where stat.GetGps() != null select stat.GetGps())
             {
                 var myGps = gps;
                 myGps.DiscardAt = new TimeSpan(6000);
@@ -172,18 +173,18 @@ namespace CrunchEconomy
 
         public static bool AlliancePluginEnabled = false;
 
-        public static string GetPlayerName(ulong steamId)
+        public static string GetPlayerName(ulong SteamId)
         {
-            var id = GetIdentityByNameOrId(steamId.ToString());
-            return id?.DisplayName ?? steamId.ToString();
+            var id = GetIdentityByNameOrId(SteamId.ToString());
+            return id?.DisplayName ?? SteamId.ToString();
         }
-        public static MyIdentity GetIdentityByNameOrId(string playerNameOrSteamId)
+        public static MyIdentity GetIdentityByNameOrId(string PlayerNameOrSteamId)
         {
             foreach (var identity in MySession.Static.Players.GetAllIdentities())
             {
-                if (identity.DisplayName == playerNameOrSteamId)
+                if (identity.DisplayName == PlayerNameOrSteamId)
                     return identity;
-                if (!ulong.TryParse(playerNameOrSteamId, out var steamId)) continue;
+                if (!ulong.TryParse(PlayerNameOrSteamId, out var steamId)) continue;
                 var id = MySession.Static.Players.TryGetSteamId(identity.IdentityId);
                 if (id == steamId)
                     return identity;
@@ -198,41 +199,41 @@ namespace CrunchEconomy
             CrunchEconCore.Log.Info("Redoing station whitelists"); 
             Task.Run(() =>
             {
-                foreach (var station in stations)
+                foreach (var station in Stations)
                 {
                     StoresLogic.RefreshWhitelists(station);
                 }
             });
         }
 
-        public static Random rnd = new Random();
-        private DateTime NextWhitelist = DateTime.Now.AddMinutes(15);
+        public static Random Rnd = new Random();
+        private DateTime _nextWhitelist = DateTime.Now.AddMinutes(15);
         public override void Update()
         {
-            ticks++;
-            if (paused)
+            _ticks++;
+            if (Paused)
             {
                 return;
             }
-            if (CrunchEconCore.config == null)
+            if (CrunchEconCore.Config == null)
             {
                 return;
             }
-            if (!CrunchEconCore.config.PluginEnabled)
+            if (!CrunchEconCore.Config.PluginEnabled)
             {
                 return;
             }
 
-            if (ticks % 256 == 0 && TorchState == TorchSessionState.Loaded)
+            if (_ticks % 256 == 0 && TorchState == TorchSessionState.Loaded)
             {
 
                 foreach (var player in MySession.Static.Players.GetOnlinePlayers())
                 {
-                    if (config.MiningContractsEnabled || config.HaulingContractsEnabled)
+                    if (Config.MiningContractsEnabled || Config.HaulingContractsEnabled)
                     {
-                        if (DateTime.Now >= ContractUtils.chat)
+                        if (DateTime.Now >= ContractUtils.Chat)
                         {
-                            ContractUtils.chat = DateTime.Now.AddMinutes(10);
+                            ContractUtils.Chat = DateTime.Now.AddMinutes(10);
                             ContractLogic.DoContractDelivery(player, true);
                         }
                         else
@@ -241,25 +242,25 @@ namespace CrunchEconomy
                         }
                     }
 
-                    if (config == null || !config.SurveyContractsEnabled) continue;
+                    if (Config == null || !Config.SurveyContractsEnabled) continue;
                     var data = PlayerStorageProvider.GetPlayerData(player.Id.SteamId);
                     SurveyLogic.GenerateNewSurveyMission(data, player);
                 }
 
             }
 
-            if (ticks % 64 != 0 || TorchState != TorchSessionState.Loaded) return;
+            if (_ticks % 64 != 0 || TorchState != TorchSessionState.Loaded) return;
 
             PlayerStorageProvider.SaveContracts();
             var now = DateTime.Now;
-            foreach (var station in stations)
+            foreach (var station in Stations)
             {
                 //first check if its any, then we can load the grid to do the editing
                 CraftingLogic.DoCrafting(station, now);
                 StoresLogic.DoStationRefresh(station, now);
-                if (now < NextWhitelist) continue;
+                if (now < _nextWhitelist) continue;
                 RefreshWhitelists();
-                NextWhitelist = NextWhitelist.AddMinutes(15);
+                _nextWhitelist = _nextWhitelist.AddMinutes(15);
             }
 
         }
@@ -269,28 +270,28 @@ namespace CrunchEconomy
             ConfigProvider.SaveStation(Station);
         }
 
-        public static List<Stations> stations = new List<Stations>();
+        public static List<Stations> Stations = new List<Stations>();
 
 
-        public static FileUtils utils = new FileUtils();
+        public static FileUtils Utils = new FileUtils();
 
-        private void SessionChanged(ITorchSession session, TorchSessionState state)
+        private void SessionChanged(ITorchSession Session, TorchSessionState State)
         {
-            TorchState = state;
-            if (!CrunchEconCore.config.PluginEnabled && config != null)
+            TorchState = State;
+            if (!CrunchEconCore.Config.PluginEnabled && Config != null)
             {
                 return;
             }
 
-            if (state != TorchSessionState.Loaded) return;
+            if (State != TorchSessionState.Loaded) return;
 
 
-            ConfigProvider = new XmlConfigProvider(path);
-            PlayerStorageProvider = new JsonPlayerDataProvider(path);
+            ConfigProvider = new XmlConfigProvider(Path);
+            PlayerStorageProvider = new JsonPlayerDataProvider(Path);
 
-            if (config.SetMinPricesTo1)
+            if (Config.SetMinPricesTo1)
             {
-                sessionManager.AddOverrideMod(2825413709);
+                _sessionManager.AddOverrideMod(2825413709);
                 foreach (var def in MyDefinitionManager.Static.GetAllDefinitions())
                 {
                     if (def is MyComponentDefinition definition)
@@ -303,14 +304,14 @@ namespace CrunchEconomy
                     }
                 }
             }
-            session.Managers.GetManager<IMultiplayerManagerBase>().PlayerJoined += Login;
+            Session.Managers.GetManager<IMultiplayerManagerBase>().PlayerJoined += Login;
 
-            if (session.Managers.GetManager<PluginManager>().Plugins.TryGetValue(Guid.Parse("74796707-646f-4ebd-8700-d077a5f47af3"), out var All))
+            if (Session.Managers.GetManager<PluginManager>().Plugins.TryGetValue(Guid.Parse("74796707-646f-4ebd-8700-d077a5f47af3"), out var all))
             {
-                var alli = All.GetType().Assembly.GetType("AlliancesPlugin.AlliancePlugin");
+                var alli = all.GetType().Assembly.GetType("AlliancesPlugin.AlliancePlugin");
                 try
                 {
-                    AllianceTaxes = All.GetType().GetMethod("AddToTaxes", BindingFlags.Public | BindingFlags.Static, null, new Type[4] { typeof(ulong), typeof(long), typeof(string), typeof(Vector3D) }, null);
+                    AllianceTaxes = all.GetType().GetMethod("AddToTaxes", BindingFlags.Public | BindingFlags.Static, null, new Type[4] { typeof(ulong), typeof(long), typeof(string), typeof(Vector3D) }, null);
                     //    BackupGrid = GridBackupPlugin.GetType().GetMethod("BackupGridsManuallyWithBuilders", BindingFlags.Public | BindingFlags.Instance, null, new Type[2] { typeof(List<MyObjectBuilder_CubeGrid>), typeof(long) }, null);
                 }
                 catch (Exception ex)
@@ -318,7 +319,7 @@ namespace CrunchEconomy
                     Log.Error("Error getting alliance taxes");
 
                 }
-                Alliance = All;
+                Alliance = all;
                 AlliancePluginEnabled = true;
             }
 
@@ -372,28 +373,28 @@ namespace CrunchEconomy
             }
         }
 
-        public override void Init(ITorchBase torch)
+        public override void Init(ITorchBase Torch)
         {
 
-            base.Init(torch);
-            sessionManager = Torch.Managers.GetManager<TorchSessionManager>();
+            base.Init(Torch);
+            _sessionManager = base.Torch.Managers.GetManager<TorchSessionManager>();
 
-            if (sessionManager != null)
+            if (_sessionManager != null)
             {
-                sessionManager.SessionStateChanged += SessionChanged;
+                _sessionManager.SessionStateChanged += SessionChanged;
             }
-            basePath = StoragePath;
+            BasePath = StoragePath;
             SetupConfig();
-            path = CreatePath();
-            if (!CrunchEconCore.config.PluginEnabled)
+            Path = CreatePath();
+            if (!CrunchEconCore.Config.PluginEnabled)
             {
                 return;
             }
-            if (!Directory.Exists(path + "//Logs//"))
+            if (!Directory.Exists(Path + "//Logs//"))
             {
-                Directory.CreateDirectory(path + "//Logs//");
+                Directory.CreateDirectory(Path + "//Logs//");
             }
-            TorchBase = Torch;
+            TorchBase = base.Torch;
         }
 
         public static MethodInfo AllianceTaxes;
@@ -403,17 +404,17 @@ namespace CrunchEconomy
         public void SetupConfig()
         {
 
-            path = StoragePath;
+            Path = StoragePath;
 
             if (File.Exists(StoragePath + "\\CrunchEconomy.xml"))
             {
-                config = utils.ReadFromXmlFile<Config>(StoragePath + "\\CrunchEconomy.xml");
-                utils.WriteToXmlFile<Config>(StoragePath + "\\CrunchEconomy.xml", config, false);
+                Config = Utils.ReadFromXmlFile<Config>(StoragePath + "\\CrunchEconomy.xml");
+                Utils.WriteToXmlFile<Config>(StoragePath + "\\CrunchEconomy.xml", Config, false);
             }
             else
             {
-                config = new Config();
-                utils.WriteToXmlFile<Config>(StoragePath + "\\CrunchEconomy.xml", config, false);
+                Config = new Config();
+                Utils.WriteToXmlFile<Config>(StoragePath + "\\CrunchEconomy.xml", Config, false);
             }
 
         }
@@ -421,18 +422,18 @@ namespace CrunchEconomy
         {
 
             var folder = "";
-            folder = config.StoragePath.Equals("default") ? Path.Combine(StoragePath + "//CrunchEcon//") : config.StoragePath;
+            folder = Config.StoragePath.Equals("default") ? System.IO.Path.Combine(StoragePath + "//CrunchEcon//") : Config.StoragePath;
             var folder2 = "";
             Directory.CreateDirectory(folder);
-            folder2 = Path.Combine(StoragePath + "//CrunchEcon//");
+            folder2 = System.IO.Path.Combine(StoragePath + "//CrunchEcon//");
             Directory.CreateDirectory(folder2);
-            if (config.StoragePath.Equals("default"))
+            if (Config.StoragePath.Equals("default"))
             {
-                folder2 = Path.Combine(StoragePath + "//CrunchEcon//");
+                folder2 = System.IO.Path.Combine(StoragePath + "//CrunchEcon//");
             }
             else
             {
-                folder2 = config.StoragePath + "//CrunchEcon//";
+                folder2 = Config.StoragePath + "//CrunchEcon//";
             }
 
             Directory.CreateDirectory(folder2);
@@ -446,8 +447,8 @@ namespace CrunchEconomy
         {
             var utils = new FileUtils();
 
-            config = utils.ReadFromXmlFile<Config>(basePath + "\\CrunchEconomy.xml");
-            return config;
+            Config = utils.ReadFromXmlFile<Config>(BasePath + "\\CrunchEconomy.xml");
+            return Config;
         }
     }
 }

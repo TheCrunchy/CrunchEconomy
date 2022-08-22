@@ -1,42 +1,33 @@
 ﻿using Sandbox.Game.Entities;
 using Sandbox.Game.World;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using VRage.Game.ModAPI;
 
-
-namespace CrunchEconomy
+namespace CrunchEconomy.Helpers
 {
     public class FacUtils
     {
-        public static IMyFaction GetPlayersFaction(long playerId)
+        public static IMyFaction GetPlayersFaction(long PlayerId)
         {
-            return MySession.Static.Factions.TryGetPlayerFaction(playerId);
+            return MySession.Static.Factions.TryGetPlayerFaction(PlayerId);
         }
 
-        public static bool InSameFaction(long player1, long player2)
+        public static bool InSameFaction(long Player1, long Player2)
         {
-            var faction1 = GetPlayersFaction(player1);
-            var faction2 = GetPlayersFaction(player2);
+            var faction1 = GetPlayersFaction(Player1);
+            var faction2 = GetPlayersFaction(Player2);
             return faction1 == faction2;
         }
 
-        public static string GetFactionTag(long playerId)
+        public static string GetFactionTag(long PlayerId)
         {
-            var faction = MySession.Static.Factions.TryGetPlayerFaction(playerId);
+            var faction = MySession.Static.Factions.TryGetPlayerFaction(PlayerId);
 
-            if (faction == null)
-                return "";
-
-            return faction.Tag;
+            return faction == null ? "" : faction.Tag;
         }
-        public static long GetOwner(MyCubeGrid grid)
+        public static long GetOwner(MyCubeGrid Grid)
         {
 
-            var gridOwnerList = grid.BigOwners;
+            var gridOwnerList = Grid.BigOwners;
             var ownerCnt = gridOwnerList.Count;
             var gridOwner = 0L;
 
@@ -48,21 +39,21 @@ namespace CrunchEconomy
             return gridOwner;
         }
 
-        public static bool IsOwnerOrFactionOwned(MyCubeGrid grid, long playerId, bool doFactionCheck)
+        public static bool IsOwnerOrFactionOwned(MyCubeGrid Grid, long PlayerId, bool DoFactionCheck)
         {
-            if (grid.BigOwners.Contains(playerId))
+            if (Grid.BigOwners.Contains(PlayerId))
             {
                 return true;
             }
             else
             {
-                if (!doFactionCheck)
+                if (!DoFactionCheck)
                 {
                     return false;
                 }
-                var ownerId = GetOwner(grid);
+                var ownerId = GetOwner(Grid);
                 //check if the owner is a faction member, i honestly dont know the difference between grid.BigOwners and grid.SmallOwners
-                return FacUtils.InSameFaction(playerId, ownerId);
+                return FacUtils.InSameFaction(PlayerId, ownerId);
             }
         }
 

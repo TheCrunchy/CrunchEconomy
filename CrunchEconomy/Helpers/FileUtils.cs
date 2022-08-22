@@ -1,25 +1,19 @@
-﻿namespace CrunchEconomy
-{
-    using Newtonsoft.Json;
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
-    using System.Xml;
-    using System.Xml.Serialization;
+﻿using System.IO;
+using System.Xml.Serialization;
+using Newtonsoft.Json;
 
+namespace CrunchEconomy.Helpers
+{
     public class FileUtils
     {
 
-        public void WriteToJsonFile<T>(string filePath, T objectToWrite, bool append = false) where T : new()
+        public void WriteToJsonFile<T>(string FilePath, T ObjectToWrite, bool Append = false) where T : new()
         {
             TextWriter writer = null;
             try
             {
-                var contentsToWriteToFile = JsonConvert.SerializeObject(objectToWrite, Newtonsoft.Json.Formatting.Indented);
-                writer = new StreamWriter(filePath, append);
+                var contentsToWriteToFile = JsonConvert.SerializeObject(ObjectToWrite, Newtonsoft.Json.Formatting.Indented);
+                writer = new StreamWriter(FilePath, Append);
                 writer.Write(contentsToWriteToFile);
             }
             finally
@@ -28,12 +22,12 @@
             }
         }
 
-        public T ReadFromJsonFile<T>(string filePath) where T : new()
+        public T ReadFromJsonFile<T>(string FilePath) where T : new()
         {
             TextReader reader = null;
             try
             {
-                reader = new StreamReader(filePath);
+                reader = new StreamReader(FilePath);
                 var fileContents = reader.ReadToEnd();
                 return JsonConvert.DeserializeObject<T>(fileContents);
             }
@@ -43,14 +37,14 @@
             }
         }
 
-        public void WriteToXmlFile<T>(string filePath, T objectToWrite, bool append = false) where T : new()
+        public void WriteToXmlFile<T>(string FilePath, T ObjectToWrite, bool Append = false) where T : new()
         {
             TextWriter writer = null;
             try
             {
                 var serializer = new XmlSerializer(typeof(T));
-                writer = new StreamWriter(filePath, append);
-                serializer.Serialize(writer, objectToWrite);
+                writer = new StreamWriter(FilePath, Append);
+                serializer.Serialize(writer, ObjectToWrite);
             }
             finally
             {
@@ -58,13 +52,13 @@
             }
         }
 
-        public T ReadFromXmlFile<T>(string filePath) where T : new()
+        public T ReadFromXmlFile<T>(string FilePath) where T : new()
         {
             TextReader reader = null;
             try
             {
                 var serializer = new XmlSerializer(typeof(T));
-                reader = new StreamReader(filePath);
+                reader = new StreamReader(FilePath);
                 return (T)serializer.Deserialize(reader);
             }
             finally
