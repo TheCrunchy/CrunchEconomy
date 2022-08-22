@@ -224,7 +224,7 @@ namespace CrunchEconomy.Storage
         public void LoadAllBuyOrders()
         {
             BuyOrders.Clear();
-            foreach (var s in Directory.GetDirectories(FolderLocation + "//BuyOrders//", "*", SearchOption.AllDirectories))
+            foreach (var s in Directory.GetFiles(FolderLocation + "//BuyOrders//", "*", SearchOption.AllDirectories))
             {
                 var temp = new DirectoryInfo(s).Name;
                 var temporaryList = new List<BuyOrder>();
@@ -255,7 +255,7 @@ namespace CrunchEconomy.Storage
         public void LoadAllSellOffers()
         {
             SellOffers.Clear();
-            foreach (var s in Directory.GetDirectories(FolderLocation + "//SellOffers//", "*", SearchOption.AllDirectories))
+            foreach (var s in Directory.GetFiles(FolderLocation + "//SellOffers//", "*", SearchOption.AllDirectories))
             {
                 var temp = new DirectoryInfo(s).Name;
                 var temporaryList = new List<SellOffer>();
