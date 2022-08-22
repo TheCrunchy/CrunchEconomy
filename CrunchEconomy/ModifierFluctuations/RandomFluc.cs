@@ -2,6 +2,6 @@
 {
     public class RandomFluc
     {
-        public enum RandomStationFluctuation { UP, DOWN, BETWEEN };
+        public enum RandomStationFluctuation { Up, Down, Between };
     }
 }

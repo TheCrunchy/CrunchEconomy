@@ -9,7 +9,7 @@ namespace CrunchEconomy.Contracts
     public class RewardItem
     {
         public Boolean Enabled = false;
-        public double chance = 1;
+        public double Chance = 1;
         public int ItemMinAmount = 1;
         public int ItemMaxAmount = 2;
         public string TypeId = "Ingot";

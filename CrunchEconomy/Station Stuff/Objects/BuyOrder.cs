@@ -6,14 +6,14 @@ namespace CrunchEconomy.Station_Stuff.Objects
     {
         public Boolean Enabled = false;
         public string StationModifierItemName = "Example 100%";
-        public string typeId = "Ore";
-        public string subtypeId = "Iron";
-        public int minAmount = 10;
-        public int maxAmount = 500;
-        public long minPrice = 1;
-        public long maxPrice = 3;
+        public string TypeId = "Ore";
+        public string SubtypeId = "Iron";
+        public int MinAmount = 10;
+        public int MaxAmount = 500;
+        public long MinPrice = 1;
+        public long MaxPrice = 3;
 
-        public double chance = 0.5;
+        public double Chance = 0.5;
 
         public Boolean DeleteTheseItemsInCargOnRefresh = false;
 
@@ -22,8 +22,8 @@ namespace CrunchEconomy.Station_Stuff.Objects
         public string FactionTagOwnerForCancelling = "GAIA";
 
         public Boolean IndividualRefreshTimer = false;
-        public DateTime nextRefresh = DateTime.Now;
+        public DateTime NextRefresh = DateTime.Now;
         public int SecondsBetweenRefresh = 600;
-        public string path = "ignore me";
+        public string Path = "ignore me";
     }
 }

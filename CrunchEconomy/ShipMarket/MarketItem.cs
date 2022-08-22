@@ -17,23 +17,23 @@ namespace CrunchEconomy.ShipMarket
         public Dictionary<string, MyFixedPoint> Cargo = new Dictionary<string, MyFixedPoint>();
         public string Name;
         public List<String> GridTags;
-        public int PCU;
+        public int Pcu;
         public string Description;
         public int BlockCount;
        public float GridMass;
 
-        public void AddTag(string tag)
+        public void AddTag(string Tag)
         {
-            if (!GridTags.Contains(tag))
+            if (!GridTags.Contains(Tag))
             {
-                GridTags.Add(tag);
+                GridTags.Add(Tag);
             }
         }
-        public void RemoveTag(string tag)
+        public void RemoveTag(string Tag)
         {
-            if (GridTags.Contains(tag))
+            if (GridTags.Contains(Tag))
             {
-                GridTags.Remove(tag);
+                GridTags.Remove(Tag);
             }
         }
         public List<String> GetLowerTags()
@@ -46,18 +46,18 @@ namespace CrunchEconomy.ShipMarket
             return l;
         }
         public ItemStatus Status;
-        public DateTime soldAt;
+        public DateTime SoldAt;
         public ulong Buyer;
-        public void Setup(List<MyCubeGrid> grids, string name, long price, ulong SteamId)
+        public void Setup(List<MyCubeGrid> Grids, string Name, long Price, ulong SteamId)
         {
             Status = ItemStatus.Listed;
-            this.Name = name;
-            this.Price = price;
+            this.Name = Name;
+            this.Price = Price;
             this.SellerSteamId = SteamId;
             this.Description = "Not set.";
-            foreach (var grid in grids)
+            foreach (var grid in Grids)
             {
-                this.PCU += grid.BlocksPCU;
+                this.Pcu += grid.BlocksPCU;
                 this.BlockCount += grid.BlocksCount;
                this.GridMass += grid.Mass;
                 foreach (var block in grid.GetFatBlocks())
@@ -87,40 +87,40 @@ namespace CrunchEconomy.ShipMarket
                 }
             }
         }
-        public void AddToCargo(MyDefinitionId id, MyFixedPoint amount)
+        public void AddToCargo(MyDefinitionId Id, MyFixedPoint Amount)
         {
-            if (Cargo.ContainsKey(id.ToString()))
+            if (Cargo.ContainsKey(Id.ToString()))
             {
-                Cargo[id.ToString()] += amount;
+                Cargo[Id.ToString()] += Amount;
             }
             else
             {
-                Cargo.Add(id.ToString(), amount);
+                Cargo.Add(Id.ToString(), Amount);
             }
         }
-        public void AddToBlockCounts(string type, string subtype)
+        public void AddToBlockCounts(string Type, string Subtype)
         {
-            if (CountsOfBlocks.TryGetValue(type, out var counts))
+            if (CountsOfBlocks.TryGetValue(Type, out var counts))
             {
-                if (counts.ContainsKey(subtype))
+                if (counts.ContainsKey(Subtype))
                 {
                     //     blockCounts.Remove(type);
                     //     blockCounts.Add(type, value++);
 
                     //     Does this work?
-                    counts[subtype]++;
+                    counts[Subtype]++;
                 }
                 else
                 {
-                    counts.Add(subtype, 1);
+                    counts.Add(Subtype, 1);
                 }
 
             }
             else
             {
                 var temp = new Dictionary<string, int>();
-                temp.Add(subtype, 1);
-                CountsOfBlocks.Add(type, temp);
+                temp.Add(Subtype, 1);
+                CountsOfBlocks.Add(Type, temp);
             }
         }
     }

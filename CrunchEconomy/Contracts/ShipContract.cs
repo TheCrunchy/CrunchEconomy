@@ -17,7 +17,7 @@ namespace CrunchEconomy.Contracts
     public class ShipContract
     {
         public string Name = "Example";
-        public ContractStatus status = ContractStatus.InProgress;
+        public ContractStatus Status = ContractStatus.InProgress;
         public Guid ContractId = Guid.Empty;
         public long BasePrice = 50000;
         public long BonusIfBelowStock = 50000;
@@ -30,32 +30,32 @@ namespace CrunchEconomy.Contracts
         public List<RewardItem> PlayerLoot = new List<RewardItem>();
         public List<RewardItem> PutInStation = new List<RewardItem>();
         public long StationEntityId = 0;
-        public List<ShipItem> blocksRequired = new List<ShipItem>();
+        public List<ShipItem> BlocksRequired = new List<ShipItem>();
 
         public String DeliveryLocation;
-        public void DoPlayerGps(long identityId)
+        public void DoPlayerGps(long IdentityId)
         {
             var gpscol = (MyGpsCollection)MyAPIGateway.Session?.GPS;
             var sb = new StringBuilder();
             sb.AppendLine("Deliver grid !contract info");
             sb.AppendLine("Contract Delivery Location.");
-            if (GpsHelper.ParseGPS(DeliveryLocation) == null) return;
-            var gpsRef = GpsHelper.ParseGPS(DeliveryLocation);
+            if (GpsHelper.ParseGps(DeliveryLocation) == null) return;
+            var gpsRef = GpsHelper.ParseGps(DeliveryLocation);
             gpsRef.GPSColor = Color.DarkOrange;
             gpsRef.ShowOnHud = true;
             gpsRef.Description = sb.ToString();
             gpsRef.DisplayName = "Grid Delivery Location. ";
             gpsRef.Name = "Grid Delivery Location. ";
             gpsRef.DiscardAt = new TimeSpan(600);
-            gpscol.SendAddGpsRequest(identityId, ref gpsRef);
+            gpscol.SendAddGpsRequest(IdentityId, ref gpsRef);
         }
-        public Vector3 getCoords()
+        public Vector3 GetCoords()
         {
             var sb = new StringBuilder();
             sb.AppendLine("Deliver grid !contract info");
             sb.AppendLine("Contract Delivery Location.");
-            if (GpsHelper.ParseGPS(DeliveryLocation) == null) return new Vector3(0, 0, 0);
-            var gpsRef = GpsHelper.ParseGPS(DeliveryLocation);
+            if (GpsHelper.ParseGps(DeliveryLocation) == null) return new Vector3(0, 0, 0);
+            var gpsRef = GpsHelper.ParseGps(DeliveryLocation);
             gpsRef.GPSColor = Color.DarkOrange;
             gpsRef.ShowOnHud = true;
             gpsRef.Description = sb.ToString();

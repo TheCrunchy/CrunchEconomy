@@ -8,12 +8,12 @@ namespace CrunchEconomy.Contracts
 {
     public class GeneratedContract
     {
-        public ContractType type = ContractType.Mining;
+        public ContractType Type = ContractType.Mining;
         public string Name = "Example1";
         public Boolean Enabled = false;
         public int ReputationGain = 1;
-        public int minimum = 450000;
-        public int maximum = 500000;
+        public int Minimum = 450000;
+        public int Maximum = 500000;
         public double PricePerOre = 450;
         public Boolean PutTheHaulInStation = false;
         public Boolean SpawnItemsInPlayerInvent = false;
@@ -22,13 +22,13 @@ namespace CrunchEconomy.Contracts
         public List<RewardItem> PutInStation = new List<RewardItem>();
         public int CooldownInSeconds = 1;
         public List<ContractInfo> ItemsToPickFrom = new List<ContractInfo>();
-        public bool BuyingGivesGPS = false;
-        public List<string> gpsToPickFrom = new List<string>();
+        public bool BuyingGivesGps = false;
+        public List<string> GpsToPickFrom = new List<string>();
         public class ContractInfo
         {
             public string TypeId = "Ore";
             public string SubTypeId = "Stone";
-            public float chance = 100;
+            public float Chance = 100;
        
         }
         public List<StationDelivery> StationsToDeliverTo = new List<StationDelivery>();
@@ -36,7 +36,7 @@ namespace CrunchEconomy.Contracts
         public class StationDelivery
         {
             public string Name = "TAKEN";
-            public double chance = 100;
+            public double Chance = 100;
            
         }
     }

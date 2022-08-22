@@ -15,10 +15,10 @@ namespace CrunchEconomy
         public string StoreBlockName = "EXAMPLESGRIDSTORE";
         public string OwnerFactionTag = "GAIA";
         public string ExportedGridName = "BOB";
-        public Boolean GiveOwnerShipToNPC = false;
+        public Boolean GiveOwnerShipToNpc = false;
 
         public Boolean PayPercentageToPlayer = false;
-        public ulong steamId = 0;
-        public double percentage = 0.05;
+        public ulong SteamId = 0;
+        public double Percentage = 0.05;
     }
 }

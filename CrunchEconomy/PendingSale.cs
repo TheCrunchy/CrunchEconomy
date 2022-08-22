@@ -9,8 +9,8 @@ namespace CrunchEconomy
 {
    public class PendingSale
     {
-        public ulong steamid;
-        public GridSale grid;
+        public ulong Steamid;
+        public GridSale Grid;
         public MyGps Location;
 
     }

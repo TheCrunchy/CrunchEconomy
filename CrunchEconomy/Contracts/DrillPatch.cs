@@ -25,9 +25,9 @@ namespace CrunchEconomy.Contracts
     [PatchShim]
     public static class DrillPatch
     {
-        public static readonly Logger Log = LogManager.GetCurrentClassLogger();
+        public static readonly Logger log = LogManager.GetCurrentClassLogger();
 
-        public static List<MyGps> locations = new List<MyGps>();
+        public static List<MyGps> Locations = new List<MyGps>();
 
 
         internal static readonly MethodInfo update =
@@ -39,17 +39,17 @@ namespace CrunchEconomy.Contracts
             throw new Exception("Failed to find patch method");
 
 
-        public static MyGps GenerateDeliveryLocation(Vector3 location, Contract contract)
+        public static MyGps GenerateDeliveryLocation(Vector3 Location, Contract Contract)
         {
             float distance = 0;
             MyGps closest = null;
-            locations.Clear();
-            foreach (var station in CrunchEconCore.stations.Where(station => station.getGPS() != null))
+            Locations.Clear();
+            foreach (var station in CrunchEconCore.Stations.Where(Station => Station.GetGps() != null))
             {
-                locations.Add(station.getGPS());
+                Locations.Add(station.GetGps());
             }
 
-            foreach (var gps in locations)
+            foreach (var gps in Locations)
             {
                 if (distance == 0)
                 {
@@ -57,105 +57,105 @@ namespace CrunchEconomy.Contracts
                 }
                 else
                 {
-                    var d = Vector3.Distance(gps.Coords, location);
+                    var d = Vector3.Distance(gps.Coords, Location);
                     if (!(d < distance)) continue;
                     distance = d;
                     closest = gps;
                 }
             }
-            closest.Description = "Deliver " + contract.amountToMineOrDeliver + " " + contract.SubType + " Ore. !contract info";
-            closest.DisplayName = "Ore Delivery Location. " + contract.SubType;
-            closest.Name = "Ore Delivery Location. " + contract.SubType;
+            closest.Description = "Deliver " + Contract.AmountToMineOrDeliver + " " + Contract.SubType + " Ore. !contract info";
+            closest.DisplayName = "Ore Delivery Location. " + Contract.SubType;
+            closest.Name = "Ore Delivery Location. " + Contract.SubType;
             closest.DiscardAt = new TimeSpan(600);
             return closest;
         }
-        public static Dictionary<ulong, DateTime> messageCooldown = new Dictionary<ulong, DateTime>();
+        public static Dictionary<ulong, DateTime> MessageCooldown = new Dictionary<ulong, DateTime>();
 
-        public static void Patch(PatchContext ctx)
+        public static void Patch(PatchContext Ctx)
         {
 
-            ctx.GetPattern(update).Suffixes.Add(updatePatch);
+            Ctx.GetPattern(update).Suffixes.Add(updatePatch);
 
-            Log.Info("Patching Successful CrunchDrill!");
+            log.Info("Patching Successful CrunchDrill!");
 
         }
 
-        public static Type drill = null;
-        public static void TestPatchMethod(MyDrillBase __instance, MyVoxelMaterialDefinition material,
-      VRageMath.Vector3 hitPosition,
-      int removedAmount,
-      bool onlyCheck)
+        public static Type Drill = null;
+        public static void TestPatchMethod(MyDrillBase Instance, MyVoxelMaterialDefinition Material,
+      VRageMath.Vector3 HitPosition,
+      int RemovedAmount,
+      bool OnlyCheck)
         {
         
-            if (CrunchEconCore.config == null)
+            if (CrunchEconCore.Config == null)
             {
                 return;
             }
-            if (!CrunchEconCore.config.PatchesEnabled)
+            if (!CrunchEconCore.Config.PatchesEnabled)
             {
                 return;
             }
-            if (!CrunchEconCore.config.MiningContractsEnabled)
+            if (!CrunchEconCore.Config.MiningContractsEnabled)
             {
                 return;
             }
 
-            if (__instance.OutputInventory == null || __instance.OutputInventory.Owner == null) return;
-            if (!(__instance.OutputInventory.Owner.GetBaseEntity() is MyShipDrill shipDrill)) return;
-            if (drill == null)
+            if (Instance.OutputInventory == null || Instance.OutputInventory.Owner == null) return;
+            if (!(Instance.OutputInventory.Owner.GetBaseEntity() is MyShipDrill shipDrill)) return;
+            if (Drill == null)
             {
-                drill = __instance.GetType();
+                Drill = Instance.GetType();
             }
 
-            if (string.IsNullOrEmpty(material.MinedOre))
+            if (string.IsNullOrEmpty(Material.MinedOre))
                 return;
 
-            if (onlyCheck) return;
+            if (OnlyCheck) return;
             long playerId = 0;
 
             foreach (var cockpit in shipDrill.CubeGrid.GetFatBlocks().OfType<IMyCockpit>())
             {
                 if (cockpit.Pilot == null) continue;
                 var pilot = cockpit.Pilot as MyCharacter;
-                if (!CrunchEconCore.PlayerStorageProvider.playerData.TryGetValue(
+                if (!CrunchEconCore.PlayerStorageProvider.PlayerData.TryGetValue(
                         MySession.Static.Players.TryGetSteamId(pilot.GetPlayerIdentityId()),
                         out var data)) continue;
 
                 playerId = pilot.GetPlayerIdentityId();
-                var newObject = MyObjectBuilderSerializer.CreateNewObject<MyObjectBuilder_Ore>(material.MinedOre);
-                newObject.MaterialTypeName = new MyStringHash?(material.Id.SubtypeId);
-                var num = (float)((double)removedAmount / (double)byte.MaxValue * 1.0) * __instance.VoxelHarvestRatio * material.MinedOreRatio;
-                if (!MySession.Static.AmountMined.ContainsKey(material.MinedOre))
-                    MySession.Static.AmountMined[material.MinedOre] = (MyFixedPoint)0;
-                MySession.Static.AmountMined[material.MinedOre] += (MyFixedPoint)num;
+                var newObject = MyObjectBuilderSerializer.CreateNewObject<MyObjectBuilder_Ore>(Material.MinedOre);
+                newObject.MaterialTypeName = new MyStringHash?(Material.Id.SubtypeId);
+                var num = (float)((double)RemovedAmount / (double)byte.MaxValue * 1.0) * Instance.VoxelHarvestRatio * Material.MinedOreRatio;
+                if (!MySession.Static.AmountMined.ContainsKey(Material.MinedOre))
+                    MySession.Static.AmountMined[Material.MinedOre] = (MyFixedPoint)0;
+                MySession.Static.AmountMined[Material.MinedOre] += (MyFixedPoint)num;
                 var physicalItemDefinition = MyDefinitionManager.Static.GetPhysicalItemDefinition((MyObjectBuilder_Base)newObject);
                 var amountItems1 = (MyFixedPoint)(num / physicalItemDefinition.Volume);
                 var maxAmountPerDrop = (MyFixedPoint)(float)(0.150000005960464 / (double)physicalItemDefinition.Volume);
 
 
-                var collectionRatio = (MyFixedPoint)drill.GetField("m_inventoryCollectionRatio", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(__instance);
+                var collectionRatio = (MyFixedPoint)Drill.GetField("m_inventoryCollectionRatio", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(Instance);
                 var b = amountItems1 * ((MyFixedPoint)1 - collectionRatio);
                 var amountItems2 = MyFixedPoint.Min(maxAmountPerDrop * 10 - (MyFixedPoint)0.001, b);
                 var totalAmount = amountItems1 * collectionRatio - amountItems2;
 
-                foreach (var contract in data.GetMiningContracts().Values.Where(contract => contract.minedAmount < contract.amountToMineOrDeliver).Where(contract => contract.SubType.Equals(material.MinedOre) && totalAmount > 0))
+                foreach (var contract in data.GetMiningContracts().Values.Where(Contract => Contract.MinedAmount < Contract.AmountToMineOrDeliver).Where(Contract => Contract.SubType.Equals(Material.MinedOre) && totalAmount > 0))
                 {
                     contract.AddToContractAmount(totalAmount.ToIntSafe());
-                    if (contract.minedAmount >= contract.amountToMineOrDeliver)
+                    if (contract.MinedAmount >= contract.AmountToMineOrDeliver)
                     {
                         if (string.IsNullOrEmpty(contract.DeliveryLocation))
                         {
-                            var location = GenerateDeliveryLocation(hitPosition, contract);
+                            var location = GenerateDeliveryLocation(HitPosition, contract);
                             if (location != null)
                             {
                                 contract.DeliveryLocation = (location.ToString());
                                 contract.DoPlayerGps(playerId);
                             }
                         }
-                        CrunchEconCore.SendMessage("Boss Dave", "Contract Ready to be completed, Deliver " + String.Format("{0:n0}", contract.amountToMineOrDeliver) + " " + contract.SubType + " to the delivery GPS.", Color.Gold, (long)MySession.Static.Players.TryGetSteamId(playerId));
+                        CrunchEconCore.SendMessage("Boss Dave", "Contract Ready to be completed, Deliver " + String.Format("{0:n0}", contract.AmountToMineOrDeliver) + " " + contract.SubType + " to the delivery GPS.", Color.Gold, (long)MySession.Static.Players.TryGetSteamId(playerId));
                         contract.DoPlayerGps(pilot.GetPlayerIdentityId());
-                        messageCooldown.Remove(MySession.Static.Players.TryGetSteamId(playerId));
-                        messageCooldown.Add(MySession.Static.Players.TryGetSteamId(playerId), DateTime.Now.AddSeconds(0.5));
+                        MessageCooldown.Remove(MySession.Static.Players.TryGetSteamId(playerId));
+                        MessageCooldown.Add(MySession.Static.Players.TryGetSteamId(playerId), DateTime.Now.AddSeconds(0.5));
 
                         data.GetMiningContracts()[contract.ContractId] = contract;
 
@@ -163,18 +163,18 @@ namespace CrunchEconomy.Contracts
                         return;
                     }
 
-                    if (messageCooldown.TryGetValue(MySession.Static.Players.TryGetSteamId(playerId), out var time))
+                    if (MessageCooldown.TryGetValue(MySession.Static.Players.TryGetSteamId(playerId), out var time))
                     {
                         if (DateTime.Now >= time)
                         {
-                            CrunchEconCore.SendMessage("Boss Dave", "Progress: " + material.MinedOre + " " + String.Format("{0:n0}", contract.minedAmount) + " / " + String.Format("{0:n0}", contract.amountToMineOrDeliver), Color.Gold, (long)MySession.Static.Players.TryGetSteamId(playerId));
-                            messageCooldown[MySession.Static.Players.TryGetSteamId(playerId)] = DateTime.Now.AddSeconds(0.5);
+                            CrunchEconCore.SendMessage("Boss Dave", "Progress: " + Material.MinedOre + " " + String.Format("{0:n0}", contract.MinedAmount) + " / " + String.Format("{0:n0}", contract.AmountToMineOrDeliver), Color.Gold, (long)MySession.Static.Players.TryGetSteamId(playerId));
+                            MessageCooldown[MySession.Static.Players.TryGetSteamId(playerId)] = DateTime.Now.AddSeconds(0.5);
                         }
                     }
                     else
                     {
-                        CrunchEconCore.SendMessage("Boss Dave", "Progress: " + material.MinedOre + " " + String.Format("{0:n0}", contract.minedAmount) + " / " + String.Format("{0:n0}", contract.amountToMineOrDeliver), Color.Gold, (long)MySession.Static.Players.TryGetSteamId(playerId));
-                        messageCooldown.Add(MySession.Static.Players.TryGetSteamId(playerId), DateTime.Now.AddSeconds(0.5));
+                        CrunchEconCore.SendMessage("Boss Dave", "Progress: " + Material.MinedOre + " " + String.Format("{0:n0}", contract.MinedAmount) + " / " + String.Format("{0:n0}", contract.AmountToMineOrDeliver), Color.Gold, (long)MySession.Static.Players.TryGetSteamId(playerId));
+                        MessageCooldown.Add(MySession.Static.Players.TryGetSteamId(playerId), DateTime.Now.AddSeconds(0.5));
                     }
                     data.GetMiningContracts()[contract.ContractId] = contract;
                     CrunchEconCore.PlayerStorageProvider.AddContractToBeSaved(contract);

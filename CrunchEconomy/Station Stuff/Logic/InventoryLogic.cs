@@ -17,15 +17,15 @@ namespace CrunchEconomy.Station_Stuff.Logic
 {
     public static class InventoryLogic
     {
-        public static MyFixedPoint CountComponents(IEnumerable<VRage.Game.ModAPI.IMyInventory> inventories, MyDefinitionId id)
+        public static MyFixedPoint CountComponents(IEnumerable<VRage.Game.ModAPI.IMyInventory> Inventories, MyDefinitionId Id)
         {
-            return inventories.Select(inv => inv.FindItem(id)).Where(invItem => invItem != null).Aggregate<IMyInventoryItem, MyFixedPoint>(0, (current, invItem) => current + invItem.Amount);
+            return Inventories.Select(Inv => Inv.FindItem(Id)).Where(InvItem => InvItem != null).Aggregate<IMyInventoryItem, MyFixedPoint>(0, (Current, InvItem) => Current + InvItem.Amount);
         }
-        public static List<VRage.Game.ModAPI.IMyInventory> GetInventoriesForContract(MyCubeGrid grid)
+        public static List<VRage.Game.ModAPI.IMyInventory> GetInventoriesForContract(MyCubeGrid Grid)
         {
             var inventories = new List<VRage.Game.ModAPI.IMyInventory>();
 
-            foreach (var block in grid.GetFatBlocks())
+            foreach (var block in Grid.GetFatBlocks())
             {
                 if (block is MyReactor reactor)
                 {
@@ -42,20 +42,20 @@ namespace CrunchEconomy.Station_Stuff.Logic
             return inventories;
         }
 
-        public static List<VRage.Game.ModAPI.IMyInventory> GetInventories(MyCubeGrid grid, Stations station)
+        public static List<VRage.Game.ModAPI.IMyInventory> GetInventories(MyCubeGrid Grid, Stations Station)
         {
             var inventories = new List<VRage.Game.ModAPI.IMyInventory>();
 
-            foreach (var block in grid.GetFatBlocks().Where(block => block.GetOwnerFactionTag().Equals(station.OwnerFactionTag)))
+            foreach (var block in Grid.GetFatBlocks().Where(Block => Block.GetOwnerFactionTag().Equals(Station.OwnerFactionTag)))
             {
                 if (block is MyReactor reactor)
                 {
                     continue;
                 }
-                if (station.ViewOnlyNamedCargo)
+                if (Station.ViewOnlyNamedCargo)
                 {
-                    var temp = station.CargoName.Split(',').ToList();
-                    var cargos = temp.Select(outer => outer.Trim()).ToList();
+                    var temp = Station.CargoName.Split(',').ToList();
+                    var cargos = temp.Select(Outer => Outer.Trim()).ToList();
                     if (block.DisplayNameText != null && !cargos.Contains(block.DisplayNameText))
                     {
                         continue;
@@ -70,14 +70,14 @@ namespace CrunchEconomy.Station_Stuff.Logic
             return inventories;
         }
 
-        public static List<VRage.Game.ModAPI.IMyInventory> ClearInventories(MyCubeGrid grid, Stations station)
+        public static List<VRage.Game.ModAPI.IMyInventory> ClearInventories(MyCubeGrid Grid, Stations Station)
         {
             var inventories = new List<VRage.Game.ModAPI.IMyInventory>();
-            var temp = station.CargoName.Split(',').ToList();
-            var cargos = temp.Select(outer => outer.Trim()).ToList();
-            foreach (var block in grid.GetFatBlocks().Where(block => block.GetOwnerFactionTag().Equals(station.OwnerFactionTag)))
+            var temp = Station.CargoName.Split(',').ToList();
+            var cargos = temp.Select(Outer => Outer.Trim()).ToList();
+            foreach (var block in Grid.GetFatBlocks().Where(Block => Block.GetOwnerFactionTag().Equals(Station.OwnerFactionTag)))
             {
-                if (station.ViewOnlyNamedCargo)
+                if (Station.ViewOnlyNamedCargo)
                 {
                     if (block.DisplayNameText != null && !cargos.Contains(block.DisplayNameText))
                     {
@@ -94,10 +94,10 @@ namespace CrunchEconomy.Station_Stuff.Logic
             return inventories;
         }
 
-        public static bool SpawnLoot(MyCubeGrid grid, MyDefinitionId id, MyFixedPoint amount)
+        public static bool SpawnLoot(MyCubeGrid Grid, MyDefinitionId Id, MyFixedPoint Amount)
         {
-            if (grid == null) return false;
-            foreach (var block in grid.GetFatBlocks())
+            if (Grid == null) return false;
+            foreach (var block in Grid.GetFatBlocks())
             {
 
 
@@ -106,28 +106,28 @@ namespace CrunchEconomy.Station_Stuff.Logic
 
                     var inv = ((VRage.Game.ModAPI.IMyCubeBlock)block).GetInventory(i);
 
-                    var itemType = new MyInventoryItemFilter(id.TypeId + "/" + id.SubtypeName).ItemType;
-                    if (!inv.CanItemsBeAdded(amount, itemType)) continue;
-                    inv.AddItems(amount,
-                        (MyObjectBuilder_PhysicalObject)MyObjectBuilderSerializer.CreateNewObject(id));
+                    var itemType = new MyInventoryItemFilter(Id.TypeId + "/" + Id.SubtypeName).ItemType;
+                    if (!inv.CanItemsBeAdded(Amount, itemType)) continue;
+                    inv.AddItems(Amount,
+                        (MyObjectBuilder_PhysicalObject)MyObjectBuilderSerializer.CreateNewObject(Id));
                     return true;
                 }
             }
             return false;
         }
 
-        public static bool SpawnItems(MyCubeGrid grid, MyDefinitionId id, MyFixedPoint amount, Stations station)
+        public static bool SpawnItems(MyCubeGrid Grid, MyDefinitionId Id, MyFixedPoint Amount, Stations Station)
         {
             //  CrunchEconCore.Log.Info("SPAWNING 1 " + amount);
-            if (grid == null) return false;
+            if (Grid == null) return false;
             var found = false;
-            var temp = station.CargoName.Split(',').ToList();
-            var cargos = temp.Select(outer => outer.Trim()).ToList();
-            foreach (var block in grid.GetFatBlocks().Where(block => block.GetOwnerFactionTag().Equals(station.OwnerFactionTag)))
+            var temp = Station.CargoName.Split(',').ToList();
+            var cargos = temp.Select(Outer => Outer.Trim()).ToList();
+            foreach (var block in Grid.GetFatBlocks().Where(Block => Block.GetOwnerFactionTag().Equals(Station.OwnerFactionTag)))
             {
                 for (var i = 0; i < block.InventoryCount; i++)
                 {
-                    if (station.ViewOnlyNamedCargo)
+                    if (Station.ViewOnlyNamedCargo)
                     {
                         if (block.DisplayNameText != null && !cargos.Contains(block.DisplayNameText) && !found)
                         {
@@ -142,25 +142,25 @@ namespace CrunchEconomy.Station_Stuff.Logic
 
                     var inv = ((IMyCubeBlock)block).GetInventory(i);
                     if (!found) continue;
-                    var itemType = new MyInventoryItemFilter(id.TypeId + "/" + id.SubtypeName).ItemType;
-                    if (!inv.CanItemsBeAdded(amount, itemType)) continue;
-                    inv.AddItems(amount, (MyObjectBuilder_PhysicalObject)MyObjectBuilderSerializer.CreateNewObject(id));
+                    var itemType = new MyInventoryItemFilter(Id.TypeId + "/" + Id.SubtypeName).ItemType;
+                    if (!inv.CanItemsBeAdded(Amount, itemType)) continue;
+                    inv.AddItems(Amount, (MyObjectBuilder_PhysicalObject)MyObjectBuilderSerializer.CreateNewObject(Id));
                     return true;
                 }
             }
             return false;
         }
 
-        public static bool ConsumeComponents(IEnumerable<VRage.Game.ModAPI.IMyInventory> inventories, IDictionary<MyDefinitionId, int> components, ulong steamid)
+        public static bool ConsumeComponents(IEnumerable<VRage.Game.ModAPI.IMyInventory> Inventories, IDictionary<MyDefinitionId, int> Components, ulong Steamid)
         {
             var toRemove = new List<MyTuple<VRage.Game.ModAPI.IMyInventory, VRage.Game.ModAPI.IMyInventoryItem, VRage.MyFixedPoint>>();
-            foreach (var c in components)
+            foreach (var c in Components)
             {
-                var needed = CountComponentsTwo(inventories, c.Key, c.Value, toRemove);
+                var needed = CountComponentsTwo(Inventories, c.Key, c.Value, toRemove);
                 if (needed <= 0) continue;
-                if (steamid != 0L)
+                if (Steamid != 0L)
                 {
-                    CrunchEconCore.SendMessage("[Econ]", "Missing " + needed + " " + c.Key.SubtypeName + " All components must be inside one grid.", Color.Red, (long)steamid);
+                    CrunchEconCore.SendMessage("[Econ]", "Missing " + needed + " " + c.Key.SubtypeName + " All components must be inside one grid.", Color.Red, (long)Steamid);
                 }
                 return false;
             }
@@ -173,21 +173,21 @@ namespace CrunchEconomy.Station_Stuff.Logic
             return true;
         }
 
-        public static MyFixedPoint CountComponentsTwo(IEnumerable<VRage.Game.ModAPI.IMyInventory> inventories, MyDefinitionId id, int amount, ICollection<MyTuple<VRage.Game.ModAPI.IMyInventory, VRage.Game.ModAPI.IMyInventoryItem, MyFixedPoint>> items)
+        public static MyFixedPoint CountComponentsTwo(IEnumerable<VRage.Game.ModAPI.IMyInventory> Inventories, MyDefinitionId Id, int Amount, ICollection<MyTuple<VRage.Game.ModAPI.IMyInventory, VRage.Game.ModAPI.IMyInventoryItem, MyFixedPoint>> Items)
         {
-            MyFixedPoint targetAmount = amount;
-            foreach (var inv in inventories)
+            MyFixedPoint targetAmount = Amount;
+            foreach (var inv in Inventories)
             {
-                var invItem = inv.FindItem(id);
+                var invItem = inv.FindItem(Id);
                 if (invItem == null) continue;
                 if (invItem.Amount >= targetAmount)
                 {
-                    items.Add(new MyTuple<VRage.Game.ModAPI.IMyInventory, VRage.Game.ModAPI.IMyInventoryItem, MyFixedPoint>(inv, invItem, targetAmount));
+                    Items.Add(new MyTuple<VRage.Game.ModAPI.IMyInventory, VRage.Game.ModAPI.IMyInventoryItem, MyFixedPoint>(inv, invItem, targetAmount));
                     targetAmount = 0;
                     return targetAmount;
                 }
 
-                items.Add(new MyTuple<VRage.Game.ModAPI.IMyInventory, VRage.Game.ModAPI.IMyInventoryItem, MyFixedPoint>(inv, invItem, invItem.Amount));
+                Items.Add(new MyTuple<VRage.Game.ModAPI.IMyInventory, VRage.Game.ModAPI.IMyInventoryItem, MyFixedPoint>(inv, invItem, invItem.Amount));
                 targetAmount -= invItem.Amount;
             }
             return targetAmount;

@@ -8,8 +8,8 @@ namespace CrunchEconomy.SurveyMissions
 {
     public class SurveyStage
     {
-        public Boolean enabled = false;
-        public Guid id;
+        public Boolean Enabled = false;
+        public Guid Id;
         public int StageNum = 1;
         public int MinimumReputation = 0;
         public int MaximumReputation = 500;
@@ -22,9 +22,9 @@ namespace CrunchEconomy.SurveyMissions
         public Boolean ContributeToGoal = false;
         public String CompletionMessage = "SURVEY COMPLETED. THANK YOU FOR CHOOSING A.C.M.E. A.C.M.E, TOGETHER FOR A BETTER TOMRROW!";
         public string GoalName = "Example";
-        public string LocationGPS = "put gps here";
-        public string GPSDescription = "Survey Location.";
-        public string GPSName = "Easy Survey Location";
+        public string LocationGps = "put gps here";
+        public string GpsDescription = "Survey Location.";
+        public string GpsName = "Easy Survey Location";
         public int RadiusNearLocationToBeInside = 25000;
         public Boolean FindRandomPositionAroundLocation;
         public int RadiusToPickRandom = 25000;

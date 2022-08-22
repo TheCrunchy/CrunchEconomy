@@ -20,16 +20,16 @@ namespace CrunchEconomy.Contracts
 {
     public class ContractUtils
     {
-        static Random rand = new Random();
-        public static Contract GeneratedToPlayer(GeneratedContract gen)
+        static Random _rand = new Random();
+        public static Contract GeneratedToPlayer(GeneratedContract Gen)
         {
             var contract = new Contract();
-            contract.type = gen.type;
+            contract.Type = Gen.Type;
             var temporary = new List<ContractInfo>();
-            foreach (var info in gen.ItemsToPickFrom)
+            foreach (var info in Gen.ItemsToPickFrom)
             {
-                var chance = rand.NextDouble();
-                if (chance <= info.chance)
+                var chance = _rand.NextDouble();
+                if (chance <= info.Chance)
                 {
                     temporary.Add(info);
                 }
@@ -41,49 +41,49 @@ namespace CrunchEconomy.Contracts
             }
             else
             {
-                var temp = rand.Next(temporary.Count);
+                var temp = _rand.Next(temporary.Count);
                 contract.TypeIfHauling = temporary[temp].TypeId;
                 contract.SubType = temporary[temp].SubTypeId;
             }
-            contract.GenerateAmountToMine(gen.minimum, gen.maximum);
-            contract.contractPrice = Convert.ToInt64(contract.amountToMineOrDeliver * gen.PricePerOre);
-            contract.minedAmount = 0;
-            contract.ContractName = gen.Name;
-            contract.SpawnItemsInPlayerInventory = gen.SpawnItemsInPlayerInvent;
-            contract.reputation = gen.ReputationGain;
-            contract.PlayerLoot = gen.PlayerLoot;
-            contract.PutInStation = gen.PutInStation;
-            contract.CargoName = gen.StationCargoName;
-            contract.PutTheHaulInStation = gen.PutTheHaulInStation;
-            contract.CooldownInSeconds = gen.CooldownInSeconds;
+            contract.GenerateAmountToMine(Gen.Minimum, Gen.Maximum);
+            contract.ContractPrice = Convert.ToInt64(contract.AmountToMineOrDeliver * Gen.PricePerOre);
+            contract.MinedAmount = 0;
+            contract.ContractName = Gen.Name;
+            contract.SpawnItemsInPlayerInventory = Gen.SpawnItemsInPlayerInvent;
+            contract.Reputation = Gen.ReputationGain;
+            contract.PlayerLoot = Gen.PlayerLoot;
+            contract.PutInStation = Gen.PutInStation;
+            contract.CargoName = Gen.StationCargoName;
+            contract.PutTheHaulInStation = Gen.PutTheHaulInStation;
+            contract.CooldownInSeconds = Gen.CooldownInSeconds;
             return contract;
         }
         public static List<SurveyMission> SurveyMissions = new List<SurveyMission>();
 
-        public static SurveyMission GetNewMission(PlayerData data)
+        public static SurveyMission GetNewMission(PlayerData Data)
         {
             SurveyMission chosen = null;
-            chosen.id = Guid.NewGuid();
-            var Possible = (from mission in SurveyMissions where mission.enabled where data.SurveyReputation >= mission.ReputationRequired let rand = new Random() let chance = rand.NextDouble() where chance <= mission.chance where mission.getStage(1) != null && mission.getStage(1).enabled where data.SurveyReputation >= mission.getStage(1).MinimumReputation && data.SurveyReputation <= mission.getStage(1).MaximumReputation where GpsHelper.ParseGPS(mission.getStage(1).LocationGPS) != null select mission).ToList();
-            switch (Possible.Count)
+            chosen.Id = Guid.NewGuid();
+            var possible = (from mission in SurveyMissions where mission.Enabled where Data.SurveyReputation >= mission.ReputationRequired let rand = new Random() let chance = rand.NextDouble() where chance <= mission.Chance where mission.GetStage(1) != null && mission.GetStage(1).Enabled where Data.SurveyReputation >= mission.GetStage(1).MinimumReputation && Data.SurveyReputation <= mission.GetStage(1).MaximumReputation where GpsHelper.ParseGps(mission.GetStage(1).LocationGps) != null select mission).ToList();
+            switch (possible.Count)
             {
                 case 0:
                     return null;
                 case 1:
-                    chosen = Possible[0];
+                    chosen = possible[0];
                     return chosen;
             }
 
             var random = new Random();
-            var r = random.Next(Possible.Count);
-            chosen = Possible[r];
+            var r = random.Next(possible.Count);
+            chosen = possible[r];
 
             return chosen ?? null;
         }
 
-        public static Stations GetDeliveryLocation(Contract contract)
+        public static Stations GetDeliveryLocation(Contract Contract)
         {
-            var locations = CrunchEconCore.stations.Where(station => station.getGPS() != null && station.UseAsDeliveryLocationForContracts).ToList();
+            var locations = CrunchEconCore.Stations.Where(Station => Station.GetGps() != null && Station.UseAsDeliveryLocationForContracts).ToList();
 
             var random = new Random();
             if (locations.Count == 1)
@@ -95,53 +95,53 @@ namespace CrunchEconomy.Contracts
 
         }
 
-        public static Dictionary<string, GeneratedContract> newContracts = new Dictionary<string, GeneratedContract>();
+        public static Dictionary<string, GeneratedContract> NewContracts = new Dictionary<string, GeneratedContract>();
         public static void LoadAllContracts()
         {
-            newContracts.Clear();
+            NewContracts.Clear();
             SurveyMissions.Clear();
-            foreach (var s in Directory.GetFiles(CrunchEconCore.path + "//ContractConfigs//Mining//"))
+            foreach (var s in Directory.GetFiles(CrunchEconCore.Path + "//ContractConfigs//Mining//"))
             {
 
 
-                var contract = CrunchEconCore.utils.ReadFromXmlFile<GeneratedContract>(s);
-                if (newContracts.ContainsKey(contract.Name))
+                var contract = CrunchEconCore.Utils.ReadFromXmlFile<GeneratedContract>(s);
+                if (NewContracts.ContainsKey(contract.Name))
                 {
                     CrunchEconCore.Log.Error("This file doesnt have unique contract name " + s);
                     continue;
                 }
                 if (contract.Enabled)
                 {
-                    newContracts.Add(contract.Name, contract);
+                    NewContracts.Add(contract.Name, contract);
                 }
             }
-            foreach (var s in Directory.GetFiles(CrunchEconCore.path + "//ContractConfigs//Hauling//"))
+            foreach (var s in Directory.GetFiles(CrunchEconCore.Path + "//ContractConfigs//Hauling//"))
             {
 
 
-                var contract = CrunchEconCore.utils.ReadFromXmlFile<GeneratedContract>(s);
-                if (newContracts.ContainsKey(contract.Name))
+                var contract = CrunchEconCore.Utils.ReadFromXmlFile<GeneratedContract>(s);
+                if (NewContracts.ContainsKey(contract.Name))
                 {
                     CrunchEconCore.Log.Error("This file doesnt have unique contract name " + s);
                     continue;
                 }
                 if (contract.Enabled)
                 {
-                    newContracts.Add(contract.Name, contract);
+                    NewContracts.Add(contract.Name, contract);
                 }
             }
 
-            foreach (var s in Directory.GetFiles(CrunchEconCore.path + "//ContractConfigs//Survey//"))
+            foreach (var s in Directory.GetFiles(CrunchEconCore.Path + "//ContractConfigs//Survey//"))
             {
 
 
-               var mission = CrunchEconCore.utils.ReadFromXmlFile<SurveyMission>(s);
-               if (!mission.enabled) continue;
+               var mission = CrunchEconCore.Utils.ReadFromXmlFile<SurveyMission>(s);
+               if (!mission.Enabled) continue;
                 mission.SetupMissionList();
                 SurveyMissions.Add(mission);
             }
         }
 
-        public static DateTime chat = DateTime.Now;
+        public static DateTime Chat = DateTime.Now;
     }
 }

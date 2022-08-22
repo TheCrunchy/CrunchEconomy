@@ -18,6 +18,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using CrunchEconomy.Helpers;
 using CrunchEconomy.Station_Stuff;
 using CrunchEconomy.Station_Stuff.Objects;
 using Torch.Managers.PatchManager;
@@ -293,7 +294,7 @@ namespace CrunchEconomy
                         var gpscol = MySession.Static.Gpss;
                         var playerList = new List<IMyGps>();
                         gpscol.GetGpsList(player.Identity.IdentityId, playerList);
-                        foreach (var gps in from s in offer.gpsToPickFrom select CrunchEconCore.ParseGPS(s) into gps where gps != null where playerList.Any(gp => gp.Coords != gps.Coords) select gps)
+                        foreach (var gps in from s in offer.gpsToPickFrom select GpsHelper.ParseGPS(s) into gps where gps != null where playerList.Any(gp => gp.Coords != gps.Coords) select gps)
                         {
                             var myGps = gps;
                             myGps.AlwaysVisible = true;

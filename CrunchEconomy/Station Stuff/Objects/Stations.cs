@@ -14,42 +14,42 @@ namespace CrunchEconomy.Station_Stuff.Objects
         public Boolean DoSellOffers = true;
         public Boolean ViewOnlyNamedCargo = false;
         public string CargoName = "bob";
-        public string stationGPS = "Put a GPS here";
+        public string StationGps = "Put a GPS here";
         public int SecondsBetweenRefreshForBuyOrders = 1800;
         public int SecondsBetweenRefreshForSellOffers = 60;
         public int SecondsBetweenClearEntireInventory = 432000;
         public string OwnerFactionTag = "GAIA";
-        public DateTime nextBuyRefresh = DateTime.Now;
-        public DateTime nextSellRefresh = DateTime.Now;
+        public DateTime NextBuyRefresh = DateTime.Now;
+        public DateTime NextSellRefresh = DateTime.Now;
         public Boolean DoPeriodGridClearing = false;
-        public DateTime nextGridInventoryClear = DateTime.Now;
+        public DateTime NextGridInventoryClear = DateTime.Now;
         public long StationEntityId = 0;
         public string WorldName = "default";
-        public Boolean GiveGPSOnLogin = false;
+        public Boolean GiveGpsOnLogin = false;
         public Boolean WhitelistedSafezones = false;
         public Boolean DoBlacklist = false;
         public List<String> Whitelist = new List<string>();
-        public MyGps getGPS()
+        public MyGps GetGps()
         {
-            return GpsHelper.ParseGPS(stationGPS);
+            return GpsHelper.ParseGps(StationGps);
         }
 
         public List<PriceModifier> Modifiers = new List<PriceModifier>();
-        private Dictionary<string, float> PriceModifiers = new Dictionary<string, float>();
+        private Dictionary<string, float> _priceModifiers = new Dictionary<string, float>();
         public void SetupModifiers()
         {
-            PriceModifiers.Clear();
+            _priceModifiers.Clear();
             foreach (var mod in Modifiers)
             {
-                if (!PriceModifiers.ContainsKey(mod.StationModifierInItemFile))
+                if (!_priceModifiers.ContainsKey(mod.StationModifierInItemFile))
                 {
-                    PriceModifiers.Add(mod.StationModifierInItemFile, mod.Modifier);
+                    _priceModifiers.Add(mod.StationModifierInItemFile, mod.Modifier);
                 }
             }
         }
-        public float GetModifier(String input)
+        public float GetModifier(String Input)
         {
-            if (PriceModifiers.TryGetValue(input, out var f))
+            if (_priceModifiers.TryGetValue(Input, out var f))
             {
                 return f;
 
@@ -68,21 +68,21 @@ namespace CrunchEconomy.Station_Stuff.Objects
         public List<CraftedItem> CraftableItems = new List<CraftedItem>();
         public Boolean EnableStationCrafting = false;
         public int SecondsBetweenCrafting = 60;
-        public DateTime nextCraftRefresh = DateTime.Now;
+        public DateTime NextCraftRefresh = DateTime.Now;
         
         public class RecipeItem
         {
-            public string typeid;
-            public string subtypeid;
-            public int amount;
+            public string Typeid;
+            public string Subtypeid;
+            public int Amount;
         }
 
         public class CraftedItem
         {
-            public string typeid;
-            public string subtypeid;
-            public double chanceToCraft = 0.5;
-            public int amountPerCraft;
+            public string Typeid;
+            public string Subtypeid;
+            public double ChanceToCraft = 0.5;
+            public int AmountPerCraft;
             public List<RecipeItem> RequriedItems = new List<RecipeItem>();
         }
     }

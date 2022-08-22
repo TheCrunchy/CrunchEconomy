@@ -12,39 +12,39 @@ namespace CrunchEconomy.Station_Stuff.Logic
 {
     public static class CraftingLogic
     {
-        public static void DoCrafting(Stations station, DateTime now)
+        public static void DoCrafting(Stations Station, DateTime Now)
         {
-            if (now < station.nextCraftRefresh || !station.EnableStationCrafting) return;
-            if (MyAPIGateway.Entities.GetEntityById(station.StationEntityId) == null) return;
+            if (Now < Station.NextCraftRefresh || !Station.EnableStationCrafting) return;
+            if (MyAPIGateway.Entities.GetEntityById(Station.StationEntityId) == null) return;
 
-            if (MyAPIGateway.Entities.GetEntityById(station.StationEntityId) is MyCubeGrid grid)
+            if (MyAPIGateway.Entities.GetEntityById(Station.StationEntityId) is MyCubeGrid grid)
             {
                 var inventories = new List<VRage.Game.ModAPI.IMyInventory>();
-                foreach (var item in station.CraftableItems)
+                foreach (var item in Station.CraftableItems)
                 {
-                    var yeet = CrunchEconCore.rnd.NextDouble();
-                    if (!(yeet <= item.chanceToCraft)) continue;
+                    var yeet = CrunchEconCore.Rnd.NextDouble();
+                    if (!(yeet <= item.ChanceToCraft)) continue;
                     var comps = new Dictionary<MyDefinitionId, int>();
-                    inventories.AddRange(InventoryLogic.GetInventories(grid, station));
-                    if (!MyDefinitionId.TryParse("MyObjectBuilder_" + item.typeid, item.subtypeid, out var id)) continue;
+                    inventories.AddRange(InventoryLogic.GetInventories(grid, Station));
+                    if (!MyDefinitionId.TryParse("MyObjectBuilder_" + item.Typeid, item.Subtypeid, out var id)) continue;
 
                     foreach (var recipe in item.RequriedItems)
                     {
-                        if (MyDefinitionId.TryParse("MyObjectBuilder_" + recipe.typeid, recipe.subtypeid, out var id2))
+                        if (MyDefinitionId.TryParse("MyObjectBuilder_" + recipe.Typeid, recipe.Subtypeid, out var id2))
                         {
-                            comps.Add(id2, recipe.amount);
+                            comps.Add(id2, recipe.Amount);
                         }
                     }
 
                     if (!InventoryLogic.ConsumeComponents(inventories, comps, 0L)) continue;
 
-                    InventoryLogic.SpawnItems(grid, id, item.amountPerCraft, station);
+                    InventoryLogic.SpawnItems(grid, id, item.AmountPerCraft, Station);
                     comps.Clear();
                     inventories.Clear();
                 }
             }
 
-            station.nextCraftRefresh = DateTime.Now.AddSeconds(station.SecondsBetweenCrafting);
+            Station.NextCraftRefresh = DateTime.Now.AddSeconds(Station.SecondsBetweenCrafting);
         }
     }
 }

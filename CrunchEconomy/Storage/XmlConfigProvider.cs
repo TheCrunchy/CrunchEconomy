@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using CrunchEconomy.Contracts;
+using CrunchEconomy.Helpers;
 using CrunchEconomy.Station_Stuff;
 using CrunchEconomy.Station_Stuff.Objects;
 using CrunchEconomy.Storage.Interfaces;
@@ -59,12 +60,12 @@ namespace CrunchEconomy.Storage
                 temp.FactionTags.Add("BOB");
                 temp.ListName = "LIST1";
 
-                Whitelist.whitelist.Add(temp);
+                Whitelist.values.Add(temp);
                 var temp2 = new WhitelistFile.Whitelist();
                 temp2.FactionTags.Add("CAR");
                 temp2.FactionTags.Add("BOB");
                 temp2.ListName = "LIST2";
-                Whitelist.whitelist.Add(temp2);
+                Whitelist.values.Add(temp2);
                 Utils.WriteToXmlFile<WhitelistFile>(FolderLocation + "\\Whitelist.xml", Whitelist, false);
             }
         }
@@ -89,17 +90,17 @@ namespace CrunchEconomy.Storage
                 station.Whitelist.Add("LIST:LIST1");
                 var item = new Stations.CraftedItem
                 {
-                    typeid = "Ore",
-                    subtypeid = "Iron",
-                    amountPerCraft = 500,
-                    chanceToCraft = 1
+                    Typeid = "Ore",
+                    Subtypeid = "Iron",
+                    AmountPerCraft = 500,
+                    ChanceToCraft = 1
                 };
 
                 var recipe = new Stations.RecipeItem
                 {
-                    typeid = "Ore",
-                    subtypeid = "Stone",
-                    amount = 500
+                    Typeid = "Ore",
+                    Subtypeid = "Stone",
+                    Amount = 500
                 };
 
                 item.RequriedItems.Add(recipe);
@@ -119,7 +120,7 @@ namespace CrunchEconomy.Storage
                 Directory.CreateDirectory(FolderLocation + "//SellOffers//Example//");
                 var example = new SellOffer();
                 var gps = "put a gps string here";
-                example.gpsToPickFrom.Add(gps);
+                example.GpsToPickFrom.Add(gps);
                 Utils.WriteToXmlFile<SellOffer>(FolderLocation + "//SellOffers//Example//Example.xml", example);
             }
 
@@ -139,12 +140,12 @@ namespace CrunchEconomy.Storage
             if (!Directory.Exists(FolderLocation + "//ContractConfigs//Survey//"))
             {
                 var mission = new SurveyMission();
-                mission.configs.Add(new SurveyStage());
+                mission.Configs.Add(new SurveyStage());
                 Directory.CreateDirectory(FolderLocation + "//ContractConfigs//Survey//");
                 Utils.WriteToXmlFile<SurveyMission>(FolderLocation + "//ContractConfigs//Survey//Example1.xml", mission);
-                mission.configs.Add(new SurveyStage());
+                mission.Configs.Add(new SurveyStage());
                 Utils.WriteToXmlFile<SurveyMission>(FolderLocation + "//ContractConfigs//Survey//Example2.xml", mission);
-                mission.configs.Add(new SurveyStage());
+                mission.Configs.Add(new SurveyStage());
                 Utils.WriteToXmlFile<SurveyMission>(FolderLocation + "//ContractConfigs//Survey//Example3.xml", mission);
             }
 
@@ -165,7 +166,7 @@ namespace CrunchEconomy.Storage
             {
                 var contract = new GeneratedContract();
                 Directory.CreateDirectory(FolderLocation + "//ContractConfigs//Hauling//");
-                contract.type = ContractType.Hauling;
+                contract.Type = ContractType.Hauling;
                 contract.PlayerLoot.Add(new RewardItem());
                 contract.PutInStation.Add(new RewardItem());
                 contract.ItemsToPickFrom.Add(new GeneratedContract.ContractInfo());
@@ -192,9 +193,9 @@ namespace CrunchEconomy.Storage
             return SellOffers;
         }
 
-        public void SaveStation(Stations station)
+        public void SaveStation(Stations Station)
         {
-            Utils.WriteToXmlFile<Stations>(FolderLocation + "//Stations//" + station.Name + ".xml", station);
+            Utils.WriteToXmlFile<Stations>(FolderLocation + "//Stations//" + Station.Name + ".xml", Station);
         }
 
         public void LoadStations()
@@ -238,7 +239,7 @@ namespace CrunchEconomy.Storage
                     if (!order.Enabled) continue;
                     if (order.IndividualRefreshTimer)
                     {
-                        order.path = s;
+                        order.Path = s;
                     }
                     temporaryList.Add(order);
                 }
@@ -269,7 +270,7 @@ namespace CrunchEconomy.Storage
                     if (!order.Enabled) continue;
                     if (order.IndividualRefreshTimer)
                     {
-                        order.path = s;
+                        order.Path = s;
                     }
                     temporaryList.Add(order);
                 }

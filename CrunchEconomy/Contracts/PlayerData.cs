@@ -12,71 +12,71 @@ namespace CrunchEconomy.Contracts
     {
         public List<Guid> MiningContracts = new List<Guid>();
         public List<Guid> HaulingContracts = new List<Guid>();
-        public ulong steamId;
+        public ulong SteamId;
         public Boolean HasHadSurveyBefore = false;
         public int MiningReputation = 0;
         public int HaulingReputation = 0;
         public int SurveyReputation = 0;
 
-        private Dictionary<Guid, Contract> loadedMining = new Dictionary<Guid, Contract>();
-        private Dictionary<Guid, Contract> loadedHauling = new Dictionary<Guid, Contract>();
-        public Guid surveyMission = Guid.Empty;
+        private Dictionary<Guid, Contract> _loadedMining = new Dictionary<Guid, Contract>();
+        private Dictionary<Guid, Contract> _loadedHauling = new Dictionary<Guid, Contract>();
+        public Guid SurveyMission = Guid.Empty;
         public DateTime NextSurveyMission = DateTime.Now.AddSeconds(10);
-        private SurveyMission loadedMission = null;
-        public void SetLoadedSurvey(SurveyMission mission)
+        private SurveyMission _loadedMission = null;
+        public void SetLoadedSurvey(SurveyMission Mission)
         {
-            loadedMission = mission;
+            _loadedMission = Mission;
         }
         public SurveyMission GetLoadedMission()
         {
-            return loadedMission;
+            return _loadedMission;
         }
         public SurveyMission GetMission()
         {
-            if (surveyMission == Guid.Empty)
+            if (SurveyMission == Guid.Empty)
             {
                 return null;
             }
 
-            var mission = CrunchEconCore.PlayerStorageProvider.LoadMission(surveyMission);
-            loadedMission = mission;
+            var mission = CrunchEconCore.PlayerStorageProvider.LoadMission(SurveyMission);
+            _loadedMission = mission;
             return mission;
         }
 
-        public void AddMining(Contract contract)
+        public void AddMining(Contract Contract)
         {
             //test
-            if (loadedMining.ContainsKey(contract.ContractId)) return;
-            loadedMining.Add(contract.ContractId, contract);
-            MiningContracts.Add(contract.ContractId);
+            if (_loadedMining.ContainsKey(Contract.ContractId)) return;
+            _loadedMining.Add(Contract.ContractId, Contract);
+            MiningContracts.Add(Contract.ContractId);
         }
-        public void AddHauling(Contract contract)
+        public void AddHauling(Contract Contract)
         {
-            if (loadedHauling.ContainsKey(contract.ContractId)) return;
-            loadedHauling.Add(contract.ContractId, contract);
-            HaulingContracts.Add(contract.ContractId);
+            if (_loadedHauling.ContainsKey(Contract.ContractId)) return;
+            _loadedHauling.Add(Contract.ContractId, Contract);
+            HaulingContracts.Add(Contract.ContractId);
         }
 
         public Dictionary<Guid, Contract> GetMiningContracts()
         {
-            if (loadedMining != null && loadedMining.Count > 0)
+            if (_loadedMining != null && _loadedMining.Count > 0)
             {
-                return loadedMining;
+                return _loadedMining;
             }
 
 
-            loadedMining = CrunchEconCore.PlayerStorageProvider.LoadMiningContracts(MiningContracts);
-            return loadedMining;
+            _loadedMining = CrunchEconCore.PlayerStorageProvider.LoadMiningContracts(MiningContracts);
+            return _loadedMining;
         }
 
         public Dictionary<Guid, Contract> GetHaulingContracts()
         {
-            if (loadedHauling != null && loadedHauling.Count > 0)
+            if (_loadedHauling != null && _loadedHauling.Count > 0)
             {
-                return loadedHauling;
+                return _loadedHauling;
             }
-            loadedHauling = CrunchEconCore.PlayerStorageProvider.LoadHaulingContracts(HaulingContracts);
-            return loadedHauling;
+            _loadedHauling = CrunchEconCore.PlayerStorageProvider.LoadHaulingContracts(HaulingContracts);
+            return _loadedHauling;
         }
     }
 }

@@ -23,36 +23,36 @@ namespace CrunchEconomy.Station_Stuff.Logic
 {
     public static class StoresLogic
     {
-        public static Dictionary<long, DateTime> individualTimers = new Dictionary<long, DateTime>();
-        public static void DoStationRefresh(Stations station, DateTime now)
+        public static Dictionary<long, DateTime> IndividualTimers = new Dictionary<long, DateTime>();
+        public static void DoStationRefresh(Stations Station, DateTime Now)
         {
             try
             {
-                var AddSellTime = false;
-                var AddBuyTime = false;
-                if (now >= station.nextBuyRefresh || now >= station.nextSellRefresh)
+                var addSellTime = false;
+                var addBuyTime = false;
+                if (Now >= Station.NextBuyRefresh || Now >= Station.NextSellRefresh)
                 {
-                    var gps = station.getGPS();
+                    var gps = Station.GetGps();
            
                     var checkLocation = true;
                     MyCubeGrid storeGrid = null;
-                    if (!station.WorldName.Equals("default"))
+                    if (!Station.WorldName.Equals("default"))
                     {
-                        if (station.StationEntityId > 0)
+                        if (Station.StationEntityId > 0)
                         {
-                            if (MyAPIGateway.Entities.GetEntityById(station.StationEntityId) != null)
+                            if (MyAPIGateway.Entities.GetEntityById(Station.StationEntityId) != null)
                             {
-                                if (MyAPIGateway.Entities.GetEntityById(station.StationEntityId) is MyCubeGrid grid)
+                                if (MyAPIGateway.Entities.GetEntityById(Station.StationEntityId) is MyCubeGrid grid)
                                 {
                                     checkLocation = false;
                                     storeGrid = grid;
-                                    if (station.DoPeriodGridClearing && now >= station.nextGridInventoryClear)
+                                    if (Station.DoPeriodGridClearing && Now >= Station.NextGridInventoryClear)
                                     {
-                                        station.nextGridInventoryClear =
-                                            now.AddSeconds(station.SecondsBetweenClearEntireInventory);
-                                        InventoryLogic.ClearInventories(grid, station);
+                                        Station.NextGridInventoryClear =
+                                            Now.AddSeconds(Station.SecondsBetweenClearEntireInventory);
+                                        InventoryLogic.ClearInventories(grid, Station);
 
-                                        SaveStation(station);
+                                        SaveStation(Station);
                                     }
                                 }
                             }
@@ -66,12 +66,12 @@ namespace CrunchEconomy.Station_Stuff.Logic
                         foreach (var grid in MyAPIGateway.Entities.GetEntitiesInSphere(ref sphere)
                                      .OfType<MyCubeGrid>())
                         {
-                            if (!station.DoPeriodGridClearing || now < station.nextGridInventoryClear) continue;
-                            station.nextGridInventoryClear =
-                                now.AddSeconds(station.SecondsBetweenClearEntireInventory);
-                            InventoryLogic.ClearInventories(grid, station);
+                            if (!Station.DoPeriodGridClearing || Now < Station.NextGridInventoryClear) continue;
+                            Station.NextGridInventoryClear =
+                                Now.AddSeconds(Station.SecondsBetweenClearEntireInventory);
+                            InventoryLogic.ClearInventories(grid, Station);
                             storeGrid = grid;
-                            SaveStation(station);
+                            SaveStation(Station);
                         }
                     }
 
@@ -79,57 +79,57 @@ namespace CrunchEconomy.Station_Stuff.Logic
 
                     foreach (var store in storeGrid.GetFatBlocks().OfType<MyStoreBlock>())
                     {
-                        if (!store.GetOwnerFactionTag().Equals(station.OwnerFactionTag)) continue;
-                        station.StationEntityId = store.CubeGrid.EntityId;
-                        station.WorldName = MyMultiplayer.Static.HostName;
-                        if (now >= station.nextSellRefresh && station.DoSellOffers)
+                        if (!store.GetOwnerFactionTag().Equals(Station.OwnerFactionTag)) continue;
+                        Station.StationEntityId = store.CubeGrid.EntityId;
+                        Station.WorldName = MyMultiplayer.Static.HostName;
+                        if (Now >= Station.NextSellRefresh && Station.DoSellOffers)
                         {
-                            AddSellTime = true;
-                            DoSellRefresh(station, now, store, storeGrid);
+                            addSellTime = true;
+                            DoSellRefresh(Station, Now, store, storeGrid);
                         }
 
-                        if (now >= station.nextBuyRefresh && station.DoBuyOrders)
+                        if (Now >= Station.NextBuyRefresh && Station.DoBuyOrders)
                         {
-                            AddBuyTime = true;
-                            DoBuyRefresh(station, now, store, storeGrid);
+                            addBuyTime = true;
+                            DoBuyRefresh(Station, Now, store, storeGrid);
                         }
                     }
                 }
 
                 var save = false;
-                if (AddSellTime)
+                if (addSellTime)
                 {
-                    station.nextSellRefresh = now.AddSeconds(station.SecondsBetweenRefreshForSellOffers);
+                    Station.NextSellRefresh = Now.AddSeconds(Station.SecondsBetweenRefreshForSellOffers);
                     save = true;
                 }
 
-                if (AddBuyTime)
+                if (addBuyTime)
                 {
-                    station.nextBuyRefresh = now.AddSeconds(station.SecondsBetweenRefreshForBuyOrders);
+                    Station.NextBuyRefresh = Now.AddSeconds(Station.SecondsBetweenRefreshForBuyOrders);
                     save = true;
                 }
 
                 if (save)
                 {
-                    SaveStation(station);
+                    SaveStation(Station);
                 }
             }
 
             catch (Exception ex)
             {
-                SaveStation(station);
-                CrunchEconCore.Log.Error("Error on this station " + station.Name);
+                SaveStation(Station);
+                CrunchEconCore.Log.Error("Error on this station " + Station.Name);
                 CrunchEconCore.Log.Error(ex.ToString());
             }
         }
 
-        public static void DoBuyRefresh(Stations station, DateTime now, MyStoreBlock store, MyCubeGrid storeGrid)
+        public static void DoBuyRefresh(Stations Station, DateTime Now, MyStoreBlock Store, MyCubeGrid StoreGrid)
         {
-            if (!CrunchEconCore.ConfigProvider.GetBuyOrders().TryGetValue(store.DisplayNameText, out var orders)) return;
-            ClearStoreOfPlayersSellingOrders(store);
+            if (!CrunchEconCore.ConfigProvider.GetBuyOrders().TryGetValue(Store.DisplayNameText, out var orders)) return;
+            ClearStoreOfPlayersSellingOrders(Store);
             var inventories =
                 new List<VRage.Game.ModAPI.IMyInventory>();
-            inventories.AddRange(InventoryLogic.GetInventories(storeGrid, station));
+            inventories.AddRange(InventoryLogic.GetInventories(StoreGrid, Station));
 
             foreach (var order in orders)
             {
@@ -137,47 +137,47 @@ namespace CrunchEconomy.Station_Stuff.Logic
                 {
                     if (order.IndividualRefreshTimer)
                     {
-                        if (individualTimers.TryGetValue(store.EntityId, out var refresh))
+                        if (IndividualTimers.TryGetValue(Store.EntityId, out var refresh))
                         {
-                            if (now < refresh)
+                            if (Now < refresh)
                             {
                                 continue;
                             }
 
-                            individualTimers[store.EntityId] =
+                            IndividualTimers[Store.EntityId] =
                                 DateTime.Now.AddSeconds(order.SecondsBetweenRefresh);
                         }
                         else
                         {
-                            individualTimers.Add(store.EntityId,
+                            IndividualTimers.Add(Store.EntityId,
                                 DateTime.Now.AddSeconds(order.SecondsBetweenRefresh));
                         }
                     }
 
-                    if (!MyDefinitionId.TryParse("MyObjectBuilder_" + order.typeId, order.subtypeId,
+                    if (!MyDefinitionId.TryParse("MyObjectBuilder_" + order.TypeId, order.SubtypeId,
                             out var id)) continue;
                     var itemId =
-                        new SerializableDefinitionId(id.TypeId, order.subtypeId);
+                        new SerializableDefinitionId(id.TypeId, order.SubtypeId);
 
 
-                    var chance = CrunchEconCore.rnd.NextDouble();
-                    if (!(chance <= order.chance)) continue;
-                    var price = CrunchEconCore.rnd.Next((int)order.minPrice, (int)order.maxPrice);
+                    var chance = CrunchEconCore.Rnd.NextDouble();
+                    if (!(chance <= order.Chance)) continue;
+                    var price = CrunchEconCore.Rnd.Next((int)order.MinPrice, (int)order.MaxPrice);
                     price = Convert.ToInt32(price *
-                                            station.GetModifier(
+                                            Station.GetModifier(
                                                 order.StationModifierItemName));
-                    var amount = CrunchEconCore.rnd.Next((int)order.minAmount, (int)order.maxAmount);
+                    var amount = CrunchEconCore.Rnd.Next((int)order.MinAmount, (int)order.MaxAmount);
                     var item =
                         new MyStoreItemData(itemId, amount, price, null, null);
                     var result =
-                        store.InsertOrder(item, out var notUsingThis);
+                        Store.InsertOrder(item, out var notUsingThis);
                     if (result == MyStoreInsertResults.Fail_PricePerUnitIsLessThanMinimum ||
                         result == MyStoreInsertResults.Fail_StoreLimitReached ||
                         result == MyStoreInsertResults.Error)
                     {
                         CrunchEconCore.Log.Error("Unable to insert this order into store " +
-                                                 order.typeId + " " + order.subtypeId +
-                                                 " at station " + station.Name + " " +
+                                                 order.TypeId + " " + order.SubtypeId +
+                                                 " at station " + Station.Name + " " +
                                                  result.ToString());
                     }
                 }
@@ -186,32 +186,32 @@ namespace CrunchEconomy.Station_Stuff.Logic
                 catch (Exception ex)
                 {
 
-                    CrunchEconCore.Log.Error("Error on this buy order " + order.typeId + " " +
-                                             order.subtypeId);
-                    CrunchEconCore.Log.Error("for this station " + station.Name);
-                    station.nextBuyRefresh =
-                        now.AddSeconds(station.SecondsBetweenRefreshForBuyOrders);
+                    CrunchEconCore.Log.Error("Error on this buy order " + order.TypeId + " " +
+                                             order.SubtypeId);
+                    CrunchEconCore.Log.Error("for this station " + Station.Name);
+                    Station.NextBuyRefresh =
+                        Now.AddSeconds(Station.SecondsBetweenRefreshForBuyOrders);
                     CrunchEconCore.Log.Error(ex.ToString());
-                    SaveStation(station);
+                    SaveStation(Station);
                 }
 
             }
         }
 
-        public static void DoSellRefresh(Stations station, DateTime now, MyStoreBlock store, MyCubeGrid storeGrid)
+        public static void DoSellRefresh(Stations Station, DateTime Now, MyStoreBlock Store, MyCubeGrid StoreGrid)
         {
             if (!CrunchEconCore.ConfigProvider.GetSellOffers()
-                    .TryGetValue(store.DisplayNameText, out var offers)) return;
-            ClearStoreOfPlayersBuyingOffers(store);
+                    .TryGetValue(Store.DisplayNameText, out var offers)) return;
+            ClearStoreOfPlayersBuyingOffers(Store);
             var inventories = new List<IMyInventory>();
-            inventories.AddRange(InventoryLogic.GetInventories(storeGrid, station));
+            inventories.AddRange(InventoryLogic.GetInventories(StoreGrid, Station));
 
             foreach (var offer in offers)
             {
                 try
                 {
-                    var chance = CrunchEconCore.rnd.NextDouble();
-                    if (!MyDefinitionId.TryParse("MyObjectBuilder_" + offer.typeId, offer.subtypeId,
+                    var chance = CrunchEconCore.Rnd.NextDouble();
+                    if (!MyDefinitionId.TryParse("MyObjectBuilder_" + offer.TypeId, offer.SubtypeId,
                             out var id)) continue;
                     var hasAmount = InventoryLogic.CountComponents(inventories, id).ToIntSafe();
                     if (hasAmount > 0)
@@ -220,24 +220,24 @@ namespace CrunchEconomy.Station_Stuff.Logic
                         {
                             var amountSpawned = 0;
 
-                            amountSpawned = CrunchEconCore.rnd.Next(offer.minAmountToSpawn,
-                                offer.maxAmountToSpawn);
+                            amountSpawned = CrunchEconCore.Rnd.Next(offer.MinAmountToSpawn,
+                                offer.MaxAmountToSpawn);
                             if (offer.IndividualRefreshTimer)
                             {
-                                if (individualTimers.TryGetValue(store.EntityId,
+                                if (IndividualTimers.TryGetValue(Store.EntityId,
                                         out var refresh))
                                 {
-                                    if (now >= refresh)
+                                    if (Now >= refresh)
                                     {
-                                        individualTimers[store.EntityId] =
+                                        IndividualTimers[Store.EntityId] =
                                             DateTime.Now.AddSeconds(
                                                 offer.SecondsBetweenRefresh);
 
 
-                                        if (chance <= offer.chance)
+                                        if (chance <= offer.Chance)
                                         {
-                                            InventoryLogic.SpawnItems(storeGrid, id,
-                                                (MyFixedPoint)amountSpawned, station);
+                                            InventoryLogic.SpawnItems(StoreGrid, id,
+                                                (MyFixedPoint)amountSpawned, Station);
                                             hasAmount += amountSpawned;
                                         }
                                     }
@@ -248,48 +248,48 @@ namespace CrunchEconomy.Station_Stuff.Logic
                                 }
                                 else
                                 {
-                                    individualTimers.Add(store.EntityId,
+                                    IndividualTimers.Add(Store.EntityId,
                                         DateTime.Now.AddSeconds(offer.SecondsBetweenRefresh));
 
-                                    if (chance <= offer.chance)
+                                    if (chance <= offer.Chance)
                                     {
-                                        InventoryLogic.SpawnItems(storeGrid, id,
-                                            (MyFixedPoint)amountSpawned, station);
+                                        InventoryLogic.SpawnItems(StoreGrid, id,
+                                            (MyFixedPoint)amountSpawned, Station);
                                         hasAmount += amountSpawned;
                                     }
                                 }
                             }
                             else
                             {
-                                if (chance <= offer.chance)
+                                if (chance <= offer.Chance)
                                 {
-                                    InventoryLogic.SpawnItems(storeGrid, id,
-                                        (MyFixedPoint)amountSpawned, station);
+                                    InventoryLogic.SpawnItems(StoreGrid, id,
+                                        (MyFixedPoint)amountSpawned, Station);
                                     hasAmount += amountSpawned;
                                 }
                             }
 
                         }
 
-                        var itemId = new SerializableDefinitionId(id.TypeId, offer.subtypeId);
+                        var itemId = new SerializableDefinitionId(id.TypeId, offer.SubtypeId);
 
-                        var price = CrunchEconCore.rnd.Next((int)offer.minPrice, (int)offer.maxPrice);
+                        var price = CrunchEconCore.Rnd.Next((int)offer.MinPrice, (int)offer.MaxPrice);
                         price = Convert.ToInt32(price *
-                                                station.GetModifier(
+                                                Station.GetModifier(
                                                     offer.StationModifierItemName));
                         var item = new MyStoreItemData(itemId, hasAmount, price,
                             null, null);
                         //       CrunchEconCore.Log.Info("if it got here its creating the offer");
                         var result =
-                            store.InsertOffer(item, out var notUsingThis);
+                            Store.InsertOffer(item, out var notUsingThis);
 
                         if (result == MyStoreInsertResults.Fail_PricePerUnitIsLessThanMinimum ||
                             result == MyStoreInsertResults.Fail_StoreLimitReached ||
                             result == MyStoreInsertResults.Error)
                         {
                             CrunchEconCore.Log.Error("Unable to insert this offer into store " +
-                                                     offer.typeId + " " + offer.subtypeId +
-                                                     " at station " + station.Name + " " +
+                                                     offer.TypeId + " " + offer.SubtypeId +
+                                                     " at station " + Station.Name + " " +
                                                      result.ToString());
                         }
                     }
@@ -298,24 +298,24 @@ namespace CrunchEconomy.Station_Stuff.Logic
                         if (!offer.SpawnItemsIfNeeded) continue;
                         var amountSpawned = 0;
 
-                        amountSpawned = CrunchEconCore.rnd.Next(offer.minAmountToSpawn,
-                            offer.maxAmountToSpawn);
+                        amountSpawned = CrunchEconCore.Rnd.Next(offer.MinAmountToSpawn,
+                            offer.MaxAmountToSpawn);
                         if (offer.IndividualRefreshTimer)
                         {
-                            if (individualTimers.TryGetValue(store.EntityId,
+                            if (IndividualTimers.TryGetValue(Store.EntityId,
                                     out var refresh))
                             {
-                                if (now >= refresh)
+                                if (Now >= refresh)
                                 {
-                                    individualTimers[store.EntityId] =
+                                    IndividualTimers[Store.EntityId] =
                                         DateTime.Now.AddSeconds(
                                             offer.SecondsBetweenRefresh);
 
 
-                                    if (chance <= offer.chance)
+                                    if (chance <= offer.Chance)
                                     {
-                                        InventoryLogic.SpawnItems(storeGrid, id,
-                                            (MyFixedPoint)amountSpawned, station);
+                                        InventoryLogic.SpawnItems(StoreGrid, id,
+                                            (MyFixedPoint)amountSpawned, Station);
                                         hasAmount += amountSpawned;
                                     }
                                 }
@@ -326,13 +326,13 @@ namespace CrunchEconomy.Station_Stuff.Logic
                             }
                             else
                             {
-                                individualTimers.Add(store.EntityId,
+                                IndividualTimers.Add(Store.EntityId,
                                     DateTime.Now.AddSeconds(offer.SecondsBetweenRefresh));
 
-                                if (chance <= offer.chance)
+                                if (chance <= offer.Chance)
                                 {
-                                    InventoryLogic.SpawnItems(storeGrid, id,
-                                        (MyFixedPoint)amountSpawned, station);
+                                    InventoryLogic.SpawnItems(StoreGrid, id,
+                                        (MyFixedPoint)amountSpawned, Station);
                                     hasAmount += amountSpawned;
                                 }
                             }
@@ -340,86 +340,86 @@ namespace CrunchEconomy.Station_Stuff.Logic
                         }
                         else
                         {
-                            InventoryLogic.SpawnItems(storeGrid, id,
-                                (MyFixedPoint)offer.SpawnIfCargoLessThan, station);
+                            InventoryLogic.SpawnItems(StoreGrid, id,
+                                (MyFixedPoint)offer.SpawnIfCargoLessThan, Station);
                         }
 
 
                         var itemId =
-                            new SerializableDefinitionId(id.TypeId, offer.subtypeId);
+                            new SerializableDefinitionId(id.TypeId, offer.SubtypeId);
 
 
 
 
-                        var price = CrunchEconCore.rnd.Next((int)offer.minPrice, (int)offer.maxPrice);
+                        var price = CrunchEconCore.Rnd.Next((int)offer.MinPrice, (int)offer.MaxPrice);
                         price = Convert.ToInt32(price *
-                                                station.GetModifier(
+                                                Station.GetModifier(
                                                     offer.StationModifierItemName));
                         var item = new MyStoreItemData(itemId,
                             offer.SpawnIfCargoLessThan, price, null, null);
                         //    CrunchEconCore.Log.Info("if it got here its creating the offer");
                         var result =
-                            store.InsertOffer(item, out var notUsingThis);
+                            Store.InsertOffer(item, out var notUsingThis);
                         if (result == MyStoreInsertResults
                                 .Fail_PricePerUnitIsLessThanMinimum ||
                             result == MyStoreInsertResults.Fail_StoreLimitReached ||
                             result == MyStoreInsertResults.Error)
                         {
                             CrunchEconCore.Log.Error(
-                                "Unable to insert this offer into store " + offer.typeId +
-                                " " + offer.subtypeId + " at station " + station.Name +
+                                "Unable to insert this offer into store " + offer.TypeId +
+                                " " + offer.SubtypeId + " at station " + Station.Name +
                                 " " + result.ToString());
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                    CrunchEconCore.Log.Error("Error on this sell offer " + offer.typeId + " " +
-                                             offer.subtypeId);
-                    CrunchEconCore.Log.Error("for this station " + station.Name);
-                    station.nextSellRefresh =
-                        now.AddSeconds(station.SecondsBetweenRefreshForSellOffers);
+                    CrunchEconCore.Log.Error("Error on this sell offer " + offer.TypeId + " " +
+                                             offer.SubtypeId);
+                    CrunchEconCore.Log.Error("for this station " + Station.Name);
+                    Station.NextSellRefresh =
+                        Now.AddSeconds(Station.SecondsBetweenRefreshForSellOffers);
                     CrunchEconCore.Log.Error(ex.ToString());
-                    SaveStation(station);
+                    SaveStation(Station);
                 }
             }
         }
 
-        public static void ClearStoreOfPlayersSellingOrders(MyStoreBlock store)
+        public static void ClearStoreOfPlayersSellingOrders(MyStoreBlock Store)
         {
-            var yeet = store.PlayerItems.Where(item => item.StoreItemType == StoreItemTypes.Order).ToList();
+            var yeet = Store.PlayerItems.Where(Item => Item.StoreItemType == StoreItemTypes.Order).ToList();
             foreach (var item in yeet)
             {
-                store.CancelStoreItem(item.Id);
+                Store.CancelStoreItem(item.Id);
             }
         }
 
-        public static void ClearStoreOfPlayersBuyingOffers(MyStoreBlock store)
+        public static void ClearStoreOfPlayersBuyingOffers(MyStoreBlock Store)
         {
 
-            var yeet = store.PlayerItems.Where(item => item.StoreItemType == StoreItemTypes.Offer).ToList();
+            var yeet = Store.PlayerItems.Where(Item => Item.StoreItemType == StoreItemTypes.Offer).ToList();
             foreach (var item in yeet)
             {
-                store.CancelStoreItem(item.Id);
+                Store.CancelStoreItem(item.Id);
             }
         }
 
-        public static void SaveStation(Stations station)
+        public static void SaveStation(Stations Station)
         {
-            CrunchEconCore.ConfigProvider.SaveStation(station);
+            CrunchEconCore.ConfigProvider.SaveStation(Station);
         }
 
-        public static void RefreshWhitelists(Stations station)
+        public static void RefreshWhitelists(Stations Station)
         {
-            if (!station.WhitelistedSafezones) return;
-            var sphere = new BoundingSphereD(station.getGPS().Coords, 200);
+            if (!Station.WhitelistedSafezones) return;
+            var sphere = new BoundingSphereD(Station.GetGps().Coords, 200);
 
             foreach (var zone in MyAPIGateway.Entities.GetEntitiesInSphere(ref sphere).OfType<MySafeZone>())
             {
                 zone.Factions.Clear();
-                zone.AccessTypeFactions = station.DoBlacklist ? MySafeZoneAccess.Blacklist : MySafeZoneAccess.Whitelist;
+                zone.AccessTypeFactions = Station.DoBlacklist ? MySafeZoneAccess.Blacklist : MySafeZoneAccess.Whitelist;
 
-                foreach (var s in station.Whitelist)
+                foreach (var s in Station.Whitelist)
                 {
                     if (s.Contains("LIST:"))
                     {

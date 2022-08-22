@@ -10,13 +10,13 @@ namespace CrunchEconomy.ModifierFluctuations
     {
         [Command("random", "randomise the modifiers of this name between these values")]
         [Permission(MyPromoteLevel.Admin)]
-        public void applyModifiers(string modifierName, string type, double min, double max, int applyTo = 500, Boolean localInstance = true)
+        public void ApplyModifiers(string ModifierName, string Type, double Min, double Max, int ApplyTo = 500, Boolean LocalInstance = true)
         {
           
         }
         [Command("set", "set the modifiers of this name between these values")]
         [Permission(MyPromoteLevel.Admin)]
-        public void setModifiers(string modifierName, double newAmount, Boolean localInstance = true)
+        public void SetModifiers(string ModifierName, double NewAmount, Boolean LocalInstance = true)
         {
 
         }

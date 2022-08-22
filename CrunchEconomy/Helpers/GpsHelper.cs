@@ -13,10 +13,10 @@ namespace CrunchEconomy.Helpers
 {
     public static class GpsHelper
     {
-        public static MyGps ParseGPS(string input, string desc = null)
+        public static MyGps ParseGps(string Input, string Desc = null)
         {
             var flag = true;
-            var matchCollection = Regex.Matches(input, "GPS:([^:]{0,32}):([\\d\\.-]*):([\\d\\.-]*):([\\d\\.-]*):");
+            var matchCollection = Regex.Matches(Input, "GPS:([^:]{0,32}):([\\d\\.-]*):([\\d\\.-]*):([\\d\\.-]*):");
 
             var color = new Color(117, 201, 241);
             foreach (Match match in matchCollection)
@@ -40,7 +40,7 @@ namespace CrunchEconomy.Helpers
                 var gps = new MyGps()
                 {
                     Name = str,
-                    Description = desc,
+                    Description = Desc,
                     Coords = new Vector3D(x, y, z),
                     GPSColor = color,
                     ShowOnHud = true

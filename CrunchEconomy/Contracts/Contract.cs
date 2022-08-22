@@ -15,37 +15,37 @@ namespace CrunchEconomy.Contracts
 {
     public class Contract
     {
-        public ContractStatus status = ContractStatus.InProgress;
+        public ContractStatus Status = ContractStatus.InProgress;
         public Guid ContractId = Guid.NewGuid();
-        public ContractType type;
+        public ContractType Type;
         public Boolean DoRareItemReward = false;
         public string TypeIfHauling = "Ingot";
         public string ContractName;
         public ulong PlayerSteamId;
         public Boolean GivenItemReward = false;
         public long DistanceBonus = 0;
-        public long contractPrice = 0;
+        public long ContractPrice = 0;
         public string CargoName = "default";
         
         public long StationEntityId = 0;
         public List<RewardItem> PlayerLoot = new List<RewardItem>();
         public List<RewardItem> PutInStation = new List<RewardItem>();
-        public int reputation = 1;
+        public int Reputation = 1;
         public int CooldownInSeconds = 1;
         public string SubType;
         public Boolean PutTheHaulInStation = false;
-        public int minedAmount = 0;
+        public int MinedAmount = 0;
         public Boolean SpawnItemsInPlayerInventory;
         public DateTime TimeCompleted;
-        public int amountToMineOrDeliver = 0;
+        public int AmountToMineOrDeliver = 0;
         public long AmountPaid = 0;
     
 
-        public void DoPlayerGps(long identityId)
+        public void DoPlayerGps(long IdentityId)
         {
             var gpscol = (MyGpsCollection)MyAPIGateway.Session?.GPS;
             var sb = new StringBuilder();
-            sb.AppendLine("Deliver " + amountToMineOrDeliver + " " + SubType + " Ore. !contract info");
+            sb.AppendLine("Deliver " + AmountToMineOrDeliver + " " + SubType + " Ore. !contract info");
             sb.AppendLine("Contract Delivery Location.");
             if (ScanChat(DeliveryLocation) != null)
             {
@@ -57,13 +57,13 @@ namespace CrunchEconomy.Contracts
                 gpsRef.DisplayName = "Delivery Location. " + SubType;
                 gpsRef.Name = "Delivery Location. " + SubType;
                 gpsRef.DiscardAt = new TimeSpan(600);
-                gpscol.SendAddGpsRequest(identityId, ref gpsRef);
+                gpscol.SendAddGpsRequest(IdentityId, ref gpsRef);
             }
         }
-        public Vector3 getCoords()
+        public Vector3 GetCoords()
         {
             var sb = new StringBuilder();
-            sb.AppendLine("Deliver " + amountToMineOrDeliver + " " + SubType + " Ore. !contract info");
+            sb.AppendLine("Deliver " + AmountToMineOrDeliver + " " + SubType + " Ore. !contract info");
             sb.AppendLine("Contract Delivery Location.");
             if (ScanChat(DeliveryLocation) != null)
             {
@@ -81,11 +81,11 @@ namespace CrunchEconomy.Contracts
 
             return new Vector3(0, 0, 0);
         }
-        public static MyGps ScanChat(string input, string desc = null)
+        public static MyGps ScanChat(string Input, string Desc = null)
         {
 
             var flag = true;
-            var matchCollection = Regex.Matches(input, "GPS:([^:]{0,32}):([\\d\\.-]*):([\\d\\.-]*):([\\d\\.-]*):");
+            var matchCollection = Regex.Matches(Input, "GPS:([^:]{0,32}):([\\d\\.-]*):([\\d\\.-]*):([\\d\\.-]*):");
 
             var color = new Color(117, 201, 241);
             foreach (Match match in matchCollection)
@@ -109,7 +109,7 @@ namespace CrunchEconomy.Contracts
                 var gps = new MyGps()
                 {
                     Name = str,
-                    Description = desc,
+                    Description = Desc,
                     Coords = new Vector3D(x, y, z),
                     GPSColor = color,
                     ShowOnHud = false
@@ -121,17 +121,17 @@ namespace CrunchEconomy.Contracts
             return null;
         }
 
-        public void GenerateAmountToMine(int min, int max)
+        public void GenerateAmountToMine(int Min, int Max)
         {
             var rnd = new Random();
-            amountToMineOrDeliver = rnd.Next(min - 1, max + 1);
+            AmountToMineOrDeliver = rnd.Next(Min - 1, Max + 1);
 
         }
 
-        public Boolean AddToContractAmount(int amount)
+        public Boolean AddToContractAmount(int Amount)
         {
-            minedAmount += amount;
-            if (minedAmount >= amountToMineOrDeliver)
+            MinedAmount += Amount;
+            if (MinedAmount >= AmountToMineOrDeliver)
             {
                 return true;
             }

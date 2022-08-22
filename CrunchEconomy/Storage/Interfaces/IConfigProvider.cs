@@ -19,7 +19,7 @@ namespace CrunchEconomy.Storage.Interfaces
         Dictionary<string, GridSale> GetGridsForSale();
         Dictionary<string, List<BuyOrder>> GetBuyOrders();
         Dictionary<string, List<SellOffer>> GetSellOffers();
-        void SaveStation(Stations station);
+        void SaveStation(Stations Station);
         void LoadStations();
         void LoadAllBuyOrders();
         void LoadAllSellOffers();

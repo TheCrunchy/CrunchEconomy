@@ -9,24 +9,24 @@ namespace CrunchEconomy.SurveyMissions
 {
     public class SurveyMission
     {
-        public Guid id;
-        public ContractStatus status = ContractStatus.InProgress;
-        public Boolean enabled = false;
-        public ulong steamId;
+        public Guid Id;
+        public ContractStatus Status = ContractStatus.InProgress;
+        public Boolean Enabled = false;
+        public ulong SteamId;
         public double CurrentPosX = 0;
         public double CurrentPosY = 0;
         public double CurrentPosZ = 0;
         public int CurrentStage = 1;
-        private Dictionary<int, SurveyStage> missions = new Dictionary<int, SurveyStage>();
-        public double chance = 1;
+        private Dictionary<int, SurveyStage> _missions = new Dictionary<int, SurveyStage>();
+        public double Chance = 1;
         public int ReputationRequired = 0;
-        public List<SurveyStage> configs = new List<SurveyStage>();
+        public List<SurveyStage> Configs = new List<SurveyStage>();
 
-        public SurveyStage getStage(int stagenum)
+        public SurveyStage GetStage(int Stagenum)
         {
-            if (missions.ContainsKey(stagenum))
+            if (_missions.ContainsKey(Stagenum))
             {
-                return missions[stagenum];
+                return _missions[Stagenum];
             }
             else
             {
@@ -36,11 +36,11 @@ namespace CrunchEconomy.SurveyMissions
 
         public void SetupMissionList()
         {
-            foreach (var stage in configs)
+            foreach (var stage in Configs)
             {
-                if (!missions.ContainsKey(stage.StageNum))
+                if (!_missions.ContainsKey(stage.StageNum))
                 {
-                    missions.Add(stage.StageNum, stage);
+                    _missions.Add(stage.StageNum, stage);
                 }
             }
         }
