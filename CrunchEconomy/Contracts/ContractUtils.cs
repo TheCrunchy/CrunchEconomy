@@ -22,12 +22,12 @@ namespace CrunchEconomy.Contracts
         static Random rand = new Random();
         public static Contract GeneratedToPlayer(GeneratedContract gen)
         {
-            Contract contract = new Contract();
+            var contract = new Contract();
             contract.type = gen.type;
-            List<ContractInfo> temporary = new List<ContractInfo>();
-            foreach (ContractInfo info in gen.ItemsToPickFrom)
+            var temporary = new List<ContractInfo>();
+            foreach (var info in gen.ItemsToPickFrom)
             {
-                double chance = rand.NextDouble();
+                var chance = rand.NextDouble();
                 if (chance <= info.chance)
                 {
                     temporary.Add(info);
@@ -61,16 +61,16 @@ namespace CrunchEconomy.Contracts
 
         public static SurveyMission GetNewMission(PlayerData data)
         {
-            List<SurveyMission> Possible = new List<SurveyMission>();
+            var Possible = new List<SurveyMission>();
             SurveyMission chosen = null;
-            foreach (SurveyMission mission in SurveyMissions)
+            foreach (var mission in SurveyMissions)
             {
                 if (mission.enabled)
                 {
                     if (data.SurveyReputation >= mission.ReputationRequired)
                     {
-                        Random rand = new Random();
-                        double chance = rand.NextDouble();
+                        var rand = new Random();
+                        var chance = rand.NextDouble();
                         if (chance <= mission.chance)
                         {
                             if (mission.getStage(1) != null && mission.getStage(1).enabled)
@@ -95,8 +95,8 @@ namespace CrunchEconomy.Contracts
             {
                 chosen = Possible[0];
             }
-            Random random = new Random();
-            int r = random.Next(Possible.Count);
+            var random = new Random();
+            var r = random.Next(Possible.Count);
             chosen = Possible[r];
 
             if (chosen != null)
@@ -110,8 +110,8 @@ namespace CrunchEconomy.Contracts
 
         public static Stations GetDeliveryLocation(Contract contract)
         {
-            List<Stations> locations = new List<Stations>();
-            foreach (Stations station in CrunchEconCore.stations)
+            var locations = new List<Stations>();
+            foreach (var station in CrunchEconCore.stations)
             {
                 if (station.getGPS() != null && station.UseAsDeliveryLocationForContracts)
                 {
@@ -119,12 +119,12 @@ namespace CrunchEconomy.Contracts
                 }
             }
 
-            Random random = new Random();
+            var random = new Random();
             if (locations.Count == 1)
             {
                 return locations[0];
             }
-            int r = random.Next(locations.Count);
+            var r = random.Next(locations.Count);
             return locations[r];
 
         }
@@ -134,11 +134,11 @@ namespace CrunchEconomy.Contracts
         {
             newContracts.Clear();
             SurveyMissions.Clear();
-            foreach (String s in Directory.GetFiles(CrunchEconCore.path + "//ContractConfigs//Mining//"))
+            foreach (var s in Directory.GetFiles(CrunchEconCore.path + "//ContractConfigs//Mining//"))
             {
 
 
-                GeneratedContract contract = CrunchEconCore.utils.ReadFromXmlFile<GeneratedContract>(s);
+                var contract = CrunchEconCore.utils.ReadFromXmlFile<GeneratedContract>(s);
                 //  DateTime now = DateTime.Now;
                 //if (now.Minute == 59 || now.Minute == 60)
                 //{
@@ -158,11 +158,11 @@ namespace CrunchEconomy.Contracts
                     newContracts.Add(contract.Name, contract);
                 }
             }
-            foreach (String s in Directory.GetFiles(CrunchEconCore.path + "//ContractConfigs//Hauling//"))
+            foreach (var s in Directory.GetFiles(CrunchEconCore.path + "//ContractConfigs//Hauling//"))
             {
 
 
-                GeneratedContract contract = CrunchEconCore.utils.ReadFromXmlFile<GeneratedContract>(s);
+                var contract = CrunchEconCore.utils.ReadFromXmlFile<GeneratedContract>(s);
                 //  DateTime now = DateTime.Now;
                 //if (now.Minute == 59 || now.Minute == 60)
                 //{
@@ -183,11 +183,11 @@ namespace CrunchEconomy.Contracts
                 }
             }
 
-            foreach (String s in Directory.GetFiles(CrunchEconCore.path + "//ContractConfigs//Survey//"))
+            foreach (var s in Directory.GetFiles(CrunchEconCore.path + "//ContractConfigs//Survey//"))
             {
 
 
-               SurveyMission mission = CrunchEconCore.utils.ReadFromXmlFile<SurveyMission>(s);
+               var mission = CrunchEconCore.utils.ReadFromXmlFile<SurveyMission>(s);
                 //  DateTime now = DateTime.Now;
                 //if (now.Minute == 59 || now.Minute == 60)
                 //{
@@ -207,14 +207,14 @@ namespace CrunchEconomy.Contracts
         public static MyGps ScanChat(string input, string desc = null)
         {
 
-            int num = 0;
-            bool flag = true;
-            MatchCollection matchCollection = Regex.Matches(input, "GPS:([^:]{0,32}):([\\d\\.-]*):([\\d\\.-]*):([\\d\\.-]*):");
+            var num = 0;
+            var flag = true;
+            var matchCollection = Regex.Matches(input, "GPS:([^:]{0,32}):([\\d\\.-]*):([\\d\\.-]*):([\\d\\.-]*):");
 
-            Color color = new Color(117, 201, 241);
+            var color = new Color(117, 201, 241);
             foreach (Match match in matchCollection)
             {
-                string str = match.Groups[1].Value;
+                var str = match.Groups[1].Value;
                 double x;
                 double y;
                 double z;
@@ -230,7 +230,7 @@ namespace CrunchEconomy.Contracts
                 {
                     continue;
                 }
-                MyGps gps = new MyGps()
+                var gps = new MyGps()
                 {
                     Name = str,
                     Description = desc,

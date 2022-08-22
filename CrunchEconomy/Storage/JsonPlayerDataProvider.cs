@@ -13,7 +13,7 @@ using NLog;
 
 namespace CrunchEconomy.Storage
 {
-    public class XmlPlayerDataProvider : IPlayerDataProvider
+    public class JsonPlayerDataProvider : IPlayerDataProvider
     {
         public string FolderLocation { get; set; }
         public FileUtils Utils { get; set; } = new FileUtils();
@@ -30,18 +30,18 @@ namespace CrunchEconomy.Storage
 
         public void SavePlayerData(PlayerData Data)
         {
-            Utils.WriteToXmlFile<PlayerData>($"{FolderLocation}//PlayerData//Data//{Data.steamId}.xml", Data);
+            
+            Utils.WriteToJsonFile<PlayerData>($"{FolderLocation}//PlayerData//Data//{Data.steamId}.json", Data);
         }
 
         public SurveyMission LoadMission(Guid SurveyMission)
         {
-            var path = $"{CrunchEconCore.path}//PlayerData//Survey//InProgress//{SurveyMission}.xml";
+            var path = $"{CrunchEconCore.path}//PlayerData//Survey//InProgress//{SurveyMission}.json";
             if (!File.Exists(path)) return null;
-            var mission = CrunchEconCore.utils.ReadFromXmlFile<SurveyMission>(path);
+            var mission = CrunchEconCore.utils.ReadFromJsonFile<SurveyMission>(path);
             if (mission == null) return null;
             mission.SetupMissionList();
             return mission;
-
         }
 
         public Dictionary<Guid, Contract> LoadMiningContracts(List<Guid> Ids)
@@ -49,10 +49,10 @@ namespace CrunchEconomy.Storage
             var temporary = new Dictionary<Guid, Contract>();
             foreach (var id in Ids)
             {
-                var path = $"{FolderLocation}//PlayerData//Mining//InProgress//{id}.xml";
+                var path = $"{FolderLocation}//PlayerData//Mining//InProgress//{id}.json";
                 if (!File.Exists(path)) continue;
                 if (temporary.ContainsKey(id)) continue;
-                var contract = CrunchEconCore.utils.ReadFromXmlFile<Contract>(path);
+                var contract = CrunchEconCore.utils.ReadFromJsonFile<Contract>(path);
                 temporary.Add(id, contract);
             }
 
@@ -63,10 +63,10 @@ namespace CrunchEconomy.Storage
             var temporary = new Dictionary<Guid, Contract>();
             foreach (var id in Ids)
             {
-                var path = $"{FolderLocation}//PlayerData//Hauling//InProgress//{id}.xml";
+                var path = $"{FolderLocation}//PlayerData//Hauling//InProgress//{id}.json";
                 if (!File.Exists(path)) continue;
                 if (temporary.ContainsKey(id)) continue;
-                var contract = CrunchEconCore.utils.ReadFromXmlFile<Contract>(path);
+                var contract = CrunchEconCore.utils.ReadFromJsonFile<Contract>(path);
                 temporary.Add(id, contract);
             }
 
@@ -84,7 +84,7 @@ namespace CrunchEconomy.Storage
 
         public PlayerData LoadPlayerData(ulong SteamId)
         {
-            var data = Utils.ReadFromXmlFile<PlayerData>($"{FolderLocation}//PlayerData//Data//{SteamId}.xml");
+            var data = Utils.ReadFromJsonFile<PlayerData>($"{FolderLocation}//PlayerData//Data//{SteamId}.json");
             playerData.Remove(SteamId);
             if (data != null)
             {
@@ -92,10 +92,10 @@ namespace CrunchEconomy.Storage
                 return data;
             }
 
-            File.Delete($"{FolderLocation}//PlayerData//Data//{SteamId}.xml");
+            File.Delete($"{FolderLocation}//PlayerData//Data//{SteamId}.json");
             if (playerData.TryGetValue(SteamId, out var previousData))
             {
-                Utils.WriteToXmlFile<PlayerData>($"{FolderLocation}//PlayerData//Data//{SteamId}.xml", previousData);
+                Utils.WriteToJsonFile<PlayerData>($"{FolderLocation}//PlayerData//Data//{SteamId}.json", previousData);
                 playerData.Add(SteamId, previousData);
                 Log.Error($"Corrupt Player Data, if they had a previous save before login, that has been restored. {SteamId}");
                 return previousData;
@@ -109,7 +109,7 @@ namespace CrunchEconomy.Storage
             return temp;
         }
 
-        public XmlPlayerDataProvider(string StorageFolder)
+        public JsonPlayerDataProvider(string StorageFolder)
         {
             FolderLocation = StorageFolder;
             Directory.CreateDirectory(FolderLocation + "//PlayerData//Data//");
@@ -128,7 +128,7 @@ namespace CrunchEconomy.Storage
         {
             if (Delete)
             {
-                File.Delete($"{FolderLocation}//PlayerData//Mining//InProgress//{Contract.ContractId}.xml");
+                File.Delete($"{FolderLocation}//PlayerData//Mining//InProgress//{Contract.ContractId}.json");
             }
             _contractSave.Remove(Contract.ContractId);
             _contractSave.Add(Contract.ContractId, Contract);
@@ -137,7 +137,7 @@ namespace CrunchEconomy.Storage
         {
             if (Delete)
             {
-                File.Delete($"{FolderLocation}//PlayerData//Survey//InProgress//{Mission.id}.xml");
+                File.Delete($"{FolderLocation}//PlayerData//Survey//InProgress//{Mission.id}.json");
             }
             _surveySave.Remove(Mission.id);
             _surveySave.Add(Mission.id, Mission);
@@ -164,13 +164,13 @@ namespace CrunchEconomy.Storage
                 switch (contract.status)
                 {
                     case ContractStatus.InProgress:
-                        Utils.WriteToXmlFile($"{FolderLocation}//PlayerData//{type}//InProgress//{contract.ContractId}.xml", keys.Value);
+                        Utils.WriteToJsonFile($"{FolderLocation}//PlayerData//{type}//InProgress//{contract.ContractId}.json", keys.Value);
                         break;
                     case ContractStatus.Completed:
-                        Utils.WriteToXmlFile($"{FolderLocation}//PlayerData//{type}//Completed//{contract.ContractId}.xml", keys.Value);
+                        Utils.WriteToJsonFile($"{FolderLocation}//PlayerData//{type}//Completed//{contract.ContractId}.json", keys.Value);
                         break;
                     case ContractStatus.Failed:
-                        Utils.WriteToXmlFile($"{FolderLocation}//PlayerData//{type}//Failed//{contract.ContractId}.xml", keys.Value);
+                        Utils.WriteToJsonFile($"{FolderLocation}//PlayerData//{type}//Failed//{contract.ContractId}.json", keys.Value);
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();
@@ -187,13 +187,13 @@ namespace CrunchEconomy.Storage
                 switch (mission.status)
                 {
                     case ContractStatus.InProgress:
-                        Utils.WriteToXmlFile($"{FolderLocation}//PlayerData//{type}//InProgress//{mission.id}.xml", keys.Value);
+                        Utils.WriteToJsonFile($"{FolderLocation}//PlayerData//{type}//InProgress//{mission.id}.json", keys.Value);
                         break;
                     case ContractStatus.Completed:
-                        Utils.WriteToXmlFile($"{FolderLocation}//PlayerData//{type}//Completed//{mission.id}.xml", keys.Value);
+                        Utils.WriteToJsonFile($"{FolderLocation}//PlayerData//{type}//Completed//{mission.id}.json", keys.Value);
                         break;
                     case ContractStatus.Failed:
-                        Utils.WriteToXmlFile($"{FolderLocation}//PlayerData//{type}//Failed//{mission.id}.xml", keys.Value);
+                        Utils.WriteToJsonFile($"{FolderLocation}//PlayerData//{type}//Failed//{mission.id}.json", keys.Value);
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();

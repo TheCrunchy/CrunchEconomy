@@ -31,32 +31,26 @@ namespace CrunchEconomy.Contracts
         {
             return loadedMission;
         }
-        public SurveyMission getMission()
+        public SurveyMission GetMission()
         {
             if (surveyMission == Guid.Empty)
             {
                 return null;
             }
 
-            if (File.Exists(CrunchEconCore.path + "//PlayerData//Survey//InProgress//" + surveyMission.ToString() + ".xml"))
-            {
-             
-                    SurveyMission mission = CrunchEconCore.utils.ReadFromXmlFile<SurveyMission>(CrunchEconCore.path + "//PlayerData//Survey//InProgress//" + surveyMission.ToString() + ".xml");
-                mission.SetupMissionList();
-                loadedMission = mission;
-            }
-
-            return loadedMission;
+            var mission = CrunchEconCore.PlayerStorageProvider.LoadMission(surveyMission);
+            loadedMission = mission;
+            return mission;
         }
 
-        public void addMining(Contract contract)
+        public void AddMining(Contract contract)
         {
             //test
             if (loadedMining.ContainsKey(contract.ContractId)) return;
             loadedMining.Add(contract.ContractId, contract);
             MiningContracts.Add(contract.ContractId);
         }
-        public void addHauling(Contract contract)
+        public void AddHauling(Contract contract)
         {
             if (loadedHauling.ContainsKey(contract.ContractId)) return;
             loadedHauling.Add(contract.ContractId, contract);

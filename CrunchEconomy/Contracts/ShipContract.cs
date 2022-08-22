@@ -34,13 +34,13 @@ namespace CrunchEconomy.Contracts
         public String DeliveryLocation;
         public void DoPlayerGps(long identityId)
         {
-            MyGpsCollection gpscol = (MyGpsCollection)MyAPIGateway.Session?.GPS;
-            StringBuilder sb = new StringBuilder();
+            var gpscol = (MyGpsCollection)MyAPIGateway.Session?.GPS;
+            var sb = new StringBuilder();
             sb.AppendLine("Deliver grid !contract info");
             sb.AppendLine("Contract Delivery Location.");
             if (ScanChat(DeliveryLocation) != null)
             {
-                MyGps gpsRef = ScanChat(DeliveryLocation);
+                var gpsRef = ScanChat(DeliveryLocation);
                 gpsRef.GPSColor = Color.DarkOrange;
                 gpsRef.ShowOnHud = true;
                 gpsRef.Description = sb.ToString();
@@ -52,12 +52,12 @@ namespace CrunchEconomy.Contracts
         }
         public Vector3 getCoords()
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             sb.AppendLine("Deliver grid !contract info");
             sb.AppendLine("Contract Delivery Location.");
             if (ScanChat(DeliveryLocation) != null)
             {
-                MyGps gpsRef = ScanChat(DeliveryLocation);
+                var gpsRef = ScanChat(DeliveryLocation);
                 gpsRef.GPSColor = Color.DarkOrange;
                 gpsRef.ShowOnHud = true;
                 gpsRef.Description = sb.ToString();
@@ -74,14 +74,14 @@ namespace CrunchEconomy.Contracts
         public static MyGps ScanChat(string input, string desc = null)
         {
 
-            int num = 0;
-            bool flag = true;
-            MatchCollection matchCollection = Regex.Matches(input, "GPS:([^:]{0,32}):([\\d\\.-]*):([\\d\\.-]*):([\\d\\.-]*):");
+            var num = 0;
+            var flag = true;
+            var matchCollection = Regex.Matches(input, "GPS:([^:]{0,32}):([\\d\\.-]*):([\\d\\.-]*):([\\d\\.-]*):");
 
-            Color color = new Color(117, 201, 241);
+            var color = new Color(117, 201, 241);
             foreach (Match match in matchCollection)
             {
-                string str = match.Groups[1].Value;
+                var str = match.Groups[1].Value;
                 double x;
                 double y;
                 double z;
@@ -97,7 +97,7 @@ namespace CrunchEconomy.Contracts
                 {
                     continue;
                 }
-                MyGps gps = new MyGps()
+                var gps = new MyGps()
                 {
                     Name = str,
                     Description = desc,

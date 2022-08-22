@@ -77,7 +77,7 @@ namespace CrunchEconomy
 
             var rules = LogManager.Configuration.LoggingRules;
 
-            for (int i = rules.Count - 1; i >= 0; i--)
+            for (var i = rules.Count - 1; i >= 0; i--)
             {
 
                 var rule = rules[i];
@@ -179,7 +179,7 @@ namespace CrunchEconomy
             {
                 if (identity.DisplayName == playerNameOrSteamId)
                     return identity;
-                if (!ulong.TryParse(playerNameOrSteamId, out ulong steamId)) continue;
+                if (!ulong.TryParse(playerNameOrSteamId, out var steamId)) continue;
                 var id = MySession.Static.Players.TryGetSteamId(identity.IdentityId);
                 if (id == steamId)
                     return identity;
@@ -219,7 +219,7 @@ namespace CrunchEconomy
 
             MyInventory inventory;
             if (!entity.TryGetInventory(out inventory)) return true;
-            if (!CrunchEconCore.ConfigProvider.GetGridsForSale().ContainsKey(storeItem.Item.Value.SubtypeName) && !CrunchEconCore.sellOffers.ContainsKey(store.DisplayNameText))
+            if (!CrunchEconCore.ConfigProvider.GetGridsForSale().ContainsKey(storeItem.Item.Value.SubtypeName) && !CrunchEconCore.ConfigProvider.GetSellOffers().ContainsKey(store.DisplayNameText))
             {
                 //  CrunchEconCore.Log.Info("bruh");
                 return true;
@@ -239,7 +239,7 @@ namespace CrunchEconomy
             }
 
             //   CrunchEconCore.Log.Info("grids?");
-            if (CrunchEconCore.ConfigProvider.GetGridsForSale().TryGetValue(storeItem.Item.Value.SubtypeName, out GridSale sale))
+            if (CrunchEconCore.ConfigProvider.GetGridsForSale().TryGetValue(storeItem.Item.Value.SubtypeName, out var sale))
             {
                 if (amount > 1)
                 {
@@ -282,7 +282,7 @@ namespace CrunchEconomy
             }
             else
             {
-                if (!CrunchEconCore.sellOffers.TryGetValue(store.DisplayNameText, out List<SellOffer> offers))
+                if (!CrunchEconCore.ConfigProvider.GetSellOffers().TryGetValue(store.DisplayNameText, out List<SellOffer> offers))
                     return true;
 
                 foreach (var offer in offers)
@@ -444,7 +444,7 @@ namespace CrunchEconomy
                                     MiningCooldowns.Add(player.Id.SteamId, temporary);
                                 }
 
-                                data.addMining(temp);
+                                data.AddMining(temp);
                                 //do this the lazy way instead of checking then setting by the key
                                 CrunchEconCore.PlayerStorageProvider.playerData.Remove(player.Id.SteamId);
                                 CrunchEconCore.PlayerStorageProvider.playerData.Add(player.Id.SteamId, data);
@@ -609,7 +609,7 @@ namespace CrunchEconomy
 
 
 
-                                data.addHauling(temp);
+                                data.AddHauling(temp);
                                 temp.PlayerSteamId = player.Id.SteamId;
 
                                 if (contract.SpawnItemsInPlayerInvent)

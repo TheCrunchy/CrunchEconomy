@@ -36,7 +36,7 @@ namespace CrunchEconomy.SurveyMissions
 
         public void SetupMissionList()
         {
-            foreach (SurveyStage stage in configs)
+            foreach (var stage in configs)
             {
                 if (!missions.ContainsKey(stage.StageNum))
                 {

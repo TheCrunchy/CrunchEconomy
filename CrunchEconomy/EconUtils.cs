@@ -40,7 +40,7 @@ namespace CrunchEconomy
             {
                 MyBankingSystem.ChangeBalance(walletIDSender, amount);
                 // Int64 amountTaxApplied = amount * tax;
-                Int64 amountTaxApplied = amount;
+                var amountTaxApplied = amount;
                 MyBankingSystem.ChangeBalance(walletIDRecipient, amountTaxApplied);
             }
             return;

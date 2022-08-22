@@ -43,9 +43,9 @@ namespace CrunchEconomy
             {
                 if (identity.DisplayName == playerNameOrSteamId)
                     return identity;
-                if (ulong.TryParse(playerNameOrSteamId, out ulong steamId))
+                if (ulong.TryParse(playerNameOrSteamId, out var steamId))
                 {
-                    ulong id = MySession.Static.Players.TryGetSteamId(identity.IdentityId);
+                    var id = MySession.Static.Players.TryGetSteamId(identity.IdentityId);
                     if (id == steamId)
                         return identity;
                     if (identity.IdentityId == (long)steamId)
@@ -58,9 +58,9 @@ namespace CrunchEconomy
 
         public static MyObjectBuilder_ShipBlueprintDefinition[] getBluePrint(string name, long newOwner, bool keepProjection, List<MyCubeGrid> grids)
         {
-            List<MyObjectBuilder_CubeGrid> objectBuilders = new List<MyObjectBuilder_CubeGrid>();
+            var objectBuilders = new List<MyObjectBuilder_CubeGrid>();
 
-            foreach (MyCubeGrid grid in grids)
+            foreach (var grid in grids)
             {
 
                 /* What else should it be? LOL? */
@@ -70,19 +70,19 @@ namespace CrunchEconomy
                 objectBuilders.Add(objectBuilder);
             }
 
-            MyObjectBuilder_ShipBlueprintDefinition definition = MyObjectBuilderSerializer.CreateNewObject<MyObjectBuilder_ShipBlueprintDefinition>();
+            var definition = MyObjectBuilderSerializer.CreateNewObject<MyObjectBuilder_ShipBlueprintDefinition>();
 
             definition.Id = new MyDefinitionId(new MyObjectBuilderType(typeof(MyObjectBuilder_ShipBlueprintDefinition)), name);
             definition.CubeGrids = objectBuilders.Select(x => (MyObjectBuilder_CubeGrid)x.Clone()).ToArray();
 
             /* Reset ownership as it will be different on the new server anyway */
-            foreach (MyObjectBuilder_CubeGrid cubeGrid in definition.CubeGrids)
+            foreach (var cubeGrid in definition.CubeGrids)
             {
                 cubeGrid.DisplayName = newOwner.ToString();
 
-                foreach (MyObjectBuilder_CubeBlock cubeBlock in cubeGrid.CubeBlocks)
+                foreach (var cubeBlock in cubeGrid.CubeBlocks)
                 {
-                    long ownerID = GetIdentityByNameOrId(newOwner.ToString()).IdentityId;
+                    var ownerID = GetIdentityByNameOrId(newOwner.ToString()).IdentityId;
                     cubeBlock.Owner = ownerID;
                     cubeBlock.BuiltBy = ownerID;
 
@@ -111,7 +111,7 @@ namespace CrunchEconomy
                             if (components != null)
                             {
 
-                                for (int i = components.Count - 1; i >= 0; i--)
+                                for (var i = components.Count - 1; i >= 0; i--)
                                 {
 
                                     var component = components[i];
@@ -128,7 +128,7 @@ namespace CrunchEconomy
                 }
             }
 
-            MyObjectBuilder_Definitions builderDefinition = MyObjectBuilderSerializer.CreateNewObject<MyObjectBuilder_Definitions>();
+            var builderDefinition = MyObjectBuilderSerializer.CreateNewObject<MyObjectBuilder_Definitions>();
             builderDefinition.ShipBlueprints = new MyObjectBuilder_ShipBlueprintDefinition[] { definition };
 
             return builderDefinition.ShipBlueprints;
@@ -139,7 +139,7 @@ namespace CrunchEconomy
         {
             if (MyObjectBuilderSerializer.DeserializeXML(path, out MyObjectBuilder_Definitions Definition))
             {
-                List<MyObjectBuilder_CubeGrid> gridsToReturn = new List<MyObjectBuilder_CubeGrid>();
+                var gridsToReturn = new List<MyObjectBuilder_CubeGrid>();
                 if (Definition.Prefabs != null && Definition.Prefabs.Count() != 0)
                 {
                     foreach (var prefab in Definition.Prefabs)
@@ -221,15 +221,15 @@ namespace CrunchEconomy
 
             foreach (var grid in grids)
             {
-                foreach (MyObjectBuilder_CubeBlock block in grid.CubeBlocks)
+                foreach (var block in grid.CubeBlocks)
                 {
-                    long ownerID = GetIdentityByNameOrId(steamID.ToString()).IdentityId;
+                    var ownerID = GetIdentityByNameOrId(steamID.ToString()).IdentityId;
                     block.Owner = ownerID;
                     block.BuiltBy = ownerID;
                 }
             }
 
-            List<MyObjectBuilder_EntityBase> objectBuilderList = new List<MyObjectBuilder_EntityBase>(grids.ToList());
+            var objectBuilderList = new List<MyObjectBuilder_EntityBase>(grids.ToList());
 
             if (!keepOriginalLocation)
             {
@@ -258,11 +258,11 @@ namespace CrunchEconomy
 
                     return false;
                 }
-                Sandbox.Game.Entities.Character.MyCharacter player = MySession.Static.Players.GetPlayerByName(GetIdentityByNameOrId(steamID.ToString()).DisplayName).Character;
-                MyGps gps = CreateGps(pos.Value, Color.LightGreen, 60, Name);
-                MyGpsCollection gpsCollection = (MyGpsCollection)MyAPIGateway.Session?.GPS;
-                MyGps gpsRef = gps;
-                long entityId = 0L;
+                var player = MySession.Static.Players.GetPlayerByName(GetIdentityByNameOrId(steamID.ToString()).DisplayName).Character;
+                var gps = CreateGps(pos.Value, Color.LightGreen, 60, Name);
+                var gpsCollection = (MyGpsCollection)MyAPIGateway.Session?.GPS;
+                var gpsRef = gps;
+                var entityId = 0L;
                 entityId = gps.EntityId;
                 gpsCollection.SendAddGpsRequest(player.GetPlayerIdentityId(), ref gpsRef, entityId, true);
             }
@@ -275,7 +275,7 @@ namespace CrunchEconomy
 
                 sphere.Center = position.Position;
 
-                List<MyEntity> entities = new List<MyEntity>();
+                var entities = new List<MyEntity>();
                 MyGamePruningStructure.GetAllTopMostEntitiesInSphere(ref sphere, entities);
 
                 foreach (var entity in entities)
@@ -298,13 +298,13 @@ namespace CrunchEconomy
                 grid.AngularVelocity = new SerializableVector3();
                 grid.LinearVelocity = new SerializableVector3();
 
-                Random random = new Random();
+                var random = new Random();
 
             }
             /* Remapping to prevent any key problems upon paste. */
             MyEntities.RemapObjectBuilderCollection(objectBuilderList);
 
-            bool hasMultipleGrids = objectBuilderList.Count > 1;
+            var hasMultipleGrids = objectBuilderList.Count > 1;
 
             if (!hasMultipleGrids)
             {
@@ -322,7 +322,7 @@ namespace CrunchEconomy
         private static MyGps CreateGps(Vector3D Position, Color gpsColor, int seconds, string Name)
         {
 
-            MyGps gps = new MyGps
+            var gps = new MyGps
             {
                 Coords = Position,
                 Name = Name.Split('_')[0],
@@ -342,7 +342,7 @@ namespace CrunchEconomy
         private static bool UpdateGridsPosition(MyObjectBuilder_CubeGrid[] grids, Vector3D newPosition)
         {
 
-            bool firstGrid = true;
+            var firstGrid = true;
             double deltaX = 0;
             double deltaY = 0;
             double deltaZ = 0;
@@ -409,7 +409,7 @@ namespace CrunchEconomy
         {
 
             Vector3? vector = null;
-            float radius = 0F;
+            var radius = 0F;
 
             var obj = grid.GetObjectBuilder() as MyObjectBuilder_CubeGrid;
             var gridSphere = obj.CalculateBoundingSphere();
@@ -429,13 +429,13 @@ namespace CrunchEconomy
                  * If its not the first run, we use the vector we already have and 
                  * figure out how far it is away from the center of the subgrids sphere. 
                  */
-                float distance = Vector3.Distance(vector.Value, gridSphere.Center);
+                var distance = Vector3.Distance(vector.Value, gridSphere.Center);
 
                 /* 
                  * Now we figure out how big our new radius must be to house both grids
                  * so the distance between the center points + the radius of our subgrid.
                  */
-                float newRadius = distance + gridSphere.Radius;
+                var newRadius = distance + gridSphere.Radius;
 
                 /*
                  * If the new radius is bigger than our old one we use that, otherwise the subgrid 
@@ -453,7 +453,7 @@ namespace CrunchEconomy
         {
 
             Vector3? vector = null;
-            float radius = 0F;
+            var radius = 0F;
 
             foreach (var grid in grids)
             {
@@ -473,13 +473,13 @@ namespace CrunchEconomy
                  * If its not the first run, we use the vector we already have and 
                  * figure out how far it is away from the center of the subgrids sphere. 
                  */
-                float distance = Vector3.Distance(vector.Value, gridSphere.Center);
+                var distance = Vector3.Distance(vector.Value, gridSphere.Center);
 
                 /* 
                  * Now we figure out how big our new radius must be to house both grids
                  * so the distance between the center points + the radius of our subgrid.
                  */
-                float newRadius = distance + gridSphere.Radius;
+                var newRadius = distance + gridSphere.Radius;
 
                 /*
                  * If the new radius is bigger than our old one we use that, otherwise the subgrid 

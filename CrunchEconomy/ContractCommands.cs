@@ -30,7 +30,7 @@ namespace CrunchEconomy
         [Permission(MyPromoteLevel.Admin)]
         public async Task GenerateFile(int amount, bool para = false)
         {
-            Stopwatch watch = new Stopwatch();
+            var watch = new Stopwatch();
             if (para) {
             watch.Start();
            await Task.Run(() => { 
@@ -43,7 +43,7 @@ namespace CrunchEconomy
             else
             {
                 watch.Start();
-                for (int i = 0; i < amount; i++)
+                for (var i = 0; i < amount; i++)
                 {
                     GenerateAndSaveContract(Context.Player.SteamUserId, "Example1");
                 }
@@ -54,22 +54,22 @@ namespace CrunchEconomy
 
         public void GenerateAndSaveContract(ulong steamid, string contractName)
         {
-            if (ContractUtils.newContracts.TryGetValue(contractName, out GeneratedContract contract))
+            if (ContractUtils.newContracts.TryGetValue(contractName, out var contract))
             {
 
 
-                Contract temp = ContractUtils.GeneratedToPlayer(contract);
-                Random random = new Random();
-                List<StationDelivery> locations = new List<StationDelivery>();
-                Dictionary<string, Stations> temporaryStations = new Dictionary<string, Stations>();
-                bool picked = false;
-                foreach (StationDelivery del in contract.StationsToDeliverTo)
+                var temp = ContractUtils.GeneratedToPlayer(contract);
+                var random = new Random();
+                var locations = new List<StationDelivery>();
+                var temporaryStations = new Dictionary<string, Stations>();
+                var picked = false;
+                foreach (var del in contract.StationsToDeliverTo)
                 {
 
 
                         if (random.Next(0, 100) <= del.chance)
                         {
-                            foreach (Stations stat in CrunchEconCore.stations)
+                            foreach (var stat in CrunchEconCore.stations)
                             {
                                 if (stat.Name.Equals(del.Name))
                                 {
@@ -94,13 +94,13 @@ namespace CrunchEconomy
         [Permission(MyPromoteLevel.Admin)]
         public void GenerateFile()
         {
-            SurveyMission mission = new SurveyMission();
+            var mission = new SurveyMission();
             mission.configs.Add(new SurveyStage());
             mission.configs.Add(new SurveyStage());
             mission.configs.Add(new SurveyStage());
             CrunchEconCore.utils.WriteToXmlFile<SurveyMission>(CrunchEconCore.path + "//survey.xml", mission);
-            SurveyMission mission2 = CrunchEconCore.utils.ReadFromXmlFile<SurveyMission>(CrunchEconCore.path + "//survey.xml");
-            foreach (SurveyStage stage in mission2.configs)
+            var mission2 = CrunchEconCore.utils.ReadFromXmlFile<SurveyMission>(CrunchEconCore.path + "//survey.xml");
+            foreach (var stage in mission2.configs)
             {
                 Context.Respond(stage.id.ToString());
             }
@@ -165,7 +165,7 @@ namespace CrunchEconomy
                     Context.Respond("Couldnt find the contract.");
                     return;
                 }
-                foreach (Contract c in data.GetMiningContracts().Values)
+                foreach (var c in data.GetMiningContracts().Values)
                 {
 
                     if (c.minedAmount >= c.amountToMineOrDeliver)
@@ -182,7 +182,7 @@ namespace CrunchEconomy
                     }
                     sb.AppendLine("");
                 }
-                foreach (Contract c in data.GetHaulingContracts().Values)
+                foreach (var c in data.GetHaulingContracts().Values)
                 {
 
                     sb.AppendLine("Deliver " + c.SubType + " Ore " + $"{c.amountToMineOrDeliver:n0}");
@@ -195,7 +195,7 @@ namespace CrunchEconomy
 
                 derp.Remove(contractnum);
                 ids[Context.Player.SteamUserId] = derp;
-                DialogMessage m = new DialogMessage("Contract", "Cancel", sb.ToString());
+                var m = new DialogMessage("Contract", "Cancel", sb.ToString());
                 ModCommunication.SendMessageTo(m, Context.Player.SteamUserId);
                     
                 CrunchEconCore.PlayerStorageProvider.AddContractToBeSaved(cancel, true);
@@ -216,7 +216,7 @@ namespace CrunchEconomy
             if (CrunchEconCore.PlayerStorageProvider.playerData.TryGetValue(Context.Player.SteamUserId, out var data))
             {
                 var num = 0;
-                ids.TryGetValue(Context.Player.SteamUserId, out Dictionary<int, Guid> derp);
+                ids.TryGetValue(Context.Player.SteamUserId, out var derp);
                 if (derp == null)
                 {
                     //  Context.Respond("ids didnt contain");

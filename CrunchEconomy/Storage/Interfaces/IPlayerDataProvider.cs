@@ -19,5 +19,6 @@ namespace CrunchEconomy.Storage.Interfaces
         void AddContractToBeSaved(Contract Contract, bool Delete = false);
         void AddSurveyToBeSaved(SurveyMission Mission, bool Delete = false);
         void SaveContracts();
+        SurveyMission LoadMission(Guid surveyMission);
     }
 }

@@ -23,7 +23,7 @@ namespace CrunchEconomy.ShipMarket
         public void RefreshList()
         {
             tempKeys.Clear();
-            foreach (KeyValuePair<int, MarketItem> i in items)
+            foreach (var i in items)
             {
                 if (!tempKeys.ContainsKey(i.Value.ItemId))
                 {
@@ -31,9 +31,9 @@ namespace CrunchEconomy.ShipMarket
                 }
             }
             items.Clear();
-            foreach (String s in Directory.GetFiles(CrunchEconCore.path + "//ShipMarket//ForSale"))
+            foreach (var s in Directory.GetFiles(CrunchEconCore.path + "//ShipMarket//ForSale"))
             {
-                MarketItem item = utils.ReadFromJsonFile<MarketItem>(s);
+                var item = utils.ReadFromJsonFile<MarketItem>(s);
                 if (tempKeys.ContainsKey(item.ItemId))
                 {
                     items.Add(tempKeys[item.ItemId], item);
@@ -48,8 +48,8 @@ namespace CrunchEconomy.ShipMarket
         {
             if (items.ContainsKey(key))
             {
-                MarketItem item = items[key];
-                MyIdentity SellerId = TryGetIdentity(item.SellerSteamId.ToString());
+                var item = items[key];
+                var SellerId = TryGetIdentity(item.SellerSteamId.ToString());
                 if (SellerId != null)
                 {
                     EconUtils.addMoney(SellerId.IdentityId, item.Price);
@@ -64,9 +64,9 @@ namespace CrunchEconomy.ShipMarket
             {
                 if (identity.DisplayName == playerNameOrSteamId)
                     return identity;
-                if (ulong.TryParse(playerNameOrSteamId, out ulong steamId))
+                if (ulong.TryParse(playerNameOrSteamId, out var steamId))
                 {
-                    ulong id = MySession.Static.Players.TryGetSteamId(identity.IdentityId);
+                    var id = MySession.Static.Players.TryGetSteamId(identity.IdentityId);
                     if (id == steamId)
                         return identity;
                     if (identity.IdentityId == (long)steamId)
@@ -78,8 +78,8 @@ namespace CrunchEconomy.ShipMarket
         }
         public Boolean AddItem(MarketItem item)
         {
-            bool added = false;
-            int attempt = count +=1;
+            var added = false;
+            var attempt = count +=1;
             while (!added)
             {
                 if (!items.ContainsKey(attempt))

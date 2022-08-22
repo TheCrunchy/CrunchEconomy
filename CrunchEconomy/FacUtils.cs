@@ -19,14 +19,14 @@ namespace CrunchEconomy
 
         public static bool InSameFaction(long player1, long player2)
         {
-            IMyFaction faction1 = GetPlayersFaction(player1);
-            IMyFaction faction2 = GetPlayersFaction(player2);
+            var faction1 = GetPlayersFaction(player1);
+            var faction2 = GetPlayersFaction(player2);
             return faction1 == faction2;
         }
 
         public static string GetFactionTag(long playerId)
         {
-            IMyFaction faction = MySession.Static.Factions.TryGetPlayerFaction(playerId);
+            var faction = MySession.Static.Factions.TryGetPlayerFaction(playerId);
 
             if (faction == null)
                 return "";
@@ -60,7 +60,7 @@ namespace CrunchEconomy
                 {
                     return false;
                 }
-                long ownerId = GetOwner(grid);
+                var ownerId = GetOwner(grid);
                 //check if the owner is a faction member, i honestly dont know the difference between grid.BigOwners and grid.SmallOwners
                 return FacUtils.InSameFaction(playerId, ownerId);
             }

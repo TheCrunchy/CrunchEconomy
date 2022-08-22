@@ -38,8 +38,8 @@ namespace CrunchEconomy.ShipMarket
         }
         public List<String> GetLowerTags()
         {
-            List<String> l = new List<string>();
-            foreach (String s in GridTags)
+            var l = new List<string>();
+            foreach (var s in GridTags)
             {
                 l.Add(s.ToLower());
             }
@@ -55,21 +55,21 @@ namespace CrunchEconomy.ShipMarket
             this.Price = price;
             this.SellerSteamId = SteamId;
             this.Description = "Not set.";
-            foreach (MyCubeGrid grid in grids)
+            foreach (var grid in grids)
             {
                 this.PCU += grid.BlocksPCU;
                 this.BlockCount += grid.BlocksCount;
                this.GridMass += grid.Mass;
-                foreach (MyCubeBlock block in grid.GetFatBlocks())
+                foreach (var block in grid.GetFatBlocks())
                 {
                     
                         AddToBlockCounts(block.BlockDefinition.Id.TypeId.ToString().Replace("MyObjectBuilder_", ""), block.BlockDefinition.Id.SubtypeName);
                     
                     if (block.HasInventory)
                     {
-                        List<MyPhysicalInventoryItem> items = new List<MyPhysicalInventoryItem>();
+                        var items = new List<MyPhysicalInventoryItem>();
                         items = block.GetInventory().GetItems();
-                        foreach (MyPhysicalInventoryItem item in items)
+                        foreach (var item in items)
                         {
                             AddToCargo(item.Content.GetObjectId(), item.Amount);
                         }
@@ -77,11 +77,11 @@ namespace CrunchEconomy.ShipMarket
                     }
                 }
             }
-            StringBuilder sb = new StringBuilder();
-            foreach (KeyValuePair<String, Dictionary<String, int>> keys in CountsOfBlocks)
+            var sb = new StringBuilder();
+            foreach (var keys in CountsOfBlocks)
             {
                 sb.AppendLine(keys.Key);
-                foreach (KeyValuePair<String, int> key2 in keys.Value)
+                foreach (var key2 in keys.Value)
                 {
                     sb.AppendLine(key2.Key + " - " + key2.Value);
                 }
@@ -100,7 +100,7 @@ namespace CrunchEconomy.ShipMarket
         }
         public void AddToBlockCounts(string type, string subtype)
         {
-            if (CountsOfBlocks.TryGetValue(type, out Dictionary<String, int> counts))
+            if (CountsOfBlocks.TryGetValue(type, out var counts))
             {
                 if (counts.ContainsKey(subtype))
                 {
@@ -118,7 +118,7 @@ namespace CrunchEconomy.ShipMarket
             }
             else
             {
-                Dictionary<string, int> temp = new Dictionary<string, int>();
+                var temp = new Dictionary<string, int>();
                 temp.Add(subtype, 1);
                 CountsOfBlocks.Add(type, temp);
             }

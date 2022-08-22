@@ -71,7 +71,7 @@ namespace CrunchEconomy.Station_Stuff.Logic
                 parseThis = "MyObjectBuilder_" + contract.TypeIfHauling + "/" + contract.SubType;
                 rep = data.HaulingReputation;
             }
-            if (MyDefinitionId.TryParse(parseThis, out MyDefinitionId id))
+            if (MyDefinitionId.TryParse(parseThis, out var id))
             {
                 itemsToRemove.Add(id, contract.amountToMineOrDeliver);
             }

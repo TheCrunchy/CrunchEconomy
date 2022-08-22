@@ -38,7 +38,7 @@ namespace CrunchEconomy.Station_Stuff.Objects
         public void SetupModifiers()
         {
             PriceModifiers.Clear();
-            foreach (PriceModifier mod in Modifiers)
+            foreach (var mod in Modifiers)
             {
                 if (!PriceModifiers.ContainsKey(mod.StationModifierInItemFile))
                 {
@@ -48,7 +48,7 @@ namespace CrunchEconomy.Station_Stuff.Objects
         }
         public float GetModifier(String input)
         {
-            if (PriceModifiers.TryGetValue(input, out float f))
+            if (PriceModifiers.TryGetValue(input, out var f))
             {
                 return f;
 

@@ -13,6 +13,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using CrunchEconomy.Station_Stuff;
+using CrunchEconomy.Station_Stuff.Logic;
 using CrunchEconomy.Station_Stuff.Objects;
 using Torch.Commands;
 using Torch.Commands.Permissions;
@@ -33,12 +34,12 @@ namespace CrunchEconomy
         public void GrabIds()
         {
 
-            BoundingSphereD sphere = new BoundingSphereD(Context.Player.GetPosition(), 400);
+            var sphere = new BoundingSphereD(Context.Player.GetPosition(), 400);
 
-            foreach (MyStoreBlock store in MyAPIGateway.Entities.GetEntitiesInSphere(ref sphere).OfType<MyStoreBlock>())
+            foreach (var store in MyAPIGateway.Entities.GetEntitiesInSphere(ref sphere).OfType<MyStoreBlock>())
             {
 
-                foreach (MyStoreItem item in store.PlayerItems)
+                foreach (var item in store.PlayerItems)
                 {
                     Context.Respond(item.Item.Value.ToString());
                 }
@@ -54,20 +55,20 @@ namespace CrunchEconomy
         public void GenerateFromGrid(string NewStationName, string CargoName, bool RemakeStoreFiles = false)
         {
 
-            BoundingSphereD sphere = new BoundingSphereD(Context.Player.GetPosition(), 400);
-            Stations newStation = new Stations();
+            var sphere = new BoundingSphereD(Context.Player.GetPosition(), 400);
+            var newStation = new Stations();
             newStation.Enabled = true;
             newStation.Name = NewStationName;
             newStation.CargoName = CargoName;
             newStation.ViewOnlyNamedCargo = true;
             newStation.WorldName = "default";
             var StoreName = "";
-            bool done = false;
-            foreach (MyStoreBlock store in MyAPIGateway.Entities.GetEntitiesInSphere(ref sphere).OfType<MyStoreBlock>())
+            var done = false;
+            foreach (var store in MyAPIGateway.Entities.GetEntitiesInSphere(ref sphere).OfType<MyStoreBlock>())
             {
                 if (!done)
                 {
-                    MyGps gps = new MyGps();
+                    var gps = new MyGps();
                     gps.Name = "EconStationGPS";
                     gps.Coords = store.PositionComp.GetPosition();
                     newStation.stationGPS = gps.ToString();
@@ -76,7 +77,7 @@ namespace CrunchEconomy
                 }
                 if (RemakeStoreFiles)
                 {
-                    foreach (MyStoreItem item in store.PlayerItems)
+                    foreach (var item in store.PlayerItems)
                     {
 
                         StoreName = store.DisplayNameText;
@@ -87,7 +88,7 @@ namespace CrunchEconomy
                                 Directory.CreateDirectory(CrunchEconCore.path + "//BuyOrders//" + StoreName + "//");
                             }
 
-                            BuyOrder order = new BuyOrder();
+                            var order = new BuyOrder();
                             order.minAmount = item.Amount;
                             order.maxAmount = item.Amount + 1;
                             order.minPrice = item.PricePerUnit;
@@ -108,7 +109,7 @@ namespace CrunchEconomy
                             if (!Directory.Exists(CrunchEconCore.path + "//SellOffers//" + StoreName + "//"))
                             {
                                 Directory.CreateDirectory(CrunchEconCore.path + "//SellOffers//" + StoreName + "//");
-                                SellOffer offer = new SellOffer();
+                                var offer = new SellOffer();
                                 offer.minAmountToSpawn = item.Amount;
                                 offer.maxAmountToSpawn = item.Amount + 1;
                                 offer.minPrice = item.PricePerUnit;
@@ -146,7 +147,7 @@ namespace CrunchEconomy
         [Permission(MyPromoteLevel.Admin)]
         public async void HowMuchMoneys(String type)
         {
-            Stopwatch watch = new Stopwatch();
+            var watch = new Stopwatch();
 
             long sc = 0;
             if (Enum.TryParse(type, out ContractType contract))
@@ -160,7 +161,7 @@ namespace CrunchEconomy
                     var files = Directory.GetFiles(CrunchEconCore.path + "//PlayerData//Mining//Completed//");
                     Parallel.ForEach(files, file =>
                     {
-                        Contract contract1 = CrunchEconCore.utils.ReadFromXmlFile<Contract>(file);
+                        var contract1 = CrunchEconCore.utils.ReadFromXmlFile<Contract>(file);
                         lock (syncRoot)
                         {
                             sc += contract1.AmountPaid;
@@ -213,7 +214,7 @@ namespace CrunchEconomy
             }
             else
             {
-                Dictionary<string, int> temp = new Dictionary<string, int>();
+                var temp = new Dictionary<string, int>();
                 temp.Add(contract.SubType, 1);
                 log.AmountFromTypes.Add(timeKey, temp);
             }
@@ -230,7 +231,7 @@ namespace CrunchEconomy
             }
             else
             {
-                Dictionary<string, long> temp = new Dictionary<string, long>();
+                var temp = new Dictionary<string, long>();
                 temp.Add(contract.SubType, contract.AmountPaid);
                 log.MoneyFromTypes.Add(timeKey, temp);
             }
@@ -239,8 +240,8 @@ namespace CrunchEconomy
         }
         public long CountMoney(ContractType type)
         {
-            Dictionary<string, long> MoneyFromTypes = new Dictionary<string, long>();
-            Dictionary<string, int> AmountCompleted = new Dictionary<string, int>();
+            var MoneyFromTypes = new Dictionary<string, long>();
+            var AmountCompleted = new Dictionary<string, int>();
 
             // String timeformat = "MM-dd-yyyy";
             //ToString(timeformat);
@@ -249,7 +250,7 @@ namespace CrunchEconomy
             //store by station id 
             //store by subtype
             //store by date - amount completed, total money
-            StringBuilder MEGALOG = new StringBuilder();
+            var MEGALOG = new StringBuilder();
             long output = 0;
             MEGALOG.AppendLine("StationId,TimeCompleted,SubType,AmountPaid,AmountDelivered,PlayerSteamId,ContractType");
             switch (type)
@@ -257,17 +258,17 @@ namespace CrunchEconomy
 
                 case ContractType.Mining:
 
-                    foreach (String s in Directory.GetFiles(CrunchEconCore.path + "//PlayerData//Mining//Completed//"))
+                    foreach (var s in Directory.GetFiles(CrunchEconCore.path + "//PlayerData//Mining//Completed//"))
                     {
 
-                        Contract contract = CrunchEconCore.utils.ReadFromXmlFile<Contract>(s);
-                        if (contractLogs.TryGetValue(contract.StationEntityId, out LogObject log))
+                        var contract = CrunchEconCore.utils.ReadFromXmlFile<Contract>(s);
+                        if (contractLogs.TryGetValue(contract.StationEntityId, out var log))
                         {
                             log = AddToLog(log, contract);
                         }
                         else
                         {
-                            LogObject log2 = new LogObject();
+                            var log2 = new LogObject();
                             log2 = AddToLog(log2, contract);
                             contractLogs.Add(contract.StationEntityId, log2);
                         }
@@ -285,19 +286,19 @@ namespace CrunchEconomy
                     }
                     break;
                 case ContractType.Hauling:
-                    foreach (String s in Directory.GetFiles(CrunchEconCore.path + "//PlayerData//Hauling//Completed//"))
+                    foreach (var s in Directory.GetFiles(CrunchEconCore.path + "//PlayerData//Hauling//Completed//"))
                     {
 
 
-                        Contract contract = CrunchEconCore.utils.ReadFromXmlFile<Contract>(s);
-                        if (contractLogs.TryGetValue(contract.StationEntityId, out LogObject log))
+                        var contract = CrunchEconCore.utils.ReadFromXmlFile<Contract>(s);
+                        if (contractLogs.TryGetValue(contract.StationEntityId, out var log))
                         {
                             log = AddToLog(log, contract);
                             contractLogs[contract.StationEntityId] = log;
                         }
                         else
                         {
-                            LogObject log2 = new LogObject();
+                            var log2 = new LogObject();
                             log2 = AddToLog(log2, contract);
                             contractLogs.Add(contract.StationEntityId, log2);
                         }
@@ -316,14 +317,14 @@ namespace CrunchEconomy
 
             }
 
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             sb.AppendLine("StationId,Date,SubType,Money,AmountCompleted");
-            foreach (KeyValuePair<long, LogObject> station in contractLogs)
+            foreach (var station in contractLogs)
             {
 
-                foreach (KeyValuePair<string, Dictionary<string, long>> money in station.Value.MoneyFromTypes)
+                foreach (var money in station.Value.MoneyFromTypes)
                 {
-                    foreach (KeyValuePair<string, long> s in money.Value)
+                    foreach (var s in money.Value)
                     {
                         sb.AppendLine(station.Key + "," + money.Key + "," + s.Key + "," + s.Value + "," + station.Value.AmountFromTypes[money.Key][s.Key]);
                     }
@@ -341,7 +342,7 @@ namespace CrunchEconomy
         public void Reload()
         {
             Context.Respond("reloading");
-            CrunchEconCore.individualTimers.Clear();
+            StoresLogic.individualTimers.Clear();
             CrunchEconCore.LoadConfig();
             CrunchEconCore.ConfigProvider.LoadStations();
             CrunchEconCore.ConfigProvider.LoadAllBuyOrders();

@@ -91,6 +91,7 @@
     <Compile Include="Station Stuff\Logic\CraftingLogic.cs" />
     <Compile Include="Station Stuff\Logic\InventoryLogic.cs" />
     <Compile Include="Station Stuff\Logic\StoresLogic.cs" />
+    <Compile Include="Station Stuff\Logic\SurveyLogic.cs" />
     <Compile Include="Station Stuff\Objects\BuyOrder.cs" />
     <Compile Include="Config.cs" />
     <Compile Include="ContractCommands.cs" />
@@ -125,6 +126,7 @@
     <Compile Include="Storage\Interfaces\IConfigProvider.cs" />
     <Compile Include="Storage\Interfaces\IPlayerDataProvider.cs" />
     <Compile Include="Storage\XmlConfigProvider.cs" />
+    <Compile Include="Storage\JsonPlayerDataProvider.cs" />
     <Compile Include="Storage\XmlPlayerDataProvider.cs" />
     <Compile Include="SurveyMissions\SurveyMission.cs" />
     <Compile Include="SurveyMissions\SurveyStage.cs" />
