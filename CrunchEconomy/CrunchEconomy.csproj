@@ -87,6 +87,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Helpers\GpsHelper.cs" />
     <Compile Include="Station Stuff\Logic\ContractLogic.cs" />
     <Compile Include="Station Stuff\Logic\CraftingLogic.cs" />
     <Compile Include="Station Stuff\Logic\InventoryLogic.cs" />

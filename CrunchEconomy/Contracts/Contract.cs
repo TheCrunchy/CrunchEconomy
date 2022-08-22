@@ -84,7 +84,6 @@ namespace CrunchEconomy.Contracts
         public static MyGps ScanChat(string input, string desc = null)
         {
 
-            var num = 0;
             var flag = true;
             var matchCollection = Regex.Matches(input, "GPS:([^:]{0,32}):([\\d\\.-]*):([\\d\\.-]*):([\\d\\.-]*):");
 

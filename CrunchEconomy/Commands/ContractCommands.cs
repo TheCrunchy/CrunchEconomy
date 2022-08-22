@@ -54,40 +54,27 @@ namespace CrunchEconomy
 
         public void GenerateAndSaveContract(ulong steamid, string contractName)
         {
-            if (ContractUtils.newContracts.TryGetValue(contractName, out var contract))
+            if (!ContractUtils.newContracts.TryGetValue(contractName, out var contract)) return;
+            var temp = ContractUtils.GeneratedToPlayer(contract);
+            var random = new Random();
+            var locations = new List<StationDelivery>();
+            var temporaryStations = new Dictionary<string, Stations>();
+            foreach (var del in contract.StationsToDeliverTo)
             {
-
-
-                var temp = ContractUtils.GeneratedToPlayer(contract);
-                var random = new Random();
-                var locations = new List<StationDelivery>();
-                var temporaryStations = new Dictionary<string, Stations>();
-                var picked = false;
-                foreach (var del in contract.StationsToDeliverTo)
+                if (!(random.Next(0, 100) <= del.chance)) continue;
+                foreach (var stat in CrunchEconCore.stations.Where(stat => stat.Name.Equals(del.Name)))
                 {
-
-
-                        if (random.Next(0, 100) <= del.chance)
-                        {
-                            foreach (var stat in CrunchEconCore.stations)
-                            {
-                                if (stat.Name.Equals(del.Name))
-                                {
-                                    if (!temporaryStations.ContainsKey(del.Name))
-                                    {
-                                        temporaryStations.Add(del.Name, stat);
-                                    }
-                                    locations.Add(del);
-                                }
-                            }
-
-                        }
+                    if (!temporaryStations.ContainsKey(del.Name))
+                    {
+                        temporaryStations.Add(del.Name, stat);
+                    }
+                    locations.Add(del);
                 }
-
-                temp.AmountPaid = temp.contractPrice;
-                temp.PlayerSteamId = steamid;
-                CrunchEconCore.utils.WriteToXmlFile<Contract>(CrunchEconCore.path + "//PlayerData//" + contract.type + "//Completed//" + temp.ContractId + ".xml", temp);
             }
+
+            temp.AmountPaid = temp.contractPrice;
+            temp.PlayerSteamId = steamid;
+            CrunchEconCore.utils.WriteToXmlFile<Contract>(CrunchEconCore.path + "//PlayerData//" + contract.type + "//Completed//" + temp.ContractId + ".xml", temp);
         }
 
         [Command("admintest", "quit current contracts")]

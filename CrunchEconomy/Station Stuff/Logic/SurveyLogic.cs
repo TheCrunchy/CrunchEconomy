@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using CrunchEconomy.Contracts;
+using CrunchEconomy.Helpers;
 using NLog.Fluent;
 using Sandbox.Game.Entities;
 using Sandbox.Game.Multiplayer;
@@ -106,7 +107,7 @@ namespace CrunchEconomy.Station_Stuff.Logic
                                             if (mission.getStage(mission.CurrentStage).FindRandomPositionAroundLocation)
 
                                             {
-                                                var gps = ContractUtils.ScanChat(mission.getStage(1).LocationGPS);
+                                                var gps = GpsHelper.ParseGPS(mission.getStage(1).LocationGPS);
 
                                                 if (mission.getStage(mission.CurrentStage).FindRandomPositionAroundLocation)
                                                 {
@@ -141,7 +142,7 @@ namespace CrunchEconomy.Station_Stuff.Logic
                                             }
                                             else
                                             {
-                                                var gps = ContractUtils.ScanChat(mission.getStage(mission.CurrentStage).LocationGPS);
+                                                var gps = GpsHelper.ParseGPS(mission.getStage(mission.CurrentStage).LocationGPS);
                                                 mission.CurrentPosX = gps.Coords.X;
                                                 mission.CurrentPosY = gps.Coords.Y;
                                                 mission.CurrentPosZ = gps.Coords.Z;
@@ -264,7 +265,7 @@ namespace CrunchEconomy.Station_Stuff.Logic
                 if (newSurvey.getStage(1).FindRandomPositionAroundLocation)
 
                 {
-                    var gps = ContractUtils.ScanChat(newSurvey.getStage(1).LocationGPS);
+                    var gps = GpsHelper.ParseGPS(newSurvey.getStage(1).LocationGPS);
 
                     if (newSurvey.getStage(1).FindRandomPositionAroundLocation)
                     {
@@ -299,7 +300,7 @@ namespace CrunchEconomy.Station_Stuff.Logic
                 }
                 else
                 {
-                    var gps = ContractUtils.ScanChat(newSurvey.getStage(1).LocationGPS);
+                    var gps = GpsHelper.ParseGPS(newSurvey.getStage(1).LocationGPS);
                     newSurvey.CurrentPosX = gps.Coords.X;
                     newSurvey.CurrentPosY = gps.Coords.Y;
                     newSurvey.CurrentPosZ = gps.Coords.Z;

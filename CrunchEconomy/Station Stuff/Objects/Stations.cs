@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using CrunchEconomy.Helpers;
 using Sandbox.Game.Screens.Helpers;
 
 namespace CrunchEconomy.Station_Stuff.Objects
@@ -30,7 +31,7 @@ namespace CrunchEconomy.Station_Stuff.Objects
         public List<String> Whitelist = new List<string>();
         public MyGps getGPS()
         {
-            return CrunchEconCore.ParseGPS(stationGPS);
+            return GpsHelper.ParseGPS(stationGPS);
         }
 
         public List<PriceModifier> Modifiers = new List<PriceModifier>();
