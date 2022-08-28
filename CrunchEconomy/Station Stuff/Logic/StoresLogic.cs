@@ -425,7 +425,7 @@ namespace CrunchEconomy.Station_Stuff.Logic
                     {
                         var temp = s.Split(':')[1];
        
-                        foreach (var tag in from list in CrunchEconCore.ConfigProvider.Whitelist.whitelist where list.ListName == temp from tag in list.FactionTags where MySession.Static.Factions.TryGetFactionByTag(tag) != null select tag)
+                        foreach (var tag in from list in CrunchEconCore.ConfigProvider.Whitelist.Values where list.ListName == temp from tag in list.FactionTags where MySession.Static.Factions.TryGetFactionByTag(tag) != null select tag)
                         {
                             zone.Factions.Add(MySession.Static.Factions.TryGetFactionByTag(tag));
                         }
