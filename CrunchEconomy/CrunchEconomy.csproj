@@ -103,6 +103,7 @@
     <Compile Include="EconUtils.cs" />
     <Compile Include="FacUtils.cs" />
     <Compile Include="FileUtils.cs" />
+    <Compile Include="GridFinder.cs" />
     <Compile Include="GridManager.cs" />
     <Compile Include="GridSale.cs" />
     <Compile Include="Contracts\Contract.cs" />

@@ -6,6 +6,7 @@ using Sandbox.Game.Screens.Helpers;
 using Sandbox.Game.World;
 using Sandbox.ModAPI;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -46,6 +47,53 @@ namespace CrunchEconomy
 
         }
 
+        [Command("exportgrid", "export a grid to a sellable file")]
+        [Permission(MyPromoteLevel.Admin)]
+        public void ExportGrid()
+        {
+        
+            ConcurrentBag<MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group> gridWithSubGrids = GridFinder.FindLookAtGridGroup(Context.Player.Character);
+            List<MyCubeGrid> grids = new List<MyCubeGrid>();
+            foreach (var item in gridWithSubGrids)
+            {
+                foreach (MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Node groupNodes in item.Nodes)
+                {
+                    MyCubeGrid grid = groupNodes.NodeData;
+
+                    foreach (MyProjectorBase proj in grid.GetFatBlocks().OfType<MyProjectorBase>())
+                    {
+                        proj.Clipboard.Clear();
+                    }
+                    grids.Add(grid);
+                    foreach (var block in grid.GetFatBlocks().OfType<MyCockpit>())
+                    {
+                        if (block.Pilot != null)
+                        {
+                            block.RemovePilot();
+                        }
+                    }
+
+                }
+
+            }
+            if (grids.Count == 0)
+            {
+                Context.Respond("Could not find grid.");
+                return;
+            }
+
+            string gridname = grids.First().GetBiggestGridInGroup().DisplayName;
+            var gridsell = new GridSale();
+            gridsell.Enabled = true;
+            gridsell.ExportedGridName = $"{gridname}";
+            gridsell.GiveOwnerShipToNPC = false;
+            GridManager.SaveGridNoDelete($"{CrunchEconCore.path}\\GridSelling\\Grids\\{gridname}.sbc", $"{gridname}.sbc", false, false, grids);
+            CrunchEconCore.utils.WriteToXmlFile($"{CrunchEconCore.path}\\GridSelling\\{gridname}.xml", gridsell);
+
+            CrunchEconCore.LoadAllGridSales();
+            Context.Respond($"Exported grid: {gridname}");
+
+        }
 
         [Command("generatefromgrid", "generate a station and configs from a grid")]
         [Permission(MyPromoteLevel.Admin)]
@@ -164,7 +212,7 @@ namespace CrunchEconomy
                             sc += contract1.AmountPaid;
                         }
                     });
-                  
+
                 });
                 Context.Respond(watch.ElapsedMilliseconds.ToString());
                 Context.Respond(String.Format("{0:n0}", sc) + " SC Added to economy through " + type + " contracts.");

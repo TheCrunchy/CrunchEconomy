@@ -400,14 +400,14 @@ namespace CrunchEconomy
                                 //   CrunchEconCore.Log.Info("grids?");
                                 if (CrunchEconCore.gridsForSale.TryGetValue(storeItem.Item.Value.SubtypeName, out GridSale sale))
                                 {
-                                    if (amount > 1)
-                                    {
-                                        DialogMessage m = new DialogMessage("Shop Error", "Can only buy one ship at a time");
-                                        ModCommunication.SendMessageTo(m, player.Id.SteamId);
-                                        return false;
-                                    }
                                     if (store.GetOwnerFactionTag().Equals(sale.OwnerFactionTag) && store.DisplayNameText.Equals(sale.StoreBlockName))
                                     {
+                                        if (amount > 1)
+                                        {
+                                            DialogMessage m = new DialogMessage("Shop Error", "Can only buy one ship at a time");
+                                            ModCommunication.SendMessageTo(m, player.Id.SteamId);
+                                            return false;
+                                        }
                                         if (File.Exists(CrunchEconCore.path + "//GridSelling//Grids//" + sale.ExportedGridName + ".sbc"))
                                         {
                                             ulong idd = player.Id.SteamId;
