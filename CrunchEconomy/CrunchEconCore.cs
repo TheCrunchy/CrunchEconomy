@@ -1492,31 +1492,45 @@ namespace CrunchEconomy
                                 if (MyAPIGateway.Entities.GetEntityById(station.StationEntityId) is MyCubeGrid grid)
                                 {
                                     List<VRage.Game.ModAPI.IMyInventory> inventories = new List<VRage.Game.ModAPI.IMyInventory>();
-                                    foreach (CraftedItem item in station.CraftableItems)
+                                    foreach (CraftedItem item in station.CraftableItems.Where(x => x.Enabled))
                                     {
-                                        double yeet = rnd.NextDouble();
-                                        if (yeet <= item.chanceToCraft)
+                                        bool skip = false;
+                                        if (item.OnlyCraftIfStationSellsThisItem)
                                         {
-
-                                            var comps = new Dictionary<MyDefinitionId, int>();
-                                            inventories.AddRange(GetInventories(grid, station));
-                                            if (MyDefinitionId.TryParse("MyObjectBuilder_" + item.typeid, item.subtypeid, out MyDefinitionId id))
+                                            foreach (MyStoreBlock store in grid.GetFatBlocks().OfType<MyStoreBlock>())
                                             {
-                                                foreach (RecipeItem recipe in item.RequriedItems)
+                                                if (!store.GetOwnerFactionTag().Equals(station.OwnerFactionTag))
+                                                    continue;
+                                                if (!sellOffers.TryGetValue(store.DisplayNameText,
+                                                        out List<SellOffer> offers)) continue;
+                                                if (offers.All(x =>
+                                                        x.typeId != item.typeid &&
+                                                        x.subtypeId != item.subtypeid))
                                                 {
-                                                    if (MyDefinitionId.TryParse("MyObjectBuilder_" + recipe.typeid, recipe.subtypeid, out MyDefinitionId id2))
-                                                    {
-                                                        comps.Add(id2, recipe.amount);
-                                                    }
-                                                }
-                                                if (ConsumeComponents(inventories, comps, 0l))
-                                                {
-                                                    SpawnItems(grid, id, item.amountPerCraft, station);
-                                                    comps.Clear();
-                                                    inventories.Clear();
+                                                    skip = true;
                                                 }
                                             }
                                         }
+
+                                        if (skip) continue;
+                                        double yeet = rnd.NextDouble();
+                                        if (!(yeet <= item.chanceToCraft)) continue;
+                                        var comps = new Dictionary<MyDefinitionId, int>();
+                                        inventories.AddRange(GetInventories(grid, station));
+                                        if (!MyDefinitionId.TryParse("MyObjectBuilder_" + item.typeid, item.subtypeid,
+                                                out MyDefinitionId id)) continue;
+                                        foreach (RecipeItem recipe in item.RequriedItems)
+                                        {
+                                            if (MyDefinitionId.TryParse("MyObjectBuilder_" + recipe.typeid, recipe.subtypeid, out MyDefinitionId id2))
+                                            {
+                                                comps.Add(id2, recipe.amount);
+                                            }
+                                        }
+
+                                        if (!ConsumeComponents(inventories, comps, 0l)) continue;
+                                        SpawnItems(grid, id, item.amountPerCraft, station);
+                                        comps.Clear();
+                                        inventories.Clear();
                                     }
                                 }
                             }
@@ -1567,6 +1581,15 @@ namespace CrunchEconomy
                                                             //  Log.Info("now its checking offers");
                                                             foreach (SellOffer offer in offers)
                                                             {
+                                                                if (offer.OnlySellIfStationCraftsThis && station.EnableStationCrafting)
+                                                                {
+                                                                    if (station.CraftableItems.Where(x => x.Enabled).All(x =>
+                                                                            x.typeid != offer.typeId &&
+                                                                            x.subtypeid != offer.subtypeId))
+                                                                    {
+                                                                        continue;
+                                                                    }
+                                                                }
                                                                 try
                                                                 {
                                                                     double chance = rnd.NextDouble();
@@ -1751,7 +1774,7 @@ namespace CrunchEconomy
 
                                                             foreach (BuyOrder order in orders)
                                                             {
-
+                                                       
                                                                 try
                                                                 {
                                                                     if (order.IndividualRefreshTimer)
@@ -1770,6 +1793,15 @@ namespace CrunchEconomy
                                                                         else
                                                                         {
                                                                             individualTimers.Add(store.EntityId, DateTime.Now.AddSeconds(order.SecondsBetweenRefresh));
+                                                                        }
+                                                                    }
+                                                                    if (order.OnlyBuyIfStationDoesNotCraft && station.EnableStationCrafting)
+                                                                    {
+                                                                        if (station.CraftableItems.Where(x => x.Enabled).Any(x =>
+                                                                                x.typeid == order.typeId &&
+                                                                                x.subtypeid == order.subtypeId))
+                                                                        {
+                                                                            continue;
                                                                         }
                                                                     }
                                                                     if (MyDefinitionId.TryParse("MyObjectBuilder_" + order.typeId, order.subtypeId, out MyDefinitionId id))

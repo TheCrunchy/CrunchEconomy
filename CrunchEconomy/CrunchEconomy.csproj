@@ -87,7 +87,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BuyOrder.cs" />
+    <Compile Include="StoreStuff\BuyOrder.cs" />
     <Compile Include="Config.cs" />
     <Compile Include="ContractCommands.cs" />
     <Compile Include="Contracts\ContractStatus.cs" />
@@ -108,17 +108,17 @@
     <Compile Include="GridSale.cs" />
     <Compile Include="Contracts\Contract.cs" />
     <Compile Include="ModifierFluctuations\FluctuationCommands.cs" />
-    <Compile Include="MyStorePatch.cs" />
-    <Compile Include="PendingSale.cs" />
+    <Compile Include="StoreStuff\MyStorePatch.cs" />
+    <Compile Include="StoreStuff\PendingSale.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ModifierFluctuations\RandomFluc.cs" />
     <Compile Include="RepConfig.cs" />
-    <Compile Include="SellOffer.cs" />
+    <Compile Include="StoreStuff\SellOffer.cs" />
     <Compile Include="ShipMarket\ItemStatus.cs" />
     <Compile Include="ShipMarket\MarketCommands.cs" />
     <Compile Include="ShipMarket\MarketItem.cs" />
     <Compile Include="ShipMarket\MarketList.cs" />
-    <Compile Include="Stations.cs" />
+    <Compile Include="StoreStuff\Stations.cs" />
     <Compile Include="SurveyMissions\SurveyMission.cs" />
     <Compile Include="SurveyMissions\SurveyStage.cs" />
     <Compile Include="WhitelistFile.cs" />
@@ -126,5 +126,6 @@
   <ItemGroup>
     <WCFMetadata Include="Connected Services\" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

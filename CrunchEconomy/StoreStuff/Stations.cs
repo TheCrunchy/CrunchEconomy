@@ -81,6 +81,8 @@ namespace CrunchEconomy
 
         public class CraftedItem
         {
+            public bool Enabled = true;
+            public bool OnlyCraftIfStationSellsThisItem = false;
             public string typeid;
             public string subtypeid;
             public double chanceToCraft = 0.5;
