@@ -108,6 +108,7 @@
     <Compile Include="GridSale.cs" />
     <Compile Include="Contracts\Contract.cs" />
     <Compile Include="ModifierFluctuations\FluctuationCommands.cs" />
+    <Compile Include="StoreStuff\FunctionalBlockPatch.cs" />
     <Compile Include="StoreStuff\MyStorePatch.cs" />
     <Compile Include="StoreStuff\PendingSale.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

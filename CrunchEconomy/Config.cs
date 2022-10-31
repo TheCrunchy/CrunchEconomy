@@ -17,5 +17,7 @@ namespace CrunchEconomy
         public Boolean PluginEnabled = true;
         public Boolean PatchesEnabled = true;
         public Boolean SetMinPricesTo1 = false;
+        public Boolean DoCombine = false;
+        public Boolean RefreshPlayerStoresOnLoad = false;
     }
 }

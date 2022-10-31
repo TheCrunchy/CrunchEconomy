@@ -1809,6 +1809,7 @@ namespace CrunchEconomy
 
                                                                         SerializableDefinitionId itemId = new SerializableDefinitionId(id.TypeId, order.subtypeId);
 
+                                                                        MyStoreItemDataSimple simple = new MyStoreItemDataSimple();
 
                                                                         double chance = rnd.NextDouble();
                                                                         if (chance <= order.chance)
@@ -1818,6 +1819,7 @@ namespace CrunchEconomy
                                                                             int amount = rnd.Next((int)order.minAmount, (int)order.maxAmount);
                                                                             MyStoreItemData item = new MyStoreItemData(itemId, amount, price, null, null);
                                                                             MyStoreInsertResults result = store.InsertOrder(item, out long notUsingThis);
+                                                                            store.InsertOrder(simple, out long dfdfd);
                                                                             if (result == MyStoreInsertResults.Fail_PricePerUnitIsLessThanMinimum || result == MyStoreInsertResults.Fail_StoreLimitReached || result == MyStoreInsertResults.Error)
                                                                             {
                                                                                 Log.Error("Unable to insert this order into store " + order.typeId + " " + order.subtypeId + " at station " + station.Name + " " + result.ToString());
