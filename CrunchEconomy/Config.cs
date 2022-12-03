@@ -19,5 +19,6 @@ namespace CrunchEconomy
         public Boolean SetMinPricesTo1 = false;
         public Boolean DoCombine = false;
         public Boolean RefreshPlayerStoresOnLoad = false;
+        public int MinutesBetweenDave = 15;
     }
 }

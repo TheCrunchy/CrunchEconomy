@@ -17,7 +17,7 @@ namespace CrunchEconomy.Contracts
         public int MiningReputation = 0;
         public int HaulingReputation = 0;
         public int SurveyReputation = 0;
-
+        public DateTime NextDaveMessage = DateTime.Now;
         private Dictionary<Guid, Contract> loadedMining = new Dictionary<Guid, Contract>();
         private Dictionary<Guid, Contract> loadedHauling = new Dictionary<Guid, Contract>();
         public Guid surveyMission = Guid.Empty;

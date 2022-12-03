@@ -504,6 +504,7 @@ namespace CrunchEconomy
         //i should really split this into multiple methods so i dont have one huge method for everything
         public static Dictionary<Guid, Contract> ContractSave = new Dictionary<Guid, Contract>();
         public static Dictionary<Guid, SurveyMission> SurveySave = new Dictionary<Guid, SurveyMission>();
+
         public bool HandleDeliver(Contract contract, MyPlayer player, PlayerData data, MyCockpit controller)
         {
 
@@ -529,14 +530,17 @@ namespace CrunchEconomy
                     }
                 }
             }
+
             if (proceed)
             {
                 if (contract.DeliveryLocation == null && contract.DeliveryLocation == string.Empty)
                 {
-                    contract.DeliveryLocation = DrillPatch.GenerateDeliveryLocation(player.GetPosition(), contract).ToString();
+                    contract.DeliveryLocation =
+                        DrillPatch.GenerateDeliveryLocation(player.GetPosition(), contract).ToString();
                     CrunchEconCore.ContractSave.Remove(contract.ContractId);
                     CrunchEconCore.ContractSave.Add(contract.ContractId, contract);
                 }
+
                 Vector3D coords = contract.getCoords();
                 int rep = 0;
                 float distance = Vector3.Distance(coords, controller.PositionComp.GetPosition());
@@ -555,6 +559,7 @@ namespace CrunchEconomy
                         parseThis = "MyObjectBuilder_" + contract.TypeIfHauling + "/" + contract.SubType;
                         rep = data.HaulingReputation;
                     }
+
                     if (MyDefinitionId.TryParse(parseThis, out MyDefinitionId id))
                     {
                         itemsToRemove.Add(id, contract.amountToMineOrDeliver);
@@ -579,53 +584,68 @@ namespace CrunchEconomy
                                 data.HaulingReputation += contract.reputation;
                                 data.HaulingContracts.Remove(contract.ContractId);
                             }
+
                             if (data.MiningReputation >= 5000)
                             {
                                 data.MiningReputation = 5000;
                             }
+
                             if (data.HaulingReputation >= 5000)
                             {
                                 data.HaulingReputation = 5000;
                             }
+
                             if (data.MiningReputation >= 100)
                             {
                                 contract.contractPrice += Convert.ToInt64(contract.contractPrice * 0.025f);
                             }
+
                             if (data.MiningReputation >= 250)
                             {
                                 contract.contractPrice += Convert.ToInt64(contract.contractPrice * 0.025f);
                             }
+
                             if (data.MiningReputation >= 500)
                             {
                                 contract.contractPrice += Convert.ToInt64(contract.contractPrice * 0.025f);
                             }
+
                             if (data.MiningReputation >= 750)
                             {
                                 contract.contractPrice += Convert.ToInt64(contract.contractPrice * 0.025f);
                             }
+
                             if (data.MiningReputation >= 1000)
                             {
                                 contract.contractPrice += Convert.ToInt64(contract.contractPrice * 0.025f);
                             }
+
                             if (data.MiningReputation >= 2000)
                             {
                                 contract.contractPrice += Convert.ToInt64(contract.contractPrice * 0.025f);
                             }
+
                             if (data.MiningReputation >= 3000)
                             {
                                 contract.contractPrice += Convert.ToInt64(contract.contractPrice * 0.05f);
                             }
+
                             if (contract.DistanceBonus > 0)
                             {
                                 contract.contractPrice += contract.DistanceBonus;
                             }
+
                             if (AlliancePluginEnabled)
                             {
                                 //patch into alliances and process the payment there
                                 //contract.AmountPaid = contract.contractPrice;
                                 try
                                 {
-                                    object[] MethodInput = new object[] { player.Id.SteamId, contract.contractPrice, "Mining", controller.CubeGrid.PositionComp.GetPosition() };
+                                    object[] MethodInput = new object[]
+                                    {
+                                        player.Id.SteamId, contract.contractPrice, "Mining",
+                                        controller.CubeGrid.PositionComp.GetPosition()
+                                    };
                                     contract.contractPrice = (long)AllianceTaxes?.Invoke(null, MethodInput);
 
                                 }
@@ -639,7 +659,9 @@ namespace CrunchEconomy
                             {
                                 foreach (RewardItem item in contract.PlayerLoot)
                                 {
-                                    if (MyDefinitionId.TryParse("MyObjectBuilder_" + item.TypeId + "/" + item.SubTypeId, out MyDefinitionId reward) && item.Enabled && rep >= item.ReputationRequired)
+                                    if (MyDefinitionId.TryParse("MyObjectBuilder_" + item.TypeId + "/" + item.SubTypeId,
+                                            out MyDefinitionId reward) && item.Enabled &&
+                                        rep >= item.ReputationRequired)
                                     {
                                         //  Log.Info("Tried to do ");
                                         Random rand = new Random();
@@ -650,7 +672,10 @@ namespace CrunchEconomy
                                             if (SpawnLoot(controller.CubeGrid, reward, (MyFixedPoint)amount))
                                             {
                                                 contract.GivenItemReward = true;
-                                                SendMessage("Boss Dave", "Heres a bonus for a job well done " + amount + " " + reward.ToString().Replace("MyObjectBuilder_", ""), Color.Gold, (long)player.Id.SteamId);
+                                                SendMessage("Boss Dave",
+                                                    "Heres a bonus for a job well done " + amount + " " +
+                                                    reward.ToString().Replace("MyObjectBuilder_", ""), Color.Gold,
+                                                    (long)player.Id.SteamId);
                                             }
                                         }
                                     }
@@ -658,7 +683,8 @@ namespace CrunchEconomy
                             }
 
                             //  BoundingSphereD sphere = new BoundingSphereD(coords, 400);
-                            MyCubeGrid grid = MyAPIGateway.Entities.GetEntityById(contract.StationEntityId) as MyCubeGrid;
+                            MyCubeGrid grid =
+                                MyAPIGateway.Entities.GetEntityById(contract.StationEntityId) as MyCubeGrid;
                             if (grid != null)
                             {
 
@@ -669,18 +695,22 @@ namespace CrunchEconomy
                                         Random random = new Random();
                                         if (random.NextDouble() <= item.chance)
                                         {
-                                            if (MyDefinitionId.TryParse("MyObjectBuilder_" + item.TypeId + "/" + item.SubTypeId, out MyDefinitionId newid))
+                                            if (MyDefinitionId.TryParse(
+                                                    "MyObjectBuilder_" + item.TypeId + "/" + item.SubTypeId,
+                                                    out MyDefinitionId newid))
                                             {
                                                 int amount = random.Next(item.ItemMinAmount, item.ItemMaxAmount);
                                                 Stations station = new Stations();
                                                 station.CargoName = contract.CargoName;
-                                                station.OwnerFactionTag = FacUtils.GetFactionTag(FacUtils.GetOwner(grid));
+                                                station.OwnerFactionTag =
+                                                    FacUtils.GetFactionTag(FacUtils.GetOwner(grid));
                                                 station.ViewOnlyNamedCargo = true;
                                                 SpawnItems(grid, newid, amount, station);
                                             }
                                         }
                                     }
                                 }
+
                                 if (contract.PutTheHaulInStation)
                                 {
                                     foreach (KeyValuePair<MyDefinitionId, int> pair in itemsToRemove)
@@ -696,8 +726,10 @@ namespace CrunchEconomy
                             }
                             else
                             {
-                                Log.Error("Couldnt find station to put items in! Did it get cut and pasted? at " + coords.ToString());
+                                Log.Error("Couldnt find station to put items in! Did it get cut and pasted? at " +
+                                          coords.ToString());
                             }
+
                             contract.AmountPaid = contract.contractPrice;
                             contract.TimeCompleted = DateTime.Now;
                             EconUtils.addMoney(player.Identity.IdentityId, contract.contractPrice);
@@ -723,9 +755,12 @@ namespace CrunchEconomy
                     }
                 }
             }
+
             return false;
 
         }
+
+
         public void DoContractDelivery(MyPlayer player, bool DoNewContract)
         {
             if (config.MiningContractsEnabled)
@@ -750,7 +785,12 @@ namespace CrunchEconomy
                             //    }
 
                             //}
-                            SendMessage("Boss Dave", "Check contracts with !contract info", Color.Gold, (long)player.Id.SteamId);
+
+                            if (DateTime.Now >= data.NextDaveMessage)
+                            {
+                                SendMessage("Boss Dave", "Check contracts with !contract info", Color.Gold, (long)player.Id.SteamId);
+                                data.NextDaveMessage = DateTime.Now.AddMinutes(config.MinutesBetweenDave);
+                            }
                         }
                         //else
                         //{
