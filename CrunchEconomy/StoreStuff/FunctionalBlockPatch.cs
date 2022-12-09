@@ -35,32 +35,40 @@ namespace CrunchEconomy.StoreStuff
         }
 
         public static Dictionary<long, DateTime> NextUpdate = new Dictionary<long, DateTime>();
+        public static Dictionary<long, DateTime> NextUpdate2 = new Dictionary<long, DateTime>();
         public static void Transfer(MyFunctionalBlock __instance)
         {
             if (CrunchEconCore.config.DoCombine || CrunchEconCore.config.RefreshPlayerStoresOnLoad)
             {
                 if (!(__instance is MyStoreBlock store)) return;
-          
-                if (NextUpdate.TryGetValue(__instance.EntityId, out var time))
-                {
-                    if (DateTime.Now < time)
-                    {
-                        return;
-                    }
-                    NextUpdate[store.EntityId] = DateTime.Now.AddMinutes(0.5);
-                }
-                else
-                {
-                    NextUpdate.Add(store.EntityId, DateTime.Now.AddMinutes(0.5));
-                }
-
-                if (CrunchEconCore.config.DoCombine)
-                {
-                    CombineBlock(store);
-                }
                 if (CrunchEconCore.config.RefreshPlayerStoresOnLoad)
                 {
-                    RefreshBlock(store);
+                    if (NextUpdate.TryGetValue(__instance.EntityId, out var time))
+                    {
+                        if (DateTime.Now > time)
+                        {
+                            NextUpdate[store.EntityId] = DateTime.Now.AddMinutes(5);
+                            RefreshBlock(store);
+                        }
+
+                    }
+                    else
+                    {
+                        NextUpdate.Add(store.EntityId, DateTime.Now.AddMinutes(5));
+                        NextUpdate2.Add(store.EntityId, DateTime.Now.AddMinutes(4));
+                    }
+
+                }
+                if (CrunchEconCore.config.DoCombine)
+                {
+                    if (NextUpdate2.TryGetValue(__instance.EntityId, out var time2))
+                    {
+                        if (DateTime.Now > time2)
+                        {
+                            NextUpdate2[store.EntityId] = DateTime.Now.AddMinutes(5);
+                            CombineBlock(store);
+                        }
+                    }
                 }
             }
         }
@@ -87,8 +95,6 @@ namespace CrunchEconomy.StoreStuff
                 foreach (MyStoreItem item in yeet)
                 {
                     store.CancelStoreItem(item.Id);
-                    var data = new MyStoreItemData(item.Item.Value, item.Amount, item.PricePerUnit, null, null);
-                    store.InsertOrder(data, out long dontCare);
                 }
             });
         }
@@ -108,8 +114,6 @@ namespace CrunchEconomy.StoreStuff
                 foreach (MyStoreItem item in yeet)
                 {
                     store.CancelStoreItem(item.Id);
-                    var data = new MyStoreItemData(item.Item.Value, item.Amount, item.PricePerUnit, null, null);
-                    store.InsertOffer(data, out long dontCare);
                 }
             });
         }
@@ -134,6 +138,7 @@ namespace CrunchEconomy.StoreStuff
                 else
                 {
                     orders.Add(order.Item.Value, new TempHolder() { amount = order.Amount, pricePer = order.PricePerUnit });
+
                 }
                 yeet.Add(order);
             }
@@ -150,6 +155,7 @@ namespace CrunchEconomy.StoreStuff
                 else
                 {
                     offers.Add(offer.Item.Value, new TempHolder() { amount = offer.Amount, pricePer = offer.PricePerUnit });
+
                 }
                 yeet.Add(offer);
             }
