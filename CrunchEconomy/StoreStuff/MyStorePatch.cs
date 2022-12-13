@@ -68,6 +68,9 @@ namespace CrunchEconomy
         internal static readonly MethodInfo storePatchTwo =
              typeof(MyStorePatch).GetMethod(nameof(StorePatchMethodTwo), BindingFlags.Static | BindingFlags.Public) ??
              throw new Exception("Failed to find patch method");
+        internal static readonly MethodInfo storePatchYEET =
+            typeof(MyStorePatch).GetMethod(nameof(StorePatchMethodYEET), BindingFlags.Static | BindingFlags.Public) ??
+            throw new Exception("Failed to find patch method");
         public static Logger log = LogManager.GetLogger("Stores");
         public static void ApplyLogging()
         {
@@ -112,6 +115,7 @@ namespace CrunchEconomy
 
             ctx.GetPattern(update).Prefixes.Add(storePatch);
             ctx.GetPattern(updateTwo).Prefixes.Add(storePatchTwo);
+            ctx.GetPattern(updateTwo).Suffixes.Add(storePatchYEET);
 
         }
         //        log.Info("SteamId:" + player.Id.SteamId + ",action:sold,Amount:" + amount + ",TypeId:" + myStoreItem.Item.Value.TypeIdString + ",SubTypeId:" + myStoreItem.Item.Value.SubtypeName + ",TotalMoney:" + myStoreItem.PricePerUnit * (long)amount + ",GridId:" + store.CubeGrid.EntityId + ",FacTag:" + store.GetOwnerFactionTag());
@@ -125,7 +129,7 @@ namespace CrunchEconomy
             {
                 return;
             }
-            //  AlliancePlugin.Log.Info("sold to store");
+          //  CrunchEconCore.Log.Info("sold to store");
             if (result == MyStoreSellItemResults.Success && PossibleLogs.ContainsKey(id))
             {
                 log.Info(PossibleLogs[id]);
@@ -148,6 +152,31 @@ namespace CrunchEconomy
             PossibleLogs.Remove(id);
             return;
         }
+
+        public static void StorePatchMethodYEET(long id, int amount, long sourceEntityId, MyPlayer player,
+            MyStoreBlock __instance)
+        {
+   
+            List<MyStoreItem> yeet = new List<MyStoreItem>();
+            foreach (MyStoreItem item in __instance.PlayerItems)
+            {
+                if (item.StoreItemType == StoreItemTypes.Order && item.Amount <= 0)
+                {
+                    yeet.Add(item);
+                }
+            }
+
+            Sandbox.ModAPI.MyAPIGateway.Utilities.InvokeOnGameThread(() =>
+            {
+                foreach (MyStoreItem item in yeet)
+                {
+                    __instance.CancelStoreItem(item.Id);
+                    //CrunchEconCore.Log.Info("YEET");
+                }
+            });
+        }
+
+
         public static Boolean StorePatchMethodTwo(long id, int amount, long sourceEntityId, MyPlayer player, MyStoreBlock __instance)
         {
             if (CrunchEconCore.config != null && !CrunchEconCore.config.PatchesEnabled)
@@ -174,6 +203,7 @@ namespace CrunchEconomy
                 if (!PossibleLogs.ContainsKey(id))
                 {
                     PossibleLogs.Add(id, "SteamId:" + player.Id.SteamId + ",action:sold,Amount:" + amount + ",TypeId:" + myStoreItem.Item.Value.TypeIdString + ",SubTypeId:" + myStoreItem.Item.Value.SubtypeName + ",TotalMoney:" + myStoreItem.PricePerUnit * (long)amount + ",GridId:" + store.CubeGrid.EntityId + ",FacTag:" + store.GetOwnerFactionTag() + ",ModifierName:notimplemented" + ",GridName:" + store.CubeGrid.DisplayName);
+
                 }
 
                 if (CrunchEconCore.playerData.TryGetValue(player.Id.SteamId, out PlayerData data))

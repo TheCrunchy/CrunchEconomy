@@ -38,27 +38,9 @@ namespace CrunchEconomy.StoreStuff
         public static Dictionary<long, DateTime> NextUpdate2 = new Dictionary<long, DateTime>();
         public static void Transfer(MyFunctionalBlock __instance)
         {
-            if (CrunchEconCore.config.DoCombine || CrunchEconCore.config.RefreshPlayerStoresOnLoad)
+            if (CrunchEconCore.config.DoCombine)
             {
                 if (!(__instance is MyStoreBlock store)) return;
-                if (CrunchEconCore.config.RefreshPlayerStoresOnLoad)
-                {
-                    if (NextUpdate.TryGetValue(__instance.EntityId, out var time))
-                    {
-                        if (DateTime.Now > time)
-                        {
-                            NextUpdate[store.EntityId] = DateTime.Now.AddMinutes(5);
-                            RefreshBlock(store);
-                        }
-
-                    }
-                    else
-                    {
-                        NextUpdate.Add(store.EntityId, DateTime.Now.AddMinutes(5));
-                        NextUpdate2.Add(store.EntityId, DateTime.Now.AddMinutes(4));
-                    }
-
-                }
                 if (CrunchEconCore.config.DoCombine)
                 {
                     if (NextUpdate2.TryGetValue(__instance.EntityId, out var time2))
@@ -69,54 +51,15 @@ namespace CrunchEconomy.StoreStuff
                             CombineBlock(store);
                         }
                     }
+                    else
+                    {
+                        NextUpdate2.Add(store.EntityId, DateTime.Now.AddMinutes(5));
+                        CombineBlock(store);
+                    }
                 }
             }
         }
 
-        public static void RefreshBlock(MyStoreBlock store)
-        {
-            ClearStoreOfPlayersBuyingOffers(store);
-            ClearStoreOfPlayersSellingOrders(store);
-        }
-
-        public static void ClearStoreOfPlayersSellingOrders(MyStoreBlock store)
-        {
-            List<MyStoreItem> yeet = new List<MyStoreItem>();
-            foreach (MyStoreItem item in store.PlayerItems)
-            {
-                if (item.StoreItemType == StoreItemTypes.Order && item.Amount <= 0)
-                {
-                    yeet.Add(item);
-                }
-            }
-
-            Sandbox.ModAPI.MyAPIGateway.Utilities.InvokeOnGameThread(() =>
-            {
-                foreach (MyStoreItem item in yeet)
-                {
-                    store.CancelStoreItem(item.Id);
-                }
-            });
-        }
-
-        public static void ClearStoreOfPlayersBuyingOffers(MyStoreBlock store)
-        {
-            List<MyStoreItem> yeet = new List<MyStoreItem>();
-            foreach (MyStoreItem item in store.PlayerItems)
-            {
-                if (item.StoreItemType == StoreItemTypes.Offer && item.Amount <= 0)
-                {
-                    yeet.Add(item);
-                }
-            }
-            Sandbox.ModAPI.MyAPIGateway.Utilities.InvokeOnGameThread(() =>
-            {
-                foreach (MyStoreItem item in yeet)
-                {
-                    store.CancelStoreItem(item.Id);
-                }
-            });
-        }
 
         public static void CombineBlock(MyStoreBlock store)
         {
@@ -127,35 +70,41 @@ namespace CrunchEconomy.StoreStuff
 
             foreach (var order in store.PlayerItems.Where(item => item.StoreItemType == StoreItemTypes.Order))
             {
-                if (orders.TryGetValue(order.Item.Value, out var temp))
+                if (order.Amount > 0)
                 {
-                    if (order.PricePerUnit > temp.pricePer)
-                    {
-                        temp.pricePer = order.PricePerUnit;
-                    }
-                    temp.amount += order.Amount;
-                }
-                else
-                {
-                    orders.Add(order.Item.Value, new TempHolder() { amount = order.Amount, pricePer = order.PricePerUnit });
 
+                    if (orders.TryGetValue(order.Item.Value, out var temp))
+                    {
+                        if (order.PricePerUnit > temp.pricePer)
+                        {
+                            temp.pricePer = order.PricePerUnit;
+                        }
+                        temp.amount += order.Amount;
+                    }
+                    else
+                    {
+                        orders.Add(order.Item.Value, new TempHolder() { amount = order.Amount, pricePer = order.PricePerUnit });
+                    }
                 }
                 yeet.Add(order);
             }
             foreach (var offer in store.PlayerItems.Where(item => item.StoreItemType == StoreItemTypes.Offer))
             {
-                if (offers.TryGetValue(offer.Item.Value, out var temp))
+                if (offer.Amount > 0)
                 {
-                    if (offer.PricePerUnit > temp.pricePer)
+                    if (offers.TryGetValue(offer.Item.Value, out var temp))
                     {
-                        temp.pricePer = offer.PricePerUnit;
+                        if (offer.PricePerUnit > temp.pricePer)
+                        {
+                            temp.pricePer = offer.PricePerUnit;
+                        }
+                        temp.amount += offer.Amount;
                     }
-                    temp.amount += offer.Amount;
-                }
-                else
-                {
-                    offers.Add(offer.Item.Value, new TempHolder() { amount = offer.Amount, pricePer = offer.PricePerUnit });
+                    else
+                    {
+                        offers.Add(offer.Item.Value, new TempHolder() { amount = offer.Amount, pricePer = offer.PricePerUnit });
 
+                    }
                 }
                 yeet.Add(offer);
             }
