@@ -20,5 +20,7 @@ namespace CrunchEconomy
         public Boolean PayPercentageToPlayer = false;
         public ulong steamId = 0;
         public double percentage = 0.05;
+        public int minDistance = 1000;
+        public int maxDistance = 2500;
     }
 }

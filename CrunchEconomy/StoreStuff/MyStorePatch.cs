@@ -27,6 +27,7 @@ using VRage.Game.Entity;
 using VRage.Game.ModAPI;
 using VRage.Game.ModAPI.Ingame;
 using VRage.Game.ObjectBuilders.Definitions;
+using VRage.Network;
 using VRage.ObjectBuilders;
 using VRageMath;
 using static CrunchEconomy.Contracts.GeneratedContract;
@@ -45,7 +46,7 @@ namespace CrunchEconomy
             throw new Exception("Failed to find patch method");
 
         internal static readonly MethodInfo logupdate2 =
-  typeof(MyStoreBlock).GetMethod("SendBuyItemResult", BindingFlags.Instance | BindingFlags.NonPublic, null, new Type[] { typeof(long), typeof(string), typeof(long), typeof(int), typeof(MyStoreBuyItemResults) }, null) ??
+  typeof(MyStoreBlock).GetMethod("SendBuyItemResult", BindingFlags.Instance | BindingFlags.NonPublic, null, new Type[] { typeof(long), typeof(string), typeof(long), typeof(int), typeof(MyStoreBuyItemResults), typeof(EndpointId) }, null) ??
   throw new Exception("Failed to find patch method");
 
         internal static readonly MethodInfo storePatchLog2 =
@@ -129,7 +130,7 @@ namespace CrunchEconomy
             {
                 return;
             }
-          //  CrunchEconCore.Log.Info("sold to store");
+            //  CrunchEconCore.Log.Info("sold to store");
             if (result == MyStoreSellItemResults.Success && PossibleLogs.ContainsKey(id))
             {
                 log.Info(PossibleLogs[id]);
@@ -138,13 +139,15 @@ namespace CrunchEconomy
             return;
         }
 
-        public static void StorePatchMethodBuy(long id, string name, long price, int amount, MyStoreBuyItemResults result)
+        public static void StorePatchMethodBuy(long id, string name, long price, int amount, MyStoreBuyItemResults result, EndpointId targetEndpoint)
         {
+            
+         //   CrunchEconCore.Log.Info("bought? " + id);
             if (CrunchEconCore.config != null && !CrunchEconCore.config.PatchesEnabled)
             {
                 return;
             }
-            //  AlliancePlugin.Log.Info("sold to store");
+           // CrunchEconCore.Log.Info("bought? " + id);
             if (result == MyStoreBuyItemResults.Success && PossibleLogs.ContainsKey(id))
             {
                 log.Info(PossibleLogs[id]);
@@ -156,7 +159,7 @@ namespace CrunchEconomy
         public static void StorePatchMethodYEET(long id, int amount, long sourceEntityId, MyPlayer player,
             MyStoreBlock __instance)
         {
-   
+
             List<MyStoreItem> yeet = new List<MyStoreItem>();
             foreach (MyStoreItem item in __instance.PlayerItems)
             {
@@ -200,10 +203,22 @@ namespace CrunchEconomy
                     return false;
                 }
 
-                if (!PossibleLogs.ContainsKey(id))
-                {
-                    PossibleLogs.Add(id, "SteamId:" + player.Id.SteamId + ",action:sold,Amount:" + amount + ",TypeId:" + myStoreItem.Item.Value.TypeIdString + ",SubTypeId:" + myStoreItem.Item.Value.SubtypeName + ",TotalMoney:" + myStoreItem.PricePerUnit * (long)amount + ",GridId:" + store.CubeGrid.EntityId + ",FacTag:" + store.GetOwnerFactionTag() + ",ModifierName:notimplemented" + ",GridName:" + store.CubeGrid.DisplayName);
 
+                if (store.DisplayNameText != null &&
+                    CrunchEconCore.buyOrders.TryGetValue(store.DisplayNameText, out List<BuyOrder> orders2))
+                {
+                    foreach (BuyOrder order in orders2)
+                    {
+                        if (order.typeId.Equals(myStoreItem.Item.Value.TypeIdString.Replace("MyObjectBuilder_", "")) &&
+                            order.subtypeId.Equals(myStoreItem.Item.Value.SubtypeName))
+                        {
+
+                            if (!PossibleLogs.ContainsKey(id))
+                            {
+                                PossibleLogs.Add(id, "SteamId:" + player.Id.SteamId + ",action:sold,Amount:" + amount + ",TypeId:" + myStoreItem.Item.Value.TypeIdString + ",SubTypeId:" + myStoreItem.Item.Value.SubtypeName + ",TotalMoney:" + myStoreItem.PricePerUnit * (long)amount + ",GridId:" + store.CubeGrid.EntityId + ",FacTag:" + store.GetOwnerFactionTag() + ",ModifierName:" + order.StationModifierItemName + ",GridName:" + store.CubeGrid.DisplayName);
+                            }
+                        }
+                    }
                 }
 
                 if (CrunchEconCore.playerData.TryGetValue(player.Id.SteamId, out PlayerData data))
@@ -377,10 +392,7 @@ namespace CrunchEconomy
                     return true;
                 }
 
-                if (!PossibleLogs.ContainsKey(id))
-                {
-                    PossibleLogs.Add(id, "SteamId:" + player.Id.SteamId + ",action:bought,Amount:" + amount + ",TypeId:" + storeItem.Item.Value.TypeIdString + ",SubTypeId:" + storeItem.Item.Value.SubtypeName + ",TotalMoney:" + storeItem.PricePerUnit * (long)amount + ",GridId:" + store.CubeGrid.EntityId + ",FacTag:" + store.GetOwnerFactionTag() + ",ModifierName:notimplemented" + ",GridName:" + store.CubeGrid.DisplayName);
-                }
+
                 //this code is awful
                 MyEntity entity = (MyEntity)null;
                 if (!Sandbox.Game.Entities.MyEntities.TryGetEntityById(targetEntityId, out entity, false))
@@ -448,7 +460,7 @@ namespace CrunchEconomy
                                             Vector3 Position = player.Character.PositionComp.GetPosition();
                                             Random random = new Random();
 
-                                            Position.Add(new Vector3(random.Next(1000, 2000), random.Next(1000, 2000), random.Next(1000, 2000)));
+                                            Position.Add(new Vector3(random.Next(sale.minDistance, sale.maxDistance), random.Next(sale.minDistance, sale.maxDistance), random.Next(sale.minDistance, sale.maxDistance)));
                                             if (!GridManager.LoadGrid(CrunchEconCore.path + "//GridSelling//Grids//" + sale.ExportedGridName + ".sbc", Position, false, idd, storeItem.Item.Value.SubtypeName, false))
                                             {
                                                 CrunchEconCore.Log.Info(player.Id.SteamId + " failure when purchasing grid");
@@ -482,53 +494,58 @@ namespace CrunchEconomy
 
                                         foreach (SellOffer offer in offers)
                                         {//
-
-                                            if (offer.BuyingGivesGPS)
+                                            if (offer.typeId.Equals(storeItem.Item.Value.TypeIdString.Replace("MyObjectBuilder_", "")) && offer.subtypeId.Equals(storeItem.Item.Value.SubtypeName))
                                             {
-                                                var pickFrom = new List<MyGps>();
-                                                var gpscol = MySession.Static.Gpss;
-                                                List<IMyGps> playerList = new List<IMyGps>();
-                                                gpscol.GetGpsList(player.Identity.IdentityId, playerList);
-                                                foreach (var s in offer.gpsToPickFrom)
+                                                if (!PossibleLogs.ContainsKey(id))
                                                 {
-                                                    var gps = CrunchEconCore.ParseGPS(s);
-                                                    if (gps != null)
+                                                    PossibleLogs.Add(id, "SteamId:" + player.Id.SteamId + ",action:bought,Amount:" + amount + ",TypeId:" + storeItem.Item.Value.TypeIdString + ",SubTypeId:" + storeItem.Item.Value.SubtypeName + ",TotalMoney:" + storeItem.PricePerUnit * (long)amount + ",GridId:" + store.CubeGrid.EntityId + ",FacTag:" + store.GetOwnerFactionTag() + ",ModifierName:" + offer.StationModifierItemName + ",GridName:" + store.CubeGrid.DisplayName);
+                                                //    CrunchEconCore.Log.Info("Should log some shit buying");
+                                             //       CrunchEconCore.Log.Info("bought? " + id);
+                                                }
+                                                if (offer.BuyingGivesGPS)
+                                                {
+                                                    var pickFrom = new List<MyGps>();
+                                                    var gpscol = MySession.Static.Gpss;
+                                                    List<IMyGps> playerList = new List<IMyGps>();
+                                                    gpscol.GetGpsList(player.Identity.IdentityId, playerList);
+                                                    foreach (var s in offer.gpsToPickFrom)
                                                     {
-                                                        foreach (var gp in playerList)
+                                                        var gps = CrunchEconCore.ParseGPS(s);
+                                                        if (gps != null)
                                                         {
-                                                            if (gp.Coords != gps.Coords)
+                                                            foreach (var gp in playerList)
                                                             {
-                                                                gps.AlwaysVisible = true;
-                                                                gps.ShowOnHud = true;
-                                                                gpscol.SendAddGpsRequest(player.Identity.IdentityId, ref gps);
-                                                                return true;
+                                                                if (gp.Coords != gps.Coords)
+                                                                {
+                                                                    gps.AlwaysVisible = true;
+                                                                    gps.ShowOnHud = true;
+                                                                    gpscol.SendAddGpsRequest(player.Identity.IdentityId, ref gps);
+                                                                    return true;
+                                                                }
                                                             }
                                                         }
                                                     }
                                                 }
-                                            }
-                                            if (offer.BuyingGivesHaulingContract || offer.BuyingGivesMiningContract)
-                                            {
-                                                //   CrunchEconCore.Log.Info("has a contract");
-                                                if (!store.GetOwnerFactionTag().Equals(offer.IfGivesContractNPCTag))
+                                                if (offer.BuyingGivesHaulingContract || offer.BuyingGivesMiningContract)
                                                 {
-                                                    //  CrunchEconCore.Log.Info("not the faction tag");
+                                                    //   CrunchEconCore.Log.Info("has a contract");
+                                                    if (!store.GetOwnerFactionTag().Equals(offer.IfGivesContractNPCTag))
+                                                    {
+                                                        //  CrunchEconCore.Log.Info("not the faction tag");
 
-                                                    continue;
-                                                }
-                                                if (amount > 1)
-                                                {
-                                                    StringBuilder sb = new StringBuilder();
-                                                    sb.AppendLine("Cannot purchase more than 1 contract in single purchase!");
+                                                        continue;
+                                                    }
+                                                    if (amount > 1)
+                                                    {
+                                                        StringBuilder sb = new StringBuilder();
+                                                        sb.AppendLine("Cannot purchase more than 1 contract in single purchase!");
 
-                                                    DialogMessage m = new DialogMessage("Shop Error", "", sb.ToString());
-                                                    ModCommunication.SendMessageTo(m, player.Id.SteamId);
-                                                    return false;
-                                                }
-                                                //  CrunchEconCore.Log.Info("is the faction tag");
-                                                //  CrunchEconCore.Log.Info(storeItem.Item.Value.TypeIdString + " " + storeItem.Item.Value.SubtypeName) ;
-                                                if (offer.typeId.Equals(storeItem.Item.Value.TypeIdString.Replace("MyObjectBuilder_", "")) && offer.subtypeId.Equals(storeItem.Item.Value.SubtypeName))
-                                                {
+                                                        DialogMessage m = new DialogMessage("Shop Error", "", sb.ToString());
+                                                        ModCommunication.SendMessageTo(m, player.Id.SteamId);
+                                                        return false;
+                                                    }
+                                                    //  CrunchEconCore.Log.Info("is the faction tag");
+                                                    //  CrunchEconCore.Log.Info(storeItem.Item.Value.TypeIdString + " " + storeItem.Item.Value.SubtypeName) ;
 
                                                     CrunchEconCore.playerData.TryGetValue(player.Id.SteamId, out PlayerData data);
                                                     if (data == null)

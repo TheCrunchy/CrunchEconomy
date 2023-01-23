@@ -140,7 +140,7 @@ namespace CrunchEconomy
                             order.maxPrice = item.PricePerUnit + 1;
                             order.subtypeId = item.Item.Value.SubtypeName;
                             order.typeId = item.Item.Value.TypeIdString;
-                            order.chance = 100;
+                            order.chance = 1;
                             order.Enabled = true;
                             CrunchEconCore.utils.WriteToXmlFile<BuyOrder>(CrunchEconCore.path + "//BuyOrders//" + StoreName + "//" + order.typeId + "-" + order.subtypeId + ".xml", order);
                             //generate a folder for this store name
@@ -163,7 +163,7 @@ namespace CrunchEconomy
                                 offer.maxPrice = item.PricePerUnit + 1;
                                 offer.subtypeId = item.Item.Value.SubtypeName;
                                 offer.typeId = item.Item.Value.TypeIdString;
-                                offer.chance = 100;
+                                offer.chance = 1;
                                 offer.Enabled = true;
                                 CrunchEconCore.utils.WriteToXmlFile<SellOffer>(CrunchEconCore.path + "//SellOffers//" + StoreName + "//" + offer.typeId + "-" + offer.subtypeId + ".xml", offer);
                             }
@@ -412,6 +412,7 @@ namespace CrunchEconomy
             {
                 station.nextBuyRefresh = DateTime.Now;
                 station.nextSellRefresh = DateTime.Now;
+                station.nextCraftRefresh = DateTime.Now;
             }
             CrunchEconCore.paused = false;
         }
