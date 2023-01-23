@@ -139,7 +139,7 @@ namespace CrunchEconomy
                             order.minPrice = item.PricePerUnit;
                             order.maxPrice = item.PricePerUnit + 1;
                             order.subtypeId = item.Item.Value.SubtypeName;
-                            order.typeId = item.Item.Value.TypeIdString;
+                            order.typeId = item.Item.Value.TypeIdString.Replace("MyObjectBuilder_", "");
                             order.chance = 1;
                             order.Enabled = true;
                             CrunchEconCore.utils.WriteToXmlFile<BuyOrder>(CrunchEconCore.path + "//BuyOrders//" + StoreName + "//" + order.typeId + "-" + order.subtypeId + ".xml", order);
@@ -162,7 +162,7 @@ namespace CrunchEconomy
                                 offer.SpawnIfCargoLessThan = item.Amount;
                                 offer.maxPrice = item.PricePerUnit + 1;
                                 offer.subtypeId = item.Item.Value.SubtypeName;
-                                offer.typeId = item.Item.Value.TypeIdString;
+                                offer.typeId = item.Item.Value.TypeIdString.Replace("MyObjectBuilder_", "");
                                 offer.chance = 1;
                                 offer.Enabled = true;
                                 CrunchEconCore.utils.WriteToXmlFile<SellOffer>(CrunchEconCore.path + "//SellOffers//" + StoreName + "//" + offer.typeId + "-" + offer.subtypeId + ".xml", offer);
