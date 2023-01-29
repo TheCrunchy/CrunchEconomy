@@ -31,6 +31,8 @@ namespace CrunchEconomy
         public Boolean WhitelistedSafezones = false;
         public Boolean DoBlacklist = false;
         public List<String> Whitelist = new List<string>();
+        public bool MaintainNPCBalance = false;
+        public long MoneyToHave = 100000000000;
         public MyGps getGPS()
         {
             return CrunchEconCore.ParseGPS(stationGPS);
@@ -41,7 +43,7 @@ namespace CrunchEconomy
         public void SetupModifiers()
         {
             PriceModifiers.Clear();
-            foreach (PriceModifier mod in Modifiers)
+            foreach (PriceModifier mod in Modifiers.Where(x => x.Enabled))
             {
                 if (!PriceModifiers.ContainsKey(mod.StationModifierInItemFile))
                 {
@@ -49,12 +51,13 @@ namespace CrunchEconomy
                 }
             }
         }
+
         public float GetModifier(String input)
         {
             if (PriceModifiers.TryGetValue(input, out float f))
             {
-                return f;
 
+                return f;
             }
 
             return 1f;
@@ -64,6 +67,11 @@ namespace CrunchEconomy
         public class PriceModifier
         {
             public float Modifier = 1.0f;
+            public bool Enabled = false;
+            public float Max = 1.3f;
+            public float Min = 0.7f;
+            public DateTime NextRefresh = DateTime.Now;
+            public int SecondsBetweenRefreshes = 43200;
             public string StationModifierInItemFile = "Example 100%";
         }
 

@@ -1,6 +1,7 @@
 ﻿using Sandbox.Game.World;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts.Internal;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -1522,6 +1523,7 @@ namespace CrunchEconomy
                 DateTime now = DateTime.Now;
                 foreach (Stations station in stations)
                 {
+                    bool doneMoney = false;
                     //first check if its any, then we can load the grid to do the editing
                     try
                     {
@@ -1579,6 +1581,10 @@ namespace CrunchEconomy
                         if (now >= station.nextBuyRefresh || now >= station.nextSellRefresh)
                         {
                             MyGps gps = station.getGPS();
+                            if (gps == null)
+                            {
+                                continue;
+                            }
                             Boolean AddSellTime = false;
                             Boolean AddBuyTime = false;
                             bool checkLocation = false;
@@ -1597,11 +1603,33 @@ namespace CrunchEconomy
                                                 SaveStation(station);
                                             }
 
+                                            if (station.Modifiers != null)
+                                            {
+                                                foreach (var modifier in station.Modifiers.Where(x => x.Enabled && now >= x.NextRefresh))
+                                                {
+                                                    modifier.NextRefresh = now.AddSeconds(modifier.SecondsBetweenRefreshes);
+                                                    modifier.Modifier = (float)Math.Round((rnd.NextDouble() * (modifier.Max - modifier.Min) + modifier.Min), 2);
+                                                }
+                                            }
                                             foreach (MyStoreBlock store in grid.GetFatBlocks().OfType<MyStoreBlock>())
                                             {
                                                 //  Log.Info(store.DisplayNameText);
                                                 if (store.GetOwnerFactionTag().Equals(station.OwnerFactionTag))
                                                 {
+                                                    if (station.MaintainNPCBalance && !doneMoney)
+                                                    {
+                                                        var balance = EconUtils.getBalance(store.OwnerId);
+                                                        if (balance < station.MoneyToHave)
+                                                        {
+                                                            EconUtils.addMoney(store.OwnerId, station.MoneyToHave - balance);
+                                                            doneMoney = true;
+                                                        }
+                                                        else
+                                                        {
+                                                            doneMoney = true;
+                                                        }
+                                                    }
+
                                                     //   Log.Info("1");
                                                     station.StationEntityId = store.CubeGrid.EntityId;
                                                     if (now >= station.nextSellRefresh && station.DoSellOffers)
@@ -1814,7 +1842,7 @@ namespace CrunchEconomy
 
                                                             foreach (BuyOrder order in orders)
                                                             {
-                                                       
+
                                                                 try
                                                                 {
                                                                     if (order.IndividualRefreshTimer)
@@ -1958,9 +1986,9 @@ namespace CrunchEconomy
                                                         try
                                                         {
 
-                                                            //Log.Info("this is an offer");
+                                                            //   Log.Info("this is an offer");
                                                             double chance = rnd.NextDouble();
-
+                                                            //    Log.Info("this is fucked");
                                                             //   Log.Info("Should be adding something to sell?");
 
                                                             if (MyDefinitionId.TryParse("MyObjectBuilder_" + offer.typeId, offer.subtypeId, out MyDefinitionId id))
