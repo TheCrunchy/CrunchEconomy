@@ -1368,64 +1368,12 @@ namespace CrunchEconomy
                 Log.Info("Loading stuff for CrunchEcon");
                 try
                 {
-                    repConfig = utils.ReadFromXmlFile<RepConfig>(path + "\\ReputationConfig.xml");
-                    whitelist = utils.ReadFromXmlFile<WhitelistFile>(path + "\\Whitelist.xml");
-                    //MarketCommands.list.RefreshList();
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex);
-                }
-                try
-                {
-                    ContractUtils.LoadAllContracts();
-                }
-                catch (Exception ex)
-                {
-                    Log.Error("Error loading mining contract stuff " + ex.ToString());
-                }
-                try
-                {
-                    LoadAllGridSales();
-                }
-                catch (Exception ex)
-                {
-                    Log.Error("Error loading grid sales " + ex.ToString());
-
-
-                }
-                try
-                {
-                    LoadAllSellOffers();
-                }
-                catch (Exception ex)
-                {
-                    Log.Error("Error loading Sell offers " + ex.ToString());
-
-
-                }
-                try
-                {
-                    LoadAllStations();
                     DoStationShit();
                 }
                 catch (Exception ex)
                 {
                     Log.Error("Error loading Stations " + ex.ToString());
-
-
                 }
-                try
-                {
-                    LoadAllBuyOrders();
-                }
-                catch (Exception ex)
-                {
-                    Log.Error("Error loading Buy Orders " + ex.ToString());
-
-
-                }
-
 
             }
 
