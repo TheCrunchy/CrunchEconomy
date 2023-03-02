@@ -122,6 +122,7 @@ namespace CrunchEconomy
                 {
                     continue;
                 }
+            
                 for (int i = 0; i < block.InventoryCount; i++)
                 {
 
@@ -327,6 +328,7 @@ namespace CrunchEconomy
                     return false;
                 }
             }
+            
 
             foreach (MyTuple<VRage.Game.ModAPI.IMyInventory, VRage.Game.ModAPI.IMyInventoryItem, MyFixedPoint> item in toRemove)
                 MyAPIGateway.Utilities.InvokeOnGameThread(() =>

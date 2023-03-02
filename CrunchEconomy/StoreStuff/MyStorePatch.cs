@@ -73,6 +73,15 @@ namespace CrunchEconomy
             typeof(MyStorePatch).GetMethod(nameof(StorePatchMethodYEET), BindingFlags.Static | BindingFlags.Public) ??
             throw new Exception("Failed to find patch method");
         public static Logger log = LogManager.GetLogger("Stores");
+
+        internal static readonly MethodInfo limitUpdate =
+            typeof(MySessionComponentEconomy).GetMethod("GetStoreCreationLimitPerPlayer", BindingFlags.Instance | BindingFlags.Public) ??
+            throw new Exception("Failed to find patch method");
+
+        internal static readonly MethodInfo limitUpdateM =
+            typeof(MyStorePatch).GetMethod(nameof(YeetKeenLimit), BindingFlags.Static | BindingFlags.Public) ??
+            throw new Exception("Failed to find patch method");
+
         public static void ApplyLogging()
         {
 
@@ -105,7 +114,11 @@ namespace CrunchEconomy
             LogManager.Configuration.Reload();
         }
 
-
+        public static void YeetKeenLimit(ref int __result)
+        {
+            __result = 5000000;
+            return;
+        }
         public static void Patch(PatchContext ctx)
         {
 
@@ -117,6 +130,7 @@ namespace CrunchEconomy
             ctx.GetPattern(update).Prefixes.Add(storePatch);
             ctx.GetPattern(updateTwo).Prefixes.Add(storePatchTwo);
             ctx.GetPattern(updateTwo).Suffixes.Add(storePatchYEET);
+            ctx.GetPattern(limitUpdate).Suffixes.Add(limitUpdateM);
 
         }
         //        log.Info("SteamId:" + player.Id.SteamId + ",action:sold,Amount:" + amount + ",TypeId:" + myStoreItem.Item.Value.TypeIdString + ",SubTypeId:" + myStoreItem.Item.Value.SubtypeName + ",TotalMoney:" + myStoreItem.PricePerUnit * (long)amount + ",GridId:" + store.CubeGrid.EntityId + ",FacTag:" + store.GetOwnerFactionTag());
