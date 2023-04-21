@@ -39,6 +39,13 @@
     <Reference Include="NLog">
       <HintPath>..\..\..\4 Torch Server\DedicatedServer64\NLog.dll</HintPath>
     </Reference>
+    <Reference Include="protobuf-net, Version=2.4.0.0, Culture=neutral, PublicKeyToken=257b51d87d2e4d67, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\AlliancesPlugin\AlliancesPlugin\bin\Debug\protobuf-net.dll</HintPath>
+    </Reference>
+    <Reference Include="ProtoBuf.Net">
+      <HintPath>..\..\AlliancesPlugin\AlliancesPlugin\bin\Debug\ProtoBuf.Net.dll</HintPath>
+    </Reference>
     <Reference Include="Sandbox.Common">
       <HintPath>..\..\..\4 Torch Server\DedicatedServer64\Sandbox.Common.dll</HintPath>
     </Reference>
@@ -87,6 +94,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CombatEncounters\Encounter.cs" />
+    <Compile Include="CombatEncounters\EncounterStage.cs" />
+    <Compile Include="CombatEncounters\EncounterTrigger.cs" />
+    <Compile Include="CombatEncounters\Triggers.cs" />
     <Compile Include="StoreStuff\BuyOrder.cs" />
     <Compile Include="Config.cs" />
     <Compile Include="ContractCommands.cs" />

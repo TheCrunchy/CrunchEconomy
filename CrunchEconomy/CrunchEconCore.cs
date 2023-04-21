@@ -51,8 +51,11 @@ using static CrunchEconomy.Stations;
 using static CrunchEconomy.Contracts.GeneratedContract;
 using static CrunchEconomy.RepConfig;
 using System.Threading.Tasks;
+using NLog.Fluent;
+using ProtoBuf;
 using static CrunchEconomy.WhitelistFile;
 using Sandbox.Definitions;
+using Torch.Server.Views.Entities;
 
 namespace CrunchEconomy
 {
@@ -1587,7 +1590,7 @@ namespace CrunchEconomy
                                                         //    Log.Info(store.DisplayNameText);
                                                         //    Log.Info("its past the timer");
                                                         AddSellTime = true;
-
+                                                        
                                                         if (sellOffers.TryGetValue(store.DisplayNameText, out List<SellOffer> offers))
                                                         {
                                                             //     Log.Info("it found the store files");
@@ -1684,10 +1687,13 @@ namespace CrunchEconomy
                                                                             //       Log.Info("if it got here its creating the offer");
                                                                             MyStoreInsertResults result = store.InsertOffer(item, out long notUsingThis);
 
+
+
                                                                             if (result == MyStoreInsertResults.Fail_PricePerUnitIsLessThanMinimum || result == MyStoreInsertResults.Fail_StoreLimitReached || result == MyStoreInsertResults.Error)
                                                                             {
                                                                                 Log.Error("Unable to insert this offer into store " + offer.typeId + " " + offer.subtypeId + " at station " + station.Name + " " + result.ToString());
                                                                             }
+                                                                         
                                                                         }
                                                                         else
                                                                         {
@@ -2420,6 +2426,7 @@ namespace CrunchEconomy
         }
         public static Dictionary<String, GridSale> gridsForSale = new Dictionary<string, GridSale>();
 
+ 
         private void SessionChanged(ITorchSession session, TorchSessionState state)
         {
             TorchState = state;
@@ -2430,6 +2437,7 @@ namespace CrunchEconomy
             if (state == TorchSessionState.Loaded)
             {
 
+                //
                 string type = "//Mining";
                 foreach (KeyValuePair<Guid, Contract> keys in ContractSave)
                 {
