@@ -56,6 +56,7 @@ using ProtoBuf;
 using static CrunchEconomy.WhitelistFile;
 using Sandbox.Definitions;
 using Torch.Server.Views.Entities;
+using VRage.ObjectBuilders.Private;
 
 namespace CrunchEconomy
 {
@@ -217,7 +218,7 @@ namespace CrunchEconomy
                         MyItemType itemType = new MyInventoryItemFilter(id.TypeId + "/" + id.SubtypeName).ItemType;
                         if (inv.CanItemsBeAdded(amount, itemType))
                         {
-                            inv.AddItems(amount, (MyObjectBuilder_PhysicalObject)MyObjectBuilderSerializer.CreateNewObject(id));
+                            inv.AddItems(amount, (MyObjectBuilder_PhysicalObject)MyObjectBuilderSerializerKeen.CreateNewObject(id));
                             return true;
                         }
                         else
@@ -281,7 +282,7 @@ namespace CrunchEconomy
                             MyItemType itemType = new MyInventoryItemFilter(id.TypeId + "/" + id.SubtypeName).ItemType;
                             if (inv.CanItemsBeAdded(amount, itemType))
                             {
-                                inv.AddItems(amount, (MyObjectBuilder_PhysicalObject)MyObjectBuilderSerializer.CreateNewObject(id));
+                                inv.AddItems(amount, (MyObjectBuilder_PhysicalObject)MyObjectBuilderSerializerKeen.CreateNewObject(id));
                                 //      CrunchEconCore.Log.Info("SPAWNING 3 " + amount);
                                 return true;
                             }
@@ -967,7 +968,7 @@ namespace CrunchEconomy
                                                 MyItemType itemType = new MyInventoryItemFilter(reward.TypeId + "/" + reward.SubtypeName).ItemType;
                                                 if (player.Character.GetInventory() != null && player.Character.GetInventory().CanItemsBeAdded((MyFixedPoint)mission.getStage(mission.CurrentStage).ItemRewardAmount, itemType))
                                                 {
-                                                    player.Character.GetInventory().AddItems((MyFixedPoint)mission.getStage(mission.CurrentStage).ItemRewardAmount, (MyObjectBuilder_PhysicalObject)MyObjectBuilderSerializer.CreateNewObject(reward));
+                                                    player.Character.GetInventory().AddItems((MyFixedPoint)mission.getStage(mission.CurrentStage).ItemRewardAmount, (MyObjectBuilder_PhysicalObject)MyObjectBuilderSerializerKeen.CreateNewObject(reward));
                                                     SendMessage("Survey", "Bonus item reward in character inventory.", Color.Gold, (long)player.Id.SteamId);
                                                 }
                                             }

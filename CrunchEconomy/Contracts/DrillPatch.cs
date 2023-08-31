@@ -16,6 +16,7 @@ using Torch.Managers.PatchManager;
 using VRage;
 using VRage.Game;
 using VRage.ObjectBuilders;
+using VRage.ObjectBuilders.Private;
 using VRage.Utils;
 using VRageMath;
 
@@ -133,7 +134,7 @@ namespace CrunchEconomy.Contracts
                                     // 
 
                                     playerId = pilot.GetPlayerIdentityId();
-                                    MyObjectBuilder_Ore newObject = MyObjectBuilderSerializer.CreateNewObject<MyObjectBuilder_Ore>(material.MinedOre);
+                                    MyObjectBuilder_Ore newObject = MyObjectBuilderSerializerKeen.CreateNewObject<MyObjectBuilder_Ore>(material.MinedOre);
                                     newObject.MaterialTypeName = new MyStringHash?(material.Id.SubtypeId);
                                     float num = (float)((double)removedAmount / (double)byte.MaxValue * 1.0) * __instance.VoxelHarvestRatio * material.MinedOreRatio;
                                     if (!MySession.Static.AmountMined.ContainsKey(material.MinedOre))

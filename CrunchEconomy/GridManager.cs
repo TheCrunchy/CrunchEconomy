@@ -22,6 +22,7 @@ using VRage.Game.Entity;
 using VRage.Game.ModAPI.Ingame;
 using VRage.Groups;
 using VRage.ObjectBuilders;
+using VRage.ObjectBuilders.Private;
 using VRageMath;
 
 namespace CrunchEconomy
@@ -58,7 +59,7 @@ namespace CrunchEconomy
         public static bool SaveGridNoDelete(string path, string filename, bool keepOriginalOwner, bool keepProjection, List<MyObjectBuilder_CubeGrid> objectBuilders)
         {
 
-            MyObjectBuilder_ShipBlueprintDefinition definition = MyObjectBuilderSerializer.CreateNewObject<MyObjectBuilder_ShipBlueprintDefinition>();
+            MyObjectBuilder_ShipBlueprintDefinition definition = MyObjectBuilderSerializerKeen.CreateNewObject<MyObjectBuilder_ShipBlueprintDefinition>();
 
             definition.Id = new MyDefinitionId(new MyObjectBuilderType(typeof(MyObjectBuilder_ShipBlueprintDefinition)), filename);
             definition.CubeGrids = objectBuilders.Select(x => (MyObjectBuilder_CubeGrid)x.Clone()).ToArray();
@@ -107,10 +108,10 @@ namespace CrunchEconomy
                 }
             }
 
-            MyObjectBuilder_Definitions builderDefinition = MyObjectBuilderSerializer.CreateNewObject<MyObjectBuilder_Definitions>();
+            MyObjectBuilder_Definitions builderDefinition = MyObjectBuilderSerializerKeen.CreateNewObject<MyObjectBuilder_Definitions>();
             builderDefinition.ShipBlueprints = new MyObjectBuilder_ShipBlueprintDefinition[] { definition };
 
-            return MyObjectBuilderSerializer.SerializeXML(path, false, builderDefinition);
+            return MyObjectBuilderSerializerKeen.SerializeXML(path, false, builderDefinition);
         }
 
         public static MyIdentity GetIdentityByNameOrId(string playerNameOrSteamId)
@@ -146,7 +147,7 @@ namespace CrunchEconomy
                 objectBuilders.Add(objectBuilder);
             }
 
-            MyObjectBuilder_ShipBlueprintDefinition definition = MyObjectBuilderSerializer.CreateNewObject<MyObjectBuilder_ShipBlueprintDefinition>();
+            MyObjectBuilder_ShipBlueprintDefinition definition = MyObjectBuilderSerializerKeen.CreateNewObject<MyObjectBuilder_ShipBlueprintDefinition>();
 
             definition.Id = new MyDefinitionId(new MyObjectBuilderType(typeof(MyObjectBuilder_ShipBlueprintDefinition)), name);
             definition.CubeGrids = objectBuilders.Select(x => (MyObjectBuilder_CubeGrid)x.Clone()).ToArray();
@@ -204,7 +205,7 @@ namespace CrunchEconomy
                 }
             }
 
-            MyObjectBuilder_Definitions builderDefinition = MyObjectBuilderSerializer.CreateNewObject<MyObjectBuilder_Definitions>();
+            MyObjectBuilder_Definitions builderDefinition = MyObjectBuilderSerializerKeen.CreateNewObject<MyObjectBuilder_Definitions>();
             builderDefinition.ShipBlueprints = new MyObjectBuilder_ShipBlueprintDefinition[] { definition };
 
             return builderDefinition.ShipBlueprints;
@@ -213,7 +214,7 @@ namespace CrunchEconomy
 
         public static List<MyObjectBuilder_CubeGrid> GetObjectBuilders(string path)
         {
-            if (MyObjectBuilderSerializer.DeserializeXML(path, out MyObjectBuilder_Definitions Definition))
+            if (MyObjectBuilderSerializerKeen.DeserializeXML(path, out MyObjectBuilder_Definitions Definition))
             {
                 List<MyObjectBuilder_CubeGrid> gridsToReturn = new List<MyObjectBuilder_CubeGrid>();
                 if (Definition.Prefabs != null && Definition.Prefabs.Count() != 0)
@@ -242,7 +243,7 @@ namespace CrunchEconomy
         }
         public static bool LoadGrid(string path, Vector3D playerPosition, bool keepOriginalLocation, ulong steamID, String name, bool force = false, CommandContext context = null)
         {
-            if (MyObjectBuilderSerializer.DeserializeXML(path, out MyObjectBuilder_Definitions myObjectBuilder_Definitions))
+            if (MyObjectBuilderSerializerKeen.DeserializeXML(path, out MyObjectBuilder_Definitions myObjectBuilder_Definitions))
             {
 
                 var shipBlueprints = myObjectBuilder_Definitions.ShipBlueprints;
@@ -395,6 +396,7 @@ namespace CrunchEconomy
 
             return true;
         }
+
         private static MyGps CreateGps(Vector3D Position, Color gpsColor, int seconds, string Name)
         {
 

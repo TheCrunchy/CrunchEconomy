@@ -29,6 +29,8 @@ using VRage.Game.ModAPI.Ingame;
 using VRage.Game.ObjectBuilders.Definitions;
 using VRage.Network;
 using VRage.ObjectBuilders;
+using VRage.ObjectBuilders.Private;
+using VRage.Utils;
 using VRageMath;
 using static CrunchEconomy.Contracts.GeneratedContract;
 
@@ -155,13 +157,13 @@ namespace CrunchEconomy
 
         public static void StorePatchMethodBuy(long id, string name, long price, int amount, MyStoreBuyItemResults result, EndpointId targetEndpoint)
         {
-            
-         //   CrunchEconCore.Log.Info("bought? " + id);
+
+            //   CrunchEconCore.Log.Info("bought? " + id);
             if (CrunchEconCore.config != null && !CrunchEconCore.config.PatchesEnabled)
             {
                 return;
             }
-           // CrunchEconCore.Log.Info("bought? " + id);
+            // CrunchEconCore.Log.Info("bought? " + id);
             if (result == MyStoreBuyItemResults.Success && PossibleLogs.ContainsKey(id))
             {
                 log.Info(PossibleLogs[id]);
@@ -513,8 +515,8 @@ namespace CrunchEconomy
                                                 if (!PossibleLogs.ContainsKey(id))
                                                 {
                                                     PossibleLogs.Add(id, "SteamId:" + player.Id.SteamId + ",action:bought,Amount:" + amount + ",TypeId:" + storeItem.Item.Value.TypeIdString + ",SubTypeId:" + storeItem.Item.Value.SubtypeName + ",TotalMoney:" + storeItem.PricePerUnit * (long)amount + ",GridId:" + store.CubeGrid.EntityId + ",FacTag:" + store.GetOwnerFactionTag() + ",ModifierName:" + offer.StationModifierItemName + ",GridName:" + store.CubeGrid.DisplayName);
-                                                //    CrunchEconCore.Log.Info("Should log some shit buying");
-                                             //       CrunchEconCore.Log.Info("bought? " + id);
+                                                    //    CrunchEconCore.Log.Info("Should log some shit buying");
+                                                    //       CrunchEconCore.Log.Info("bought? " + id);
                                                 }
                                                 if (offer.BuyingGivesGPS)
                                                 {
@@ -522,22 +524,15 @@ namespace CrunchEconomy
                                                     var gpscol = MySession.Static.Gpss;
                                                     List<IMyGps> playerList = new List<IMyGps>();
                                                     gpscol.GetGpsList(player.Identity.IdentityId, playerList);
-                                                    foreach (var s in offer.gpsToPickFrom)
+                                                    var s = offer.gpsToPickFrom.GetRandomItemFromList();
+                                                    var gps = CrunchEconCore.ParseGPS(s);
+                                                    if (gps != null)
                                                     {
-                                                        var gps = CrunchEconCore.ParseGPS(s);
-                                                        if (gps != null)
-                                                        {
-                                                            foreach (var gp in playerList)
-                                                            {
-                                                                if (gp.Coords != gps.Coords)
-                                                                {
-                                                                    gps.AlwaysVisible = true;
-                                                                    gps.ShowOnHud = true;
-                                                                    gpscol.SendAddGpsRequest(player.Identity.IdentityId, ref gps);
-                                                                    return true;
-                                                                }
-                                                            }
-                                                        }
+
+                                                        gps.AlwaysVisible = true;
+                                                        gps.ShowOnHud = true;
+                                                        gpscol.SendAddGpsRequest(player.Identity.IdentityId, ref gps);
+                                                        return true;
                                                     }
                                                 }
                                                 if (offer.BuyingGivesHaulingContract || offer.BuyingGivesMiningContract)
@@ -590,7 +585,6 @@ namespace CrunchEconomy
                                                             }
                                                             if (ContractUtils.newContracts.TryGetValue(offer.ContractName, out GeneratedContract contract))
                                                             {
-
 
                                                                 Contract temp = ContractUtils.GeneratedToPlayer(contract);
                                                                 Random random = new Random();
@@ -894,7 +888,7 @@ namespace CrunchEconomy
                                                                         ModCommunication.SendMessageTo(m, player.Id.SteamId);
                                                                         return false;
                                                                     }
-                                                                    player.Character.GetInventory().AddItems(temp.amountToMineOrDeliver, (MyObjectBuilder_PhysicalObject)MyObjectBuilderSerializer.CreateNewObject(itemId));
+                                                                    player.Character.GetInventory().AddItems(temp.amountToMineOrDeliver, (MyObjectBuilder_PhysicalObject)MyObjectBuilderSerializerKeen.CreateNewObject(itemId));
                                                                 }
                                                                 //do this the lazy way instead of checking then setting by the key
                                                                 CrunchEconCore.playerData.Remove(player.Id.SteamId);

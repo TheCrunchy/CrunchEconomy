@@ -96,10 +96,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CombatEncounters\Encounter.cs" />
-    <Compile Include="CombatEncounters\EncounterStage.cs" />
-    <Compile Include="CombatEncounters\Triggers\LocationTrigger.cs" />
-    <Compile Include="CombatEncounters\Triggers\IEncounterTrigger.cs" />
     <Compile Include="StoreStuff\BuyOrder.cs" />
     <Compile Include="Config.cs" />
     <Compile Include="ContractCommands.cs" />
