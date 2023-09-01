@@ -393,22 +393,36 @@ namespace CrunchEconomy
             //  CrunchEconCore.Log.Info("bruh");
             if (__instance is MyStoreBlock store)
             {
+           //     CrunchEconCore.Log.Info("1");
                 MyStoreItem storeItem = (MyStoreItem)null;
+          //      CrunchEconCore.Log.Info("2");
                 foreach (MyStoreItem playerItem in store.PlayerItems)
-                {
+                {       
+             //       CrunchEconCore.Log.Info("3");
                     if (playerItem.Id == id)
                     {
+                //        CrunchEconCore.Log.Info("4");
                         storeItem = playerItem;
                         break;
                     }
+              //      CrunchEconCore.Log.Info("5");
                 }
                 if (storeItem == null)
                 {
 
                     return true;
                 }
+              //  CrunchEconCore.Log.Info("6");
+                if (storeItem.PrefabName == null || !string.IsNullOrWhiteSpace(storeItem.PrefabName) || storeItem.PrefabTotalPcu > 0 || storeItem.PrefabTotalPcu == null)
+                {
+                    return true;
+                }
 
-
+                if (storeItem.IsCustomStoreItem)
+                {
+                    return true;
+                }
+       //         CrunchEconCore.Log.Info("7");
                 //this code is awful
                 MyEntity entity = (MyEntity)null;
                 if (!Sandbox.Game.Entities.MyEntities.TryGetEntityById(targetEntityId, out entity, false))

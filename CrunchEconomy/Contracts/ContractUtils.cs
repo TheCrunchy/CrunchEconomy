@@ -181,27 +181,28 @@ namespace CrunchEconomy.Contracts
                 }
             }
 
-            foreach (String s in Directory.GetFiles(CrunchEconCore.path + "//ContractConfigs//Survey//"))
-            {
+            //foreach (String s in Directory.GetFiles(CrunchEconCore.path + "//ContractConfigs//Survey//"))
+            //{
 
 
-               SurveyMission mission = CrunchEconCore.utils.ReadFromXmlFile<SurveyMission>(s);
-                //  DateTime now = DateTime.Now;
-                //if (now.Minute == 59 || now.Minute == 60)
-                //{
-                //    koth.nextCaptureInterval = new DateTime(now.Year, now.Month, now.Day, now.Hour + 1, 0, 0, 0, DateTimeKind.Utc);
-                //}
-                //else
-                //{
-                //    koth.nextCaptureInterval = new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute + 1, 0, 0, DateTimeKind.Utc);
-                //}
-                if (mission.enabled)
-                {
-                    mission.SetupMissionList();
-                    SurveyMissions.Add(mission);
-                }
-            }
+            //   SurveyMission mission = CrunchEconCore.utils.ReadFromXmlFile<SurveyMission>(s);
+            //    //  DateTime now = DateTime.Now;
+            //    //if (now.Minute == 59 || now.Minute == 60)
+            //    //{
+            //    //    koth.nextCaptureInterval = new DateTime(now.Year, now.Month, now.Day, now.Hour + 1, 0, 0, 0, DateTimeKind.Utc);
+            //    //}
+            //    //else
+            //    //{
+            //    //    koth.nextCaptureInterval = new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute + 1, 0, 0, DateTimeKind.Utc);
+            //    //}
+            //    if (mission.enabled)
+            //    {
+            //        mission.SetupMissionList();
+            //        SurveyMissions.Add(mission);
+            //    }
+            //}
         }
+
         public static MyGps ScanChat(string input, string desc = null)
         {
 
