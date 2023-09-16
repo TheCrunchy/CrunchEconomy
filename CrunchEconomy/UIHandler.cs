@@ -57,6 +57,11 @@ namespace CrunchEconomy
             {
                 players.Add(player.Client.SteamUserId);
             }
+
+            if (!players.Any())
+            {
+                return;
+            }
             //  CrunchEconCore.Log.Info("1");
             var client = new RestClient($"{CrunchEconCore.config.UIURL}api/Event/GetEventsForPlayers");
             var request = new RestRequest();
