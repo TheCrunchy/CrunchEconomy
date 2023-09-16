@@ -56,7 +56,7 @@ namespace CrunchEconomy
             {
                 players.Add(player.Client.SteamUserId);
             }
-            CrunchEconCore.Log.Info("1");
+          //  CrunchEconCore.Log.Info("1");
             var client = new RestClient($"{CrunchEconCore.config.UIURL}api/Event/GetEventsForPlayers");
             var request = new RestRequest();
             var message = new APIMessage();
@@ -64,17 +64,17 @@ namespace CrunchEconomy
             message.JsonMessage = JsonConvert.SerializeObject(players);
             request.AddStringBody(JsonConvert.SerializeObject(message), DataFormat.Json);
             var returningEvents = new List<Event>();
-            CrunchEconCore.Log.Info("2");
+          ///  CrunchEconCore.Log.Info("2");
             var response = await client.PostAsync(request);
-            CrunchEconCore.Log.Info("3");
+          //  CrunchEconCore.Log.Info("3");
             if (response.IsSuccessful)
             {
-                CrunchEconCore.Log.Info("4");
+             //   CrunchEconCore.Log.Info("4");
                 var temp = JsonConvert.DeserializeObject<string>(response.Content);
                 var messages = JsonConvert.DeserializeObject<Dictionary<ulong, List<Event>>>(temp);
                 foreach (var playerEvent in messages)
                 {
-                    CrunchEconCore.Log.Info("5");
+                  //  CrunchEconCore.Log.Info("5");
                     var value = playerEvent.Value;
                     foreach (var item in value)
                     {
@@ -85,7 +85,7 @@ namespace CrunchEconomy
 
                                 break;
                             case EventType.BuyItem:
-                                CrunchEconCore.Log.Info("6");
+                       //         CrunchEconCore.Log.Info("6");
                                 var parsedEvent = JsonConvert.DeserializeObject<BuyItemEvent>(item.JsonEvent);
                                 var eventresult = await HandleBuyEvent(item, parsedEvent);
                                 parsedEvent.Result = eventresult;
@@ -116,7 +116,7 @@ namespace CrunchEconomy
                     var result = await client.PostAsync(request);
                 }
             }
-            CrunchEconCore.Log.Info("done");
+          //  CrunchEconCore.Log.Info("done");
         }
 
         public static async Task UpdateBalances()
@@ -168,7 +168,7 @@ namespace CrunchEconomy
                 inventories.AddRange(GetInventories(grid, player.Identity.IdentityId));
             }
 
-            if (!SpawnItems(id, buyEvent.Amount, inventories)) return EventResult.Failure;
+            if (!SpawnItems(id, buyEvent.Amount, inventories)) return EventResult.NotEnoughSpaceInCargo;
 
             EconUtils.takeMoney(player.Identity.IdentityId, buyEvent.Price);
 
