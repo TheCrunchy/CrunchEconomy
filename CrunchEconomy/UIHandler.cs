@@ -93,7 +93,7 @@ namespace CrunchEconomy
                                 item.JsonEvent = JsonConvert.SerializeObject(parsedEvent);
                                 item.EventType = EventType.BuyItemResult;
                                 returningEvents.Add(item);
-                                CrunchEconCore.Log.Info(eventresult.ToString());
+                            //    CrunchEconCore.Log.Info(eventresult.ToString());
                                 break;
                             case EventType.SellItem:
                                 break;
@@ -224,8 +224,20 @@ namespace CrunchEconomy
         {
             //  CrunchEconCore.Log.Info("SPAWNING 1 " + amount);
 
+            foreach (var inv in from inv in inventories let cargo = inv.Owner as IMyCargoContainer where cargo.DisplayNameText != null && cargo.DisplayNameText.ToLower().Contains("priority") select inv)
+            {
+             //   CrunchEconCore.Log.Info("priority cargo");
+                MyItemType itemType = new MyInventoryItemFilter(id.TypeId + "/" + id.SubtypeName).ItemType;
+                if (inv.CanItemsBeAdded(amount, itemType))
+                {
+                    inv.AddItems(amount,
+                        (MyObjectBuilder_PhysicalObject)MyObjectBuilderSerializerKeen.CreateNewObject(id));
+                    return true;
+                }
+            }
             foreach (var inv in inventories)
             {
+
                 MyItemType itemType = new MyInventoryItemFilter(id.TypeId + "/" + id.SubtypeName).ItemType;
                 if (inv.CanItemsBeAdded(amount, itemType))
                 {
