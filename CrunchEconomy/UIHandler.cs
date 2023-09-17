@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -11,6 +12,7 @@ using Newtonsoft.Json;
 using Sandbox.Game.World;
 using RestSharp;
 using Sandbox.Common.ObjectBuilders;
+using Sandbox.Definitions;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Ingame;
@@ -20,16 +22,30 @@ using VRage.Game.ModAPI.Ingame;
 using VRage.ObjectBuilders.Private;
 using VRageMath;
 using IMyCargoContainer = Sandbox.ModAPI.IMyCargoContainer;
+using IMyConveyorSorter = Sandbox.ModAPI.IMyConveyorSorter;
 
 namespace CrunchEconomy
 {
     public static class UIHandler
     {
+        public static bool SentDefinitions = false;
         public static async Task Handle()
         {
-         //   CrunchEconCore.Log.Info("start processing events");
+            try
+            {
+                if (!SentDefinitions)
+                {
+                    SentDefinitions = true;
+                    await SendTextures();
+                }
+            }
+            catch (Exception e)
+            {
+                CrunchEconCore.Log.Error($"Event error {e}");
+            }
+            //   CrunchEconCore.Log.Info("start processing events");
 
-       //     await Task.Delay(TimeSpan.FromSeconds(1));
+            //     await Task.Delay(TimeSpan.FromSeconds(1));
             try
             {
                 await ProcessEvents();
@@ -49,6 +65,61 @@ namespace CrunchEconomy
             }
 
             //  CrunchEconCore.Log.Info("Done processing events");
+        }
+
+        public static async Task SendTextures()
+        {
+            var returnevent = new Event();
+            var textures = new List<TextureEvent>();
+            foreach (MyDefinitionBase def in MyDefinitionManager.Static.GetAllDefinitions())
+            {
+                try
+                {
+                    if (def as MyPhysicalItemDefinition == null) continue;
+                    if (def.Icons == null || !def.Icons.Any()) continue;
+                    var icon = def.Icons[0];
+                    if (icon == null) continue;
+                    var path = icon.Substring(def.Icons[0].IndexOf("Textures"));
+                    if (icon.StartsWith("Textures"))
+                    {
+                        var parent = Directory.GetParent(CrunchEconCore.basePath);
+                        icon = $"{parent}/{icon}";
+                    }
+
+                    if (!File.Exists(icon)) continue;
+                    byte[] imageArray = System.IO.File.ReadAllBytes(icon);
+
+                    textures.Add(new TextureEvent()
+                    {
+                        DefinitionId = def.Id.ToString(),
+                        TexturePath = path,
+                        Base64Texture = imageArray
+                    });
+                }
+                catch (Exception e)
+                {
+                }
+            }
+
+            if (textures.Any())
+            {
+                CrunchEconCore.Log.Error("Sending");
+                foreach (var ev in textures)
+                {
+
+
+                    var client = new RestClient($"{CrunchEconCore.config.UIURL}api/Event/PostEvent");
+                    var request = new RestRequest();
+                    var message = new APIMessage();
+                    message.APIKEY = CrunchEconCore.config.ApiKey;
+                    returnevent.JsonEvent = JsonConvert.SerializeObject(ev);
+                    returnevent.EventType = EventType.TextureEvent;
+                    message.JsonMessage = JsonConvert.SerializeObject(returnevent);
+                    request.AddStringBody(JsonConvert.SerializeObject(message), DataFormat.Json);
+                    var response = await client.PostAsync(request);
+                }
+                CrunchEconCore.Log.Error("Sent");
+            }
         }
 
         public static async Task ProcessEvents()
