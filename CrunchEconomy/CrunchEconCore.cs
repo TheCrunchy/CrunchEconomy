@@ -102,7 +102,7 @@ namespace CrunchEconomy
                 {
                     continue;
                 }
-            
+
                 for (int i = 0; i < block.InventoryCount; i++)
                 {
 
@@ -308,7 +308,7 @@ namespace CrunchEconomy
                     return false;
                 }
             }
-            
+
 
             foreach (MyTuple<VRage.Game.ModAPI.IMyInventory, VRage.Game.ModAPI.IMyInventoryItem, MyFixedPoint> item in toRemove)
                 MyAPIGateway.Utilities.InvokeOnGameThread(() =>
@@ -603,7 +603,7 @@ namespace CrunchEconomy
                             case >= 100:
                                 contract.contractPrice += Convert.ToInt64(contract.contractPrice * 0.025f);
                                 break;
-                         
+
                         }
 
                         if (contract.DistanceBonus > 0)
@@ -854,7 +854,7 @@ namespace CrunchEconomy
 
         public static Dictionary<ulong, DateTime> playerSurveyTimes = new Dictionary<ulong, DateTime>();
         public static Dictionary<ulong, DateTime> MessageCooldowns = new Dictionary<ulong, DateTime>();
- 
+
         public static Dictionary<long, DateTime> individualTimers = new Dictionary<long, DateTime>();
 
         public static string GetPlayerName(ulong steamId)
@@ -980,20 +980,21 @@ namespace CrunchEconomy
                 {
                     return;
                 }
-
-                if (DateTime.Now >= NextBalanceUpdate)
+                if (config.DoWebUI)
                 {
-                    NextBalanceUpdate = DateTime.Now.AddSeconds(5);
-                    try
+                    if (DateTime.Now >= NextBalanceUpdate)
                     {
-                        Task.Run(async () => { UIHandler.Handle();});
-                    }
-                    catch (Exception e)
-                    {
-                        Log.Error("Error in UI handler", e.ToString());
+                        NextBalanceUpdate = DateTime.Now.AddSeconds(config.SecondsBetweenEventChecks);
+                        try
+                        {
+                            Task.Run(async () => { UIHandler.Handle(); });
+                        }
+                        catch (Exception e)
+                        {
+                            Log.Error("Error in UI handler", e.ToString());
+                        }
                     }
                 }
-
                 if (DateTime.Now >= NextFileRefresh)
                 {
                     NextFileRefresh = DateTime.Now.AddMinutes(15);
@@ -2342,7 +2343,7 @@ namespace CrunchEconomy
         }
         public static Dictionary<String, GridSale> gridsForSale = new Dictionary<string, GridSale>();
 
- 
+
         private void SessionChanged(ITorchSession session, TorchSessionState state)
         {
             TorchState = state;

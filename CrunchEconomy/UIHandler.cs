@@ -27,27 +27,28 @@ namespace CrunchEconomy
     {
         public static async Task Handle()
         {
-            try
-            {
-                await UpdateBalances();
-            }
-            catch (Exception)
-            {
+         //   CrunchEconCore.Log.Info("start processing events");
 
-                throw;
-            }
-
-            await Task.Delay(TimeSpan.FromSeconds(1));
+       //     await Task.Delay(TimeSpan.FromSeconds(1));
             try
             {
                 await ProcessEvents();
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                CrunchEconCore.Log.Error($"Event error {e}");
+            }
+            try
+            {
+                await UpdateBalances();
 
-                throw;
+            }
+            catch (Exception e)
+            {
+                CrunchEconCore.Log.Error($"Balance update error {e}");
             }
 
+            //  CrunchEconCore.Log.Info("Done processing events");
         }
 
         public static async Task ProcessEvents()
@@ -91,17 +92,27 @@ namespace CrunchEconomy
 
                                 break;
                             case EventType.BuyItem:
-                                //         CrunchEconCore.Log.Info("6");
-                                var parsedEvent = JsonConvert.DeserializeObject<BuyItemEvent>(item.JsonEvent);
-                                var eventresult = await HandleBuyEvent(item, parsedEvent);
-                                parsedEvent.Result = eventresult;
-                                item.JsonEvent = JsonConvert.SerializeObject(parsedEvent);
-                                item.EventType = EventType.BuyItemResult;
-                                returningEvents.Add(item);
-                            //    CrunchEconCore.Log.Info(eventresult.ToString());
-                                break;
+                                {
+                                    //         CrunchEconCore.Log.Info("6");
+                                    var parsedEvent = JsonConvert.DeserializeObject<BuyItemEvent>(item.JsonEvent);
+                                    var eventresult = await HandleBuyEvent(item, parsedEvent);
+                                    parsedEvent.Result = eventresult;
+                                    item.JsonEvent = JsonConvert.SerializeObject(parsedEvent);
+                                    item.EventType = EventType.BuyItemResult;
+                                    returningEvents.Add(item);
+                                    //    CrunchEconCore.Log.Info(eventresult.ToString());
+                                    break;
+                                }
                             case EventType.SellItem:
-                                break;
+                                {
+                                    var parsedEvent = JsonConvert.DeserializeObject<BuyItemEvent>(item.JsonEvent);
+                                    var eventresult = await HandleSellEvent(item, parsedEvent);
+                                    parsedEvent.Result = eventresult;
+                                    item.JsonEvent = JsonConvert.SerializeObject(parsedEvent);
+                                    item.EventType = EventType.SellItemResult;
+                                    returningEvents.Add(item);
+                                    break;
+                                }
                             default:
                                 break;
                         }
@@ -167,7 +178,7 @@ namespace CrunchEconomy
 
 
             var inventories = new List<VRage.Game.ModAPI.IMyInventory>();
-            var sphere = new BoundingSphereD(player.Character.PositionComp.GetPosition(), 5000 * 2);
+            var sphere = new BoundingSphereD(player.Character.PositionComp.GetPosition(), 1000 * 2);
             foreach (var grid in MyAPIGateway.Entities.GetEntitiesInSphere(ref sphere).OfType<MyCubeGrid>()
                          .Where(x => x.Projector == null && x.BlocksCount >= 1))
             {
@@ -186,8 +197,38 @@ namespace CrunchEconomy
             return EventResult.Success;
         }
 
-        public static async Task<EventResult> HandleSellEvent(Event playerEvent)
+        public static async Task<EventResult> HandleSellEvent(Event playerEvent, BuyItemEvent buyEvent)
         {
+            var playerId = buyEvent.OriginatingPlayerSteamId;
+            if (!MySession.Static.Players.TryGetPlayerBySteamId(playerId, out var player)) return EventResult.NotOnline;
+
+            if (!MyDefinitionId.TryParse(buyEvent.DefinitionIdString,
+                    out MyDefinitionId id)) return EventResult.ItemIdDoesntExist;
+
+            var inventories = new List<VRage.Game.ModAPI.IMyInventory>();
+            var sphere = new BoundingSphereD(player.Character.PositionComp.GetPosition(), 1000 * 2);
+            foreach (var grid in MyAPIGateway.Entities.GetEntitiesInSphere(ref sphere).OfType<MyCubeGrid>()
+                         .Where(x => x.Projector == null && x.BlocksCount >= 1))
+            {
+                inventories.AddRange(GetInventories(grid, player.Identity.IdentityId));
+            }
+
+            var comps = new Dictionary<MyDefinitionId, int>();
+            comps.Add(id, buyEvent.Amount);
+
+            var prio = (from inv in inventories let cargo = inv.Owner as IMyCargoContainer where cargo.DisplayNameText != null && cargo.DisplayNameText.ToLower().Contains("priority") select inv).Cast<VRage.Game.ModAPI.IMyInventory>().ToList();
+
+            if (CrunchEconCore.ConsumeComponents(prio, comps, buyEvent.OriginatingPlayerSteamId))
+            {
+                EconUtils.addMoney(player.Identity.IdentityId, buyEvent.Price);
+
+                return EventResult.Success;
+            }
+
+            if (!CrunchEconCore.ConsumeComponents(inventories, comps, buyEvent.OriginatingPlayerSteamId)) return EventResult.NotEnoughItems;
+
+            EconUtils.addMoney(player.Identity.IdentityId, buyEvent.Price);
+
             return EventResult.Success;
         }
 
@@ -231,7 +272,7 @@ namespace CrunchEconomy
 
             foreach (var inv in from inv in inventories let cargo = inv.Owner as IMyCargoContainer where cargo.DisplayNameText != null && cargo.DisplayNameText.ToLower().Contains("priority") select inv)
             {
-             //   CrunchEconCore.Log.Info("priority cargo");
+                //   CrunchEconCore.Log.Info("priority cargo");
                 MyItemType itemType = new MyInventoryItemFilter(id.TypeId + "/" + id.SubtypeName).ItemType;
                 if (inv.CanItemsBeAdded(amount, itemType))
                 {

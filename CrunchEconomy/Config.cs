@@ -21,6 +21,8 @@ namespace CrunchEconomy
         public Boolean RefreshPlayerStoresOnLoad = false;
         public int MinutesBetweenDave = 15;
         public string ApiKey = "HELLOIMAKEY";
+        public bool DoWebUI = false;
         public string UIURL = "https://localhost:7116/";
+        public double SecondsBetweenEventChecks = 1;
     }
 }
