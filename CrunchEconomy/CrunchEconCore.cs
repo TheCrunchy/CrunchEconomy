@@ -90,6 +90,8 @@ namespace CrunchEconomy
                     targetAmount += invItem.Amount;
                 }
             }
+
+           
             return targetAmount;
         }
         public static List<VRage.Game.ModAPI.IMyInventory> GetInventoriesForContract(MyCubeGrid grid)
