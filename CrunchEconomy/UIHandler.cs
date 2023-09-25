@@ -87,6 +87,10 @@ namespace CrunchEconomy
 					}
 
 					if (!File.Exists(icon)) continue;
+                    if (def.Id.ToString().Contains("MyObjectBuilder_TreeObject"))
+                    {
+                        continue;
+                    }
 					byte[] imageArray = System.IO.File.ReadAllBytes(icon);
 
 					textures.Add(new TextureEvent()
@@ -103,12 +107,10 @@ namespace CrunchEconomy
 
 			if (textures.Any())
 			{
-				CrunchEconCore.Log.Error("Sending");
+				//CrunchEconCore.Log.Error("Sending");
 				foreach (var ev in textures)
 				{
-
-
-					var client = new RestClient($"{CrunchEconCore.config.UIURL}api/Event/PostEvent");
+                    var client = new RestClient($"{CrunchEconCore.config.UIURL}api/Event/PostEvent");
 					var request = new RestRequest();
 					var message = new APIMessage();
 					message.APIKEY = CrunchEconCore.config.ApiKey;
@@ -118,7 +120,18 @@ namespace CrunchEconomy
 					request.AddStringBody(JsonConvert.SerializeObject(message), DataFormat.Json);
 					var response = await client.PostAsync(request);
 				}
-				CrunchEconCore.Log.Error("Sent");
+				
+                var client2 = new RestClient($"{CrunchEconCore.config.UIURL}api/Event/PostEvent");
+                var request2 = new RestRequest();
+                var message2 = new APIMessage();
+                message2.APIKEY = CrunchEconCore.config.ApiKey;
+                returnevent.JsonEvent = JsonConvert.SerializeObject(new Event(){EventType = EventType.SaveTexturesJson});
+                returnevent.EventType = EventType.SaveTexturesJson;
+                message2.JsonMessage = JsonConvert.SerializeObject(returnevent);
+                request2.AddStringBody(JsonConvert.SerializeObject(message2), DataFormat.Json);
+                var response2 = await client2.PostAsync(request2);
+				
+				//CrunchEconCore.Log.Error("Sent");
 			}
 		}
 
