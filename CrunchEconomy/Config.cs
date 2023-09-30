@@ -22,6 +22,7 @@ namespace CrunchEconomy
         public int MinutesBetweenDave = 15;
         public string ApiKey = "HELLOIMAKEY";
         public bool DoWebUI = false;
+        public bool SendDefinitions = false;
         public string UIURL = "https://localhost:7116/";
         public double SecondsBetweenEventChecks = 1;
     }
