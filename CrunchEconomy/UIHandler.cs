@@ -35,9 +35,9 @@ namespace CrunchEconomy
         {
             try
             {
+           
                 if (!SentDefinitions && CrunchEconCore.config.SendDefinitions)
                 {
-                    SentDefinitions = true;
                     await SendTextures();
                 }
             }
@@ -59,9 +59,9 @@ namespace CrunchEconomy
                 client.Headers.Add("Content-Type", "application/json");
                 //send to ingame and nexus 
                 var payloadJson = JsonConvert.SerializeObject(new
-                    {
-                        username = "Econ Error",
-                        embeds = new[]
+                {
+                    username = "Econ Error",
+                    embeds = new[]
                         {
                             new
                             {
@@ -69,7 +69,7 @@ namespace CrunchEconomy
                                 title = "Econ Error",
                             }
                         }
-                    }
+                }
                 );
 
                 var payload = payloadJson;
@@ -90,7 +90,7 @@ namespace CrunchEconomy
                 try
                 {
                     await UpdateBalances();
-
+                    await SendPrefabs();
                 }
                 catch (Exception e)
                 {
@@ -102,10 +102,40 @@ namespace CrunchEconomy
             //  CrunchEconCore.Log.Info("Done processing events");
         }
 
+        public static async Task SendPrefabs()
+        {
+            var returnevent = new Event();
+            var files = new List<String>();
+            foreach (var file in Directory.GetFiles(CrunchEconCore.path + "//GridSelling//Grids//", "*", SearchOption.AllDirectories))
+            {
+                files.Add(Path.GetFileName(file));
+            }
+
+            if (files.Any())
+            {
+                var prefabEvent = new PrefabEvent()
+                {
+                    Prefabs = files
+                };
+                var client = new RestClient($"{CrunchEconCore.config.UIURL}api/Event/PostEvent");
+                var request = new RestRequest();
+                var message = new APIMessage();
+                message.APIKEY = CrunchEconCore.config.ApiKey;
+                returnevent.JsonEvent = JsonConvert.SerializeObject(prefabEvent);
+                returnevent.EventType = EventType.PrefabEvent;
+                message.JsonMessage = JsonConvert.SerializeObject(returnevent);
+                request.AddStringBody(JsonConvert.SerializeObject(message), DataFormat.Json);
+                var response = await client.PostAsync(request);
+            }
+        }
+
         public static async Task SendTextures()
         {
             var returnevent = new Event();
             var textures = new List<TextureEvent>();
+
+         
+    
             foreach (MyDefinitionBase def in MyDefinitionManager.Static.GetAllDefinitions())
             {
                 try
@@ -208,25 +238,48 @@ namespace CrunchEconomy
                         switch (item.EventType)
                         {
                             case EventType.ListItem:
-                            {
-                                var parsedEvent = JsonConvert.DeserializeObject<CreateListingEvent>(item.JsonEvent);
-                                try
                                 {
-                                    var eventresult = await HandleListEvent(item, parsedEvent);
-                                    parsedEvent.Result = eventresult;
-                                    item.JsonEvent = JsonConvert.SerializeObject(parsedEvent);
-                                    item.EventType = EventType.ListItemResult;
-                                    returningEvents.Add(item);
+                                    var parsedEvent = JsonConvert.DeserializeObject<CreateListingEvent>(item.JsonEvent);
+                                    try
+                                    {
+                                        var eventresult = await HandleListEvent(item, parsedEvent);
+                                        parsedEvent.Result = eventresult;
+                                        item.JsonEvent = JsonConvert.SerializeObject(parsedEvent);
+                                        item.EventType = EventType.ListItemResult;
+                                        returningEvents.Add(item);
+                                    }
+                                    catch (Exception)
+                                    {
+                                        parsedEvent.Result = EventResult.Failure;
+                                        item.JsonEvent = JsonConvert.SerializeObject(parsedEvent);
+                                        item.EventType = EventType.ListItemResult;
+                                        returningEvents.Add(item);
+                                    }
+                                    break;
                                 }
-                                catch (Exception)
+                            case EventType.BuyShip:
                                 {
-                                    parsedEvent.Result = EventResult.Failure;
-                                    item.JsonEvent = JsonConvert.SerializeObject(parsedEvent);
-                                    item.EventType = EventType.ListItemResult;
-                                    returningEvents.Add(item);
+                                    //         CrunchEconCore.Log.Info("6");
+                                    var parsedEvent = JsonConvert.DeserializeObject<BuyShipEvent>(item.JsonEvent);
+                                    try
+                                    {
+                                        var eventresult = await HandleBuyShipEvent(item, parsedEvent);
+                                        parsedEvent.Result = eventresult;
+                                        item.JsonEvent = JsonConvert.SerializeObject(parsedEvent);
+                                        item.EventType = EventType.BuyShipResult;
+                                        returningEvents.Add(item);
+                                    }
+                                    catch (Exception)
+                                    {
+                                        parsedEvent.Result = EventResult.Failure;
+                                        item.JsonEvent = JsonConvert.SerializeObject(parsedEvent);
+                                        item.EventType = EventType.BuyShipResult;
+                                        returningEvents.Add(item);
+                                    }
+
+                                    //    CrunchEconCore.Log.Info(eventresult.ToString());
+                                    break;
                                 }
-                                break;
-                            }
                             case EventType.BuyItem:
                                 {
                                     //         CrunchEconCore.Log.Info("6");
@@ -375,6 +428,77 @@ namespace CrunchEconomy
 
             return EventResult.Success;
         }
+
+        public static async Task<EventResult> HandleBuyShipEvent(Event playerEvent, BuyShipEvent buyEvent)
+        {
+            var playerId = buyEvent.OriginatingPlayerSteamId;
+            if (!MySession.Static.Players.TryGetPlayerBySteamId(playerId, out var player)) return EventResult.NotOnline;
+
+            var balance = EconUtils.getBalance(player.Identity.IdentityId);
+            if (balance < buyEvent.ShipListing.Price)
+            {
+                return EventResult.BuyerCannotAfford;
+            }
+
+            if (!File.Exists(CrunchEconCore.path + "//GridSelling//Grids//" + buyEvent.ShipListing.ShipPrefabName))
+            {
+                return EventResult.PrefabDoesntExist;
+            }
+
+            if (buyEvent.ShipListing.RequireReputation)
+            {
+                foreach (var faction in buyEvent.ShipListing.FactionTag.Split(','))
+                {
+                    var trim = faction.Trim();
+                    var fac = MySession.Static.Factions.TryGetFactionByTag(trim);
+                    if (fac == null)
+                    {
+                        return EventResult.FactionNotFound;
+                    }
+
+                    var rep = MySession.Static.Factions.GetRelationBetweenPlayerAndFaction(player.Identity.IdentityId,
+                        fac.FactionId);
+                    if (buyEvent.ShipListing.ReputationRequirement < 0)
+                    {
+                        if (rep.Item2 > buyEvent.ShipListing.ReputationRequirement)
+                        {
+                            return EventResult.NotEnoughReputation;
+                        }
+                    }
+                    else
+                    {
+                        if (rep.Item2 < buyEvent.ShipListing.ReputationRequirement)
+                        {
+                            return EventResult.NotEnoughReputation;
+                        }
+                    }
+                }
+            }
+            Vector3 Position = player.Character.PositionComp.GetPosition();
+            Random random = new Random();
+
+            Position.Add(new Vector3(random.Next(1000, 1000), random.Next(1000, 1000), random.Next(1000, 1000)));
+            bool pasteResult = true;
+            MyAPIGateway.Utilities.InvokeOnGameThread(() =>
+            {
+                if (!GridManager.LoadGrid(
+                        CrunchEconCore.path + "//GridSelling//Grids//" + buyEvent.ShipListing.ShipPrefabName, Position,
+                        false, buyEvent.OriginatingPlayerSteamId, buyEvent.ShipListing.ShipName, false))
+                {
+                    pasteResult = false;
+                }
+            });
+
+            if (!pasteResult)
+            {
+                return EventResult.CouldntPasteGrid;
+            }
+
+            EconUtils.takeMoney(player.Identity.IdentityId, buyEvent.ShipListing.Price);
+
+            return EventResult.Success;
+        }
+
         public static async Task<EventResult> HandleBuyEvent(Event playerEvent, BuyItemEvent buyEvent)
         {
             var playerId = buyEvent.OriginatingPlayerSteamId;
