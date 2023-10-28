@@ -25,5 +25,6 @@ namespace CrunchEconomy
         public bool SendDefinitions = false;
         public string UIURL = "https://localhost:7116/";
         public double SecondsBetweenEventChecks = 1;
+        public string DBConnectionString = "Host=127.0.0.1;Username=postgres;Password=alan;Database=postgrescrunch";
     }
 }

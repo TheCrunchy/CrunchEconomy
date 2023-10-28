@@ -965,6 +965,10 @@ namespace CrunchEconomy
 
         public override async void Update()
         {
+            if (ticks == 0)
+            {
+                UIHandler.SetupContext(config.DBConnectionString);
+            }
             try
             {
                 ticks++;

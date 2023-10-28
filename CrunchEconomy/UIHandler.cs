@@ -9,12 +9,14 @@ using System.Threading.Tasks;
 using System.Web;
 using CrunchEconModels.Models;
 using CrunchEconModels.Models.Events;
+using CrunchEconUI.EntityFramework;
 using Newtonsoft.Json;
 using Sandbox.Game.World;
 using RestSharp;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
 using Sandbox.Game.Entities;
+using Sandbox.Game.GameSystems;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Ingame;
 using VRage;
@@ -29,8 +31,14 @@ namespace CrunchEconomy
 {
     public static class UIHandler
     {
+        private static EconContext Context { get; set; }
         public static bool SentDefinitions = false;
         private static DateTime balances = DateTime.Now;
+
+        public static void SetupContext(string connection)
+        {
+            Context = new EconContext(connection);
+        }
         public static async Task Handle()
         {
             try
