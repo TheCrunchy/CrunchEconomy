@@ -37,13 +37,20 @@ namespace CrunchEconomy
 
         public static void SetupContext(string connection)
         {
-            Context = new EconContext(connection);
+            try
+            {
+                Context = new EconContext(connection);
+            }
+            catch (Exception e)
+            {
+                CrunchEconCore.Log.Error(e);
+            }
         }
         public static async Task Handle()
         {
             try
             {
-           
+
                 if (!SentDefinitions && CrunchEconCore.config.SendDefinitions)
                 {
                     await SendTextures();
@@ -58,7 +65,7 @@ namespace CrunchEconomy
             //     await Task.Delay(TimeSpan.FromSeconds(1));
             try
             {
-                await ProcessEvents();
+                await ProcessEventsDB();
             }
             catch (Exception e)
             {
@@ -142,8 +149,8 @@ namespace CrunchEconomy
             var returnevent = new Event();
             var textures = new List<TextureEvent>();
 
-         
-    
+
+
             foreach (MyDefinitionBase def in MyDefinitionManager.Static.GetAllDefinitions())
             {
                 try
@@ -209,7 +216,142 @@ namespace CrunchEconomy
             }
         }
 
-        public static async Task ProcessEvents()
+        public static async Task ProcessEventsDB()
+        {
+            CrunchEconCore.Log.Info("Start DB call");
+            var players = MySession.Static.Players.GetOnlinePlayers().Select(player => player.Client.SteamUserId).ToList();
+            var returningEvents = new List<Event>();
+            foreach (var item in Context.ArchivedEvents.Where(x => x.Waiting && !x.Processed).ToList())
+            {
+                if (!players.Contains((ulong)item.OriginatingPlayerId))
+                {
+                    CrunchEconCore.Log.Info("player not online");
+                    continue;
+                }
+                    
+                //  CrunchEconCore.Log.Info("5");
+                item.Processed = true;
+                item.Source = EventSource.Torch;
+                switch (item.EventType)
+                {
+                    case EventType.ListItem:
+                        {
+                            var parsedEvent = JsonConvert.DeserializeObject<CreateListingEvent>(item.JsonEvent);
+                            try
+                            {
+                                var eventresult = await HandleListEvent(item, parsedEvent);
+                                parsedEvent.Result = eventresult;
+                                item.JsonEvent = JsonConvert.SerializeObject(parsedEvent);
+                                item.EventType = EventType.ListItemResult;
+
+                            }
+                            catch (Exception)
+                            {
+                                parsedEvent.Result = EventResult.Failure;
+                                item.JsonEvent = JsonConvert.SerializeObject(parsedEvent);
+                                item.EventType = EventType.ListItemResult;
+
+                            }
+
+                            break;
+                        }
+                    case EventType.BuyShip:
+                        {
+                            //         CrunchEconCore.Log.Info("6");
+                            var parsedEvent = JsonConvert.DeserializeObject<BuyShipEvent>(item.JsonEvent);
+                            try
+                            {
+                                var eventresult = await HandleBuyShipEvent(item, parsedEvent);
+                                parsedEvent.Result = eventresult;
+                                item.JsonEvent = JsonConvert.SerializeObject(parsedEvent);
+                                item.EventType = EventType.BuyShipResult;
+
+                            }
+                            catch (Exception)
+                            {
+                                parsedEvent.Result = EventResult.Failure;
+                                item.JsonEvent = JsonConvert.SerializeObject(parsedEvent);
+                                item.EventType = EventType.BuyShipResult;
+
+                            }
+
+                            //    CrunchEconCore.Log.Info(eventresult.ToString());
+                            break;
+                        }
+                    case EventType.BuyItem:
+                        {
+                            //         CrunchEconCore.Log.Info("6");
+                            var parsedEvent = JsonConvert.DeserializeObject<BuyItemEvent>(item.JsonEvent);
+                            try
+                            {
+                                var eventresult = await HandleBuyEvent(item, parsedEvent);
+                                parsedEvent.Result = eventresult;
+                                item.JsonEvent = JsonConvert.SerializeObject(parsedEvent);
+                                item.EventType = EventType.BuyItemResult;
+
+                            }
+                            catch (Exception)
+                            {
+                                parsedEvent.Result = EventResult.Failure;
+                                item.JsonEvent = JsonConvert.SerializeObject(parsedEvent);
+                                item.EventType = EventType.BuyItemResult;
+
+                            }
+
+                            //    CrunchEconCore.Log.Info(eventresult.ToString());
+                            break;
+                        }
+                    case EventType.SellItem:
+                        {
+                            var parsedEvent = JsonConvert.DeserializeObject<BuyItemEvent>(item.JsonEvent);
+                            try
+                            {
+
+                                var eventresult = await HandleSellEvent(item, parsedEvent);
+                                parsedEvent.Result = eventresult;
+                                item.JsonEvent = JsonConvert.SerializeObject(parsedEvent);
+                                item.EventType = EventType.SellItemResult;
+
+                            }
+                            catch (Exception)
+                            {
+                                parsedEvent.Result = EventResult.Failure;
+                                item.JsonEvent = JsonConvert.SerializeObject(parsedEvent);
+                                item.EventType = EventType.SellItemResult;
+                            }
+
+                            break;
+                        }
+                    case EventType.DeleteListing:
+                        {
+                            var parsedEvent = JsonConvert.DeserializeObject<DeleteListingEvent>(item.JsonEvent);
+                            try
+                            {
+                                var eventresult = await HandleDeleteEvent(item, parsedEvent);
+                                parsedEvent.Result = eventresult;
+                                item.JsonEvent = JsonConvert.SerializeObject(parsedEvent);
+                                item.EventType = EventType.DeleteListing;
+
+                            }
+                            catch (Exception)
+                            {
+                                parsedEvent.Result = EventResult.Failure;
+                                item.JsonEvent = JsonConvert.SerializeObject(parsedEvent);
+                                item.EventType = EventType.DeleteListing;
+                            }
+
+                            break;
+                        }
+                    default:
+                        break;
+                }
+            }
+
+            await Context.SaveChangesAsync();
+            CrunchEconCore.Log.Info("End DB call");
+        }
+
+        public static async Task ProcessEventsApi()
         {
             var players = new List<ulong>();
             foreach (var player in MySession.Static.Players.GetOnlinePlayers())
