@@ -38,8 +38,6 @@ using System.Globalization;
 using System.Text.RegularExpressions;
 using Sandbox.Game.Entities.Cube;
 using Sandbox.Game.Entities.Blocks;
-using SpaceEngineers.Game.Entities.Blocks.SafeZone;
-using SpaceEngineers.Game.Entities.Blocks;
 using Sandbox.Game.GameSystems.BankingAndCurrency;
 using VRage.Game.ObjectBuilders.Definitions;
 using VRageMath;
@@ -52,10 +50,9 @@ using static CrunchEconomy.Contracts.GeneratedContract;
 using static CrunchEconomy.RepConfig;
 using System.Threading.Tasks;
 using NLog.Fluent;
-using ProtoBuf;
 using static CrunchEconomy.WhitelistFile;
 using Sandbox.Definitions;
-using Torch.Server.Views.Entities;
+using Torch.Utils.SteamWorkshopTools;
 using VRage.ObjectBuilders.Private;
 
 namespace CrunchEconomy
@@ -361,7 +358,7 @@ namespace CrunchEconomy
                             if (target != null)
                             {
 
-                                MySession.Static.Factions.SetReputationBetweenPlayerAndFaction(iden.IdentityId, target.FactionId, item.PlayerToFactionRep);
+                                MySession.Static.Factions.SetReputationBetweenPlayerAndFaction(iden.IdentityId, target.FactionId, item.PlayerToFactionRep, ReputationChangeReason.Admin);
                                 if (player != null)
                                 {
                                     MySession.Static.Factions.SetReputationBetweenFactions(player.FactionId, target.FactionId, item.FactionToFactionRep);
@@ -967,7 +964,8 @@ namespace CrunchEconomy
         {
             if (ticks == 0)
             {
-                UIHandler.SetupContext(config.DBConnectionString);
+             //   UIHandler.SetupContext(config.DBConnectionString);
+
             }
             try
             {
@@ -991,14 +989,14 @@ namespace CrunchEconomy
                     if (DateTime.Now >= NextBalanceUpdate)
                     {
                         NextBalanceUpdate = DateTime.Now.AddSeconds(config.SecondsBetweenEventChecks);
-                        try
-                        {
-                            Task.Run(async () => { UIHandler.Handle(); });
-                        }
-                        catch (Exception e)
-                        {
-                            Log.Error("Error in UI handler", e.ToString());
-                        }
+                        //try
+                        //{
+                        // //   Task.Run(async () => { UIHandler.Handle(); });
+                        //}
+                        //catch (Exception e)
+                        //{
+                        //    Log.Error("Error in UI handler", e.ToString());
+                        //}
                     }
                 }
                 if (DateTime.Now >= NextFileRefresh)
